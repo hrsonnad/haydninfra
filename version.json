@@ -1,9 +1,9 @@
 {
-  "version": "v260306.24 4:57pm",
-  "release": 24,
-  "sha": "39c5439",
-  "fullSha": "39c5439a7ea2336a62913ec6a2aa72f65e71face",
+  "version": "v260306.25 5:12pm",
+  "release": 25,
+  "sha": "01bc82b",
+  "fullSha": "01bc82bf0b508432ceb8eb9c5e103fa0bc93f8b5",
   "actor": "hrsonnad",
-  "pushedAt": "2026-03-06T22:57:05Z",
-  "commits": [{"sha": "39c5439", "message": "Redesign homepage: clean workspace UI with floating icon screensaver", "author": "Haydn"}]
+  "pushedAt": "2026-03-06T23:12:40Z",
+  "commits": [{"sha": "01bc82b", "message": "feat: shell iframe architecture, colored icons, welcome tagline", "author": "Haydn"}]
 }
