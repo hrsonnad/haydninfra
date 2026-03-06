@@ -1,9 +1,9 @@
 {
-  "version": "v260306.09 1:59am",
-  "release": 9,
-  "sha": "654bb07",
-  "fullSha": "654bb072b580ce632d595db6886d6d45f5c3cdab",
+  "version": "v260306.10 2:06am",
+  "release": 10,
+  "sha": "578ae93",
+  "fullSha": "578ae93545fcdc23ac5bb2690f967fbd8fa36a0a",
   "actor": "hrsonnad",
-  "pushedAt": "2026-03-06T07:59:45Z",
-  "commits": [{"sha": "654bb07", "message": "Add public pages nav to index \u2014 always visible without auth", "author": "Haydn"}]
+  "pushedAt": "2026-03-06T08:06:08Z",
+  "commits": [{"sha": "578ae93", "message": "Add public pages admin: DB-driven index, archive/delete controls", "author": "Haydn"}]
 }
