@@ -1,9 +1,9 @@
 {
-  "version": "v260306.01 8:00pm",
-  "release": 1,
-  "sha": "e6eb69e",
-  "fullSha": "e6eb69e496f13734be01399612526a9c2dfe6a5f",
+  "version": "v260306.02 1:02am",
+  "release": 2,
+  "sha": "f898031",
+  "fullSha": "f898031d43cbc9527e8cb2b618e60052688fbf35",
   "actor": "hrsonnad",
-  "pushedAt": "2026-03-06T02:00:48Z",
-  "commits": []
+  "pushedAt": "2026-03-06T07:02:21Z",
+  "commits": [{"sha": "f898031", "message": "Set up infrastructure: Supabase, Tailwind CSS v4, Google OAuth", "author": "Haydn"}]
 }
