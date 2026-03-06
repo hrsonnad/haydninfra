@@ -161,6 +161,13 @@
                     '<h2 class="auth-modal__title">Sign In</h2>' +
                     '<p class="auth-modal__subtitle">Authorized administrators only</p>' +
                 '</div>' +
+                '<div class="auth-modal__google">' +
+                    '<button type="button" class="auth-modal__google-btn" id="authGoogleBtn">' +
+                        '<svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.2l6.8-6.8C35.8 2.4 30.2 0 24 0 14.8 0 6.9 5.4 3 13.3l7.9 6.1C12.8 13.1 18 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v8.5h12.7c-.6 3-2.3 5.5-4.8 7.2l7.5 5.8c4.4-4.1 7.1-10.1 7.1-17z"/><path fill="#FBBC05" d="M10.9 28.6A14.8 14.8 0 0 1 9.5 24c0-1.6.3-3.2.8-4.6L2.4 13.3A23.9 23.9 0 0 0 0 24c0 3.9.9 7.5 2.6 10.7l8.3-6.1z"/><path fill="#34A853" d="M24 48c6.2 0 11.4-2 15.2-5.5l-7.5-5.8c-2 1.4-4.6 2.2-7.7 2.2-6 0-11.1-3.6-13-8.9l-8.2 6.3C6.8 42.6 14.8 48 24 48z"/></svg>' +
+                        'Continue with Google' +
+                    '</button>' +
+                '</div>' +
+                '<div class="auth-modal__divider"><span>or</span></div>' +
                 '<form class="auth-modal__form" id="authLoginForm">' +
                     '<div class="auth-modal__field">' +
                         '<label for="authEmail">Email</label>' +
@@ -181,6 +188,13 @@
         document.getElementById('authModalBackdrop').addEventListener('click', closeLoginModal);
         document.getElementById('authModalClose').addEventListener('click', closeLoginModal);
         document.addEventListener('keydown', handleModalEsc);
+
+        document.getElementById('authGoogleBtn').addEventListener('click', function() {
+            sb.auth.signInWithOAuth({
+                provider: 'google',
+                options: { redirectTo: window.location.href }
+            });
+        });
 
         document.getElementById('authLoginForm').addEventListener('submit', function(e) {
             e.preventDefault();

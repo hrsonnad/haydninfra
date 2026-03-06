@@ -145,6 +145,24 @@
 .auth-modal__submit:hover { background: var(--aap-accent-deep); }
 .auth-modal__submit:disabled { opacity: 0.6; cursor: not-allowed; }
 
+/* Google OAuth */
+.auth-modal__google { margin-bottom: 4px; }
+.auth-modal__google-btn {
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    width: 100%; padding: 11px 16px; border: 1px solid #dadce0; border-radius: 8px;
+    background: #fff; color: #3c4043; font-size: 14px; font-weight: 500;
+    cursor: pointer; transition: background 0.15s, box-shadow 0.15s;
+    font-family: inherit;
+}
+.auth-modal__google-btn:hover { background: #f8f9fa; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+.auth-modal__divider {
+    display: flex; align-items: center; gap: 12px;
+    color: #9ca3af; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em;
+    margin: 4px 0;
+}
+.auth-modal__divider::before,
+.auth-modal__divider::after { content: ''; flex: 1; height: 1px; background: #e5e7eb; }
+
 /* Mobile auth */
 @media (max-width: 768px) {
     .auth-widget { position: absolute; top: 14px; right: 16px; margin-left: 0; }

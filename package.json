@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "css:build": "npx @tailwindcss/cli -i styles/tailwind.css -o styles/tailwind.out.css --minify",
+    "css:watch": "npx @tailwindcss/cli -i styles/tailwind.css -o styles/tailwind.out.css --watch"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.95.3",
@@ -15,13 +17,23 @@
     "react-dom": "19.2.3"
   },
   "devDependencies": {
+    "@tailwindcss/cli": "^4.2.1",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
-    "tailwindcss": "^4",
+    "tailwindcss": "^4.2.1",
     "typescript": "^5"
-  }
+  },
+  "description": "A starter template for building full-stack business platforms with Claude Code. Set up messaging, marketing, customer management, and finance — all on free or near-free infrastructure.",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs"
 }
