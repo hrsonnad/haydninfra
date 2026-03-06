@@ -11,7 +11,7 @@ const MODEL_ANALYZE = 'grok-4-1-fast-reasoning';
 
 const cors = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'Content-Type',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
   'Access-Control-Allow-Methods': 'GET, OPTIONS',
 };
 
