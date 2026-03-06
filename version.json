@@ -1,9 +1,9 @@
 {
-  "version": "v260306.25 5:12pm",
-  "release": 25,
-  "sha": "01bc82b",
-  "fullSha": "01bc82bf0b508432ceb8eb9c5e103fa0bc93f8b5",
+  "version": "v260306.26 5:22pm",
+  "release": 26,
+  "sha": "8dd191e",
+  "fullSha": "8dd191e52dfca24c3a0091d0029547b8e24ed3d5",
   "actor": "hrsonnad",
-  "pushedAt": "2026-03-06T23:12:40Z",
-  "commits": [{"sha": "01bc82b", "message": "feat: shell iframe architecture, colored icons, welcome tagline", "author": "Haydn"}]
+  "pushedAt": "2026-03-06T23:22:50Z",
+  "commits": [{"sha": "76cc85b", "message": "Redesign homepage: clean workspace UI with floating icon screensaver", "author": "Haydn"}, {"sha": "ea322bc", "message": "feat: shell iframe architecture, colored icons, welcome tagline", "author": "Haydn"}, {"sha": "8dd191e", "message": "Merge pull request #1 from hrsonnad/claude/zen-blackwell", "author": "hrsonnad"}]
 }
