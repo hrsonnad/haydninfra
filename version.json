@@ -1,9 +1,9 @@
 {
-  "version": "v260306.27 5:25pm",
-  "release": 27,
-  "sha": "77df7bd",
-  "fullSha": "77df7bd5849fe8d988a0f77ea297ab62fbf0ba00",
+  "version": "v260306.28 5:36pm",
+  "release": 28,
+  "sha": "9384b8c",
+  "fullSha": "9384b8cb07c09ed08fd2ff7866ef6e9b85e4662f",
   "actor": "hrsonnad",
-  "pushedAt": "2026-03-06T23:25:25Z",
-  "commits": [{"sha": "77df7bd", "message": "Fix auth dropdown position in sidebar footer", "author": "Haydn"}]
+  "pushedAt": "2026-03-06T23:36:45Z",
+  "commits": [{"sha": "9384b8c", "message": "Update hero tagline to 'In a world of agents, have agency'", "author": "Haydn"}]
 }
