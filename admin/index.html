@@ -7,9 +7,9 @@
     <meta name="robots" content="noindex, nofollow">
     <link rel="stylesheet" href="../styles/tailwind.out.css">
     <link rel="stylesheet" href="../shared/admin.css">
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-    <script src="../shared/supabase.js"></script>
-    <script src="../shared/auth.js"></script>
+    <style>
+        body { background: var(--aap-bg, #f8fafc); font-family: system-ui, -apple-system, sans-serif; margin: 0; }
+    </style>
 </head>
 <body>
     <nav style="background:#fff; border-bottom:1px solid #e5e7eb; padding:0 24px; height:56px; display:flex; align-items:center;">
@@ -48,6 +48,10 @@
         </div>
     </main>
 
+    <!-- Scripts at end of body -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    <script src="../shared/supabase.js"></script>
+    <script src="../shared/auth.js"></script>
     <script>
         requireAuth(function(user, supabase) {
             document.getElementById('admin-content').style.display = 'block';
