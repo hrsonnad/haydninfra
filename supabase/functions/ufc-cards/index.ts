@@ -2,7 +2,11 @@ import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 
 const GROK_API_KEY = Deno.env.get('GROK_API_KEY');
 const GROK_URL = 'https://api.x.ai/v1/chat/completions';
-const MODEL = 'grok-4-1-fast-reasoning';
+
+// grok-2-latest for schedule/card lookups (has live web search support)
+// grok-4-1-fast-reasoning for deep fight analysis (reasoning-heavy)
+const MODEL_SEARCH = 'grok-2-latest';
+const MODEL_REASON = 'grok-4-1-fast-reasoning';
 
 const cors = {
   'Access-Control-Allow-Origin': '*',
@@ -10,27 +14,32 @@ const cors = {
   'Access-Control-Allow-Methods': 'GET, OPTIONS',
 };
 
-async function askGrok(system: string, user: string): Promise<string> {
+async function askGrok(system: string, user: string, useSearch = false): Promise<string> {
+  const model = useSearch ? MODEL_SEARCH : MODEL_REASON;
+  const body: Record<string, unknown> = {
+    model,
+    messages: [
+      { role: 'system', content: system },
+      { role: 'user', content: user },
+    ],
+  };
+  if (useSearch) {
+    body.search_parameters = { mode: 'on' };
+  }
+
   const res = await fetch(GROK_URL, {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${GROK_API_KEY}`,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({
-      model: MODEL,
-      messages: [
-        { role: 'system', content: system },
-        { role: 'user', content: user },
-      ],
-    }),
+    body: JSON.stringify(body),
   });
 
   if (!res.ok) throw new Error(`Grok ${res.status}: ${await res.text()}`);
 
   const data = await res.json();
   const content = data.choices?.[0]?.message?.content ?? '';
-  // Strip markdown code fences if present
   return content.replace(/^```(?:json)?\s*\n?/m, '').replace(/\n?```\s*$/m, '').trim();
 }
 
@@ -50,125 +59,89 @@ serve(async (req) => {
 
   try {
     let json: string;
-    let cache = 900; // 15 min default
+    let cache = 900;
 
     if (mode === 'events') {
       json = await askGrok(
-        `You are a UFC scheduling expert with real-time knowledge. Today is ${today}. Return ONLY valid JSON — no markdown, no preamble, no commentary.`,
-        `List the next 4 upcoming UFC events from today (${today}) onwards, ordered by date ascending. Include both numbered PPV events and UFC Fight Night events. Return:
+        `You are a UFC scheduling expert. Use live web search to find accurate, current UFC event data. Today is ${today}. Return ONLY valid JSON — no markdown, no commentary.`,
+        `Search the web right now for the next 4 upcoming UFC events on or after ${today}, ordered by date. Use ufc.com or ESPN as your source. Return exact official event names and dates — do not guess. Return:
 {
   "events": [
     {
-      "id": "ufc-311",
-      "title": "UFC 311",
-      "subtitle": "Makhachev vs Moicano",
-      "date": "2025-01-18",
-      "venue": "Intuit Dome",
-      "location": "Inglewood, CA",
+      "id": "ufc-326",
+      "title": "UFC 326",
+      "subtitle": "Fighter A vs Fighter B",
+      "date": "2026-03-07",
+      "venue": "Venue Name",
+      "location": "City, State",
       "broadcast": "ESPN+ PPV"
     }
   ]
-}`
+}`,
+        true
       );
 
     } else if (mode === 'card') {
       const event = url.searchParams.get('event') ?? '';
       json = await askGrok(
-        `You are an authoritative UFC expert with current, accurate fight card knowledge. Today is ${today}. Return ONLY valid JSON.`,
-        `Give me the complete fight card for "${event}", including all fights from main event down through prelims. For each fight provide accurate fighter names, records, and current betting odds. Return:
+        `You are an authoritative UFC expert. Use live web search to get the accurate, confirmed fight card. Today is ${today}. Return ONLY valid JSON.`,
+        `Search the web right now for the confirmed fight card for "${event}". Use ufc.com, ESPN, or MMAFighting as sources. List only confirmed bouts — do not invent fights. Include all fights from main event through early prelims. Return:
 {
-  "event": {
-    "title": "UFC 311",
-    "date": "2025-01-18",
-    "venue": "Intuit Dome",
-    "location": "Inglewood, CA"
-  },
-  "fights": [
-    {
-      "id": "makhachev-vs-moicano",
-      "card_section": "main_event",
-      "weight_class": "Lightweight",
-      "is_title_fight": true,
-      "title_description": "UFC Lightweight Championship",
-      "fighter1": {
-        "name": "Islam Makhachev",
-        "nickname": "The Machine",
-        "record": "26-1",
-        "rank": "C",
-        "country_flag": "🇷🇺",
-        "country": "Russia"
-      },
-      "fighter2": {
-        "name": "Renato Moicano",
-        "nickname": "Money",
-        "record": "21-5-1",
-        "rank": "#5",
-        "country_flag": "🇧🇷",
-        "country": "Brazil"
-      },
-      "odds": {
-        "fighter1": "-800",
-        "fighter2": "+580",
-        "draw": "+3000"
-      },
-      "preview": "The dominant champion defends against the hard-hitting Brazilian stepping in on short notice."
-    }
-  ]
-}`
+  "event": { "title": string, "date": string, "venue": string, "location": string },
+  "fights": [{
+    "id": string,
+    "card_section": "main_event"|"co_main"|"main_card"|"prelim"|"early_prelim",
+    "weight_class": string,
+    "is_title_fight": boolean,
+    "title_description": string|null,
+    "fighter1": { "name": string, "nickname": string|null, "record": string, "rank": string|null, "country_flag": string, "country": string },
+    "fighter2": { "name": string, "nickname": string|null, "record": string, "rank": string|null, "country_flag": string, "country": string },
+    "odds": { "fighter1": string, "fighter2": string, "draw": string|null },
+    "preview": string
+  }]
+}`,
+        true
       );
 
     } else if (mode === 'fight') {
       const f1 = url.searchParams.get('f1') ?? '';
       const f2 = url.searchParams.get('f2') ?? '';
-      cache = 1800; // 30 min for deep dives
+      cache = 1800;
 
       json = await askGrok(
-        `You are an elite UFC analyst and journalist with deep knowledge of fighter histories, styles, and recent news. Today is ${today}. Return ONLY valid JSON.`,
-        `Give me a comprehensive breakdown of the fight between ${f1} and ${f2}. Be specific and detailed with accurate records, fight history, and current news. Return:
+        `You are an elite UFC analyst with deep knowledge of fighter histories, styles, and recent news. Today is ${today}. Return ONLY valid JSON.`,
+        `Give me a comprehensive breakdown of the fight between ${f1} and ${f2}. Be specific with accurate records, fight history, and current news. Return:
 {
   "fighter1": {
     "name": "${f1}",
-    "style": "One sentence describing their complete fighting style and approach",
-    "strengths": ["Specific strength 1", "Specific strength 2", "Specific strength 3"],
-    "weaknesses": ["Specific weakness 1", "Specific weakness 2"],
+    "style": "One sentence describing their complete fighting style",
+    "strengths": ["Strength 1", "Strength 2", "Strength 3"],
+    "weaknesses": ["Weakness 1", "Weakness 2"],
     "last_5_fights": [
-      { "opponent": "Fighter Name", "result": "W", "method": "KO/TKO R2", "date": "2024-10" }
+      { "opponent": "Name", "result": "W", "method": "KO/TKO R2", "date": "2025-10" }
     ],
-    "recent_news": [
-      "Specific recent headline or development about this fighter",
-      "Another recent fact or news item"
-    ]
+    "recent_news": ["Recent headline 1", "Recent headline 2"]
   },
   "fighter2": {
     "name": "${f2}",
-    "style": "One sentence describing their complete fighting style and approach",
-    "strengths": ["Specific strength 1", "Specific strength 2", "Specific strength 3"],
-    "weaknesses": ["Specific weakness 1", "Specific weakness 2"],
+    "style": "One sentence describing their complete fighting style",
+    "strengths": ["Strength 1", "Strength 2", "Strength 3"],
+    "weaknesses": ["Weakness 1", "Weakness 2"],
     "last_5_fights": [
-      { "opponent": "Fighter Name", "result": "W", "method": "Unanimous Decision", "date": "2024-08" }
+      { "opponent": "Name", "result": "W", "method": "Unanimous Decision", "date": "2025-08" }
     ],
-    "recent_news": [
-      "Specific recent headline or development about this fighter",
-      "Another recent fact or news item"
-    ]
+    "recent_news": ["Recent headline 1", "Recent headline 2"]
   },
-  "head_to_head": {
-    "previous_meetings": 0,
-    "history": null
-  },
-  "key_factors": [
-    "Specific factor 1 that will determine the fight outcome",
-    "Specific factor 2",
-    "Specific factor 3"
-  ],
+  "head_to_head": { "previous_meetings": 0, "history": null },
+  "key_factors": ["Factor 1", "Factor 2", "Factor 3"],
   "prediction": {
     "winner": "Fighter Name",
     "method": "Decision",
     "round": null,
     "confidence": "high",
-    "reasoning": "2-3 sentences of detailed, specific reasoning for this prediction."
+    "reasoning": "2-3 sentences of specific reasoning."
   },
-  "why_watch": "1-2 sentences on what makes this fight uniquely compelling and unmissable."
+  "why_watch": "1-2 sentences on what makes this fight compelling."
 }`
       );
 
