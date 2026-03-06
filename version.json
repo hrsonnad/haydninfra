@@ -1,9 +1,9 @@
 {
-  "version": "v260306.21 3:15am",
-  "release": 21,
-  "sha": "38f6693",
-  "fullSha": "38f669399ac5b952e86b812c3e7d488e59c80cb1",
+  "version": "v260306.22 3:19am",
+  "release": 22,
+  "sha": "1110044",
+  "fullSha": "1110044f7fadae5759061a8646965339a53fd736",
   "actor": "hrsonnad",
-  "pushedAt": "2026-03-06T09:15:12Z",
-  "commits": [{"sha": "38f6693", "message": "Remove Tesla news page", "author": "hrsonnad"}]
+  "pushedAt": "2026-03-06T09:19:58Z",
+  "commits": [{"sha": "1110044", "message": "Remove tesla-news edge function", "author": "hrsonnad"}]
 }
