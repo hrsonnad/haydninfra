@@ -1,9 +1,9 @@
 {
-  "version": "v260306.26 5:22pm",
-  "release": 26,
-  "sha": "8dd191e",
-  "fullSha": "8dd191e52dfca24c3a0091d0029547b8e24ed3d5",
+  "version": "v260306.27 5:25pm",
+  "release": 27,
+  "sha": "77df7bd",
+  "fullSha": "77df7bd5849fe8d988a0f77ea297ab62fbf0ba00",
   "actor": "hrsonnad",
-  "pushedAt": "2026-03-06T23:22:50Z",
-  "commits": [{"sha": "76cc85b", "message": "Redesign homepage: clean workspace UI with floating icon screensaver", "author": "Haydn"}, {"sha": "ea322bc", "message": "feat: shell iframe architecture, colored icons, welcome tagline", "author": "Haydn"}, {"sha": "8dd191e", "message": "Merge pull request #1 from hrsonnad/claude/zen-blackwell", "author": "hrsonnad"}]
+  "pushedAt": "2026-03-06T23:25:25Z",
+  "commits": [{"sha": "77df7bd", "message": "Fix auth dropdown position in sidebar footer", "author": "Haydn"}]
 }
