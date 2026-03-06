@@ -1,9 +1,9 @@
 {
-  "version": "v260306.15 2:45am",
-  "release": 15,
-  "sha": "b16b042",
-  "fullSha": "b16b042a1961882fc0540faffea60f1f005d3908",
+  "version": "v260306.16 2:51am",
+  "release": 16,
+  "sha": "3f5303a",
+  "fullSha": "3f5303a2090035ffa8c39df78be9c9ff1a7b91a2",
   "actor": "hrsonnad",
-  "pushedAt": "2026-03-06T08:45:16Z",
-  "commits": [{"sha": "b16b042", "message": "Fix UFC page: add Supabase anon key Authorization header to all API calls", "author": "Haydn"}]
+  "pushedAt": "2026-03-06T08:51:59Z",
+  "commits": [{"sha": "9a29929", "message": "Fix UFC edge function CORS: allow Authorization header in preflight", "author": "Haydn"}, {"sha": "3f5303a", "message": "Redesign UFC page: Stripe-inspired light theme, Inter font, clean cards", "author": "Haydn"}]
 }
