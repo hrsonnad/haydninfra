@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tesla News — Live Feed</title>
+  <meta name="description" content="Live Tesla news feed — latest headlines and updates.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=DM+Mono:wght@400;500&family=Lora:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0a0a0b;
+      --surface: #111113;
+      --surface2: #18181c;
+      --border: #222226;
+      --border-bright: #2e2e34;
+      --red: #cc0000;
+      --red-dim: #8a0000;
+      --red-glow: rgba(204, 0, 0, 0.15);
+      --text: #e8e4dc;
+      --text-dim: #8a8680;
+      --text-muted: #4a4845;
+      --accent: #ff2a2a;
+    }
+
+    html { font-size: 16px; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Lora', Georgia, serif;
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── Masthead ── */
+    .masthead {
+      border-bottom: 1px solid var(--border);
+      padding: 0 40px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(10, 10, 11, 0.92);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+
+    .masthead-inner {
+      max-width: 1320px;
+      margin: 0 auto;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+    }
+
+    .brand-name {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 22px;
+      font-weight: 900;
+      letter-spacing: -0.5px;
+      color: var(--text);
+    }
+
+    .brand-name span {
+      color: var(--red);
+    }
+
+    .brand-tag {
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      font-weight: 500;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      padding-bottom: 1px;
+      border-bottom: 1px solid var(--border-bright);
+    }
+
+    .masthead-right {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .live-badge {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+    }
+
+    .live-dot {
+      width: 6px;
+      height: 6px;
+      background: var(--red);
+      border-radius: 50%;
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.8); }
+    }
+
+    .refresh-btn {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      background: none;
+      border: 1px solid var(--border-bright);
+      color: var(--text-dim);
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 7px 14px;
+      border-radius: 2px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .refresh-btn:hover {
+      border-color: var(--red);
+      color: var(--red);
+    }
+
+    .refresh-btn svg {
+      width: 12px;
+      height: 12px;
+      transition: transform 0.5s;
+    }
+
+    .refresh-btn.spinning svg {
+      animation: spin 0.7s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* ── Hero Rule ── */
+    .hero-rule {
+      max-width: 1320px;
+      margin: 0 auto;
+      padding: 40px 40px 0;
+    }
+
+    .section-label {
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--red);
+      margin-bottom: 16px;
+    }
+
+    .hero-headline {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: clamp(36px, 5vw, 64px);
+      font-weight: 900;
+      line-height: 1.0;
+      letter-spacing: -1px;
+      color: var(--text);
+      padding-bottom: 28px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    /* ── Layout ── */
+    .page-content {
+      max-width: 1320px;
+      margin: 0 auto;
+      padding: 40px 40px 80px;
+    }
+
+    /* ── Featured card (first article) ── */
+    .featured-card {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--red);
+      margin-bottom: 40px;
+      opacity: 0;
+      transform: translateY(16px);
+      animation: fadeUp 0.5s ease forwards;
+      text-decoration: none;
+      color: inherit;
+      transition: border-color 0.2s;
+    }
+
+    .featured-card:hover {
+      border-color: var(--red);
+      border-left-color: var(--accent);
+    }
+
+    .featured-img-wrap {
+      overflow: hidden;
+      max-height: 360px;
+    }
+
+    .featured-img-wrap img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      transition: transform 0.5s ease;
+      filter: grayscale(20%);
+    }
+
+    .featured-card:hover .featured-img-wrap img {
+      transform: scale(1.03);
+    }
+
+    .featured-body {
+      padding: 36px 40px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .featured-meta {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .source-chip {
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--red);
+      border: 1px solid var(--red-dim);
+      padding: 3px 8px;
+      border-radius: 1px;
+    }
+
+    .date-str {
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+    }
+
+    .featured-title {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: clamp(20px, 2.5vw, 28px);
+      font-weight: 700;
+      line-height: 1.25;
+      color: var(--text);
+      margin-bottom: 16px;
+    }
+
+    .featured-desc {
+      font-size: 14px;
+      line-height: 1.7;
+      color: var(--text-dim);
+      flex: 1;
+      margin-bottom: 24px;
+    }
+
+    .read-link {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--red);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .read-link::after {
+      content: '→';
+      transition: transform 0.2s;
+    }
+
+    .featured-card:hover .read-link::after {
+      transform: translateX(4px);
+    }
+
+    /* ── No-image featured ── */
+    .featured-card.no-image {
+      grid-template-columns: 1fr;
+    }
+
+    /* ── Grid ── */
+    .news-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1px;
+      background: var(--border);
+      border: 1px solid var(--border);
+    }
+
+    .news-card {
+      display: flex;
+      flex-direction: column;
+      background: var(--surface);
+      text-decoration: none;
+      color: inherit;
+      padding: 24px;
+      transition: background 0.15s;
+      opacity: 0;
+      transform: translateY(12px);
+      animation: fadeUp 0.4s ease forwards;
+    }
+
+    .news-card:hover {
+      background: var(--surface2);
+    }
+
+    .card-thumb {
+      width: 100%;
+      aspect-ratio: 16/9;
+      object-fit: cover;
+      display: block;
+      margin: -24px -24px 20px;
+      width: calc(100% + 48px);
+      filter: grayscale(15%);
+      transition: filter 0.3s;
+    }
+
+    .news-card:hover .card-thumb {
+      filter: grayscale(0%);
+    }
+
+    .card-meta {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .card-source {
+      font-family: 'DM Mono', monospace;
+      font-size: 9px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--red);
+    }
+
+    .card-date {
+      font-family: 'DM Mono', monospace;
+      font-size: 9px;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+    }
+
+    .card-title {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 16px;
+      font-weight: 700;
+      line-height: 1.35;
+      color: var(--text);
+      flex: 1;
+      margin-bottom: 12px;
+    }
+
+    .card-desc {
+      font-size: 13px;
+      line-height: 1.6;
+      color: var(--text-dim);
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    /* ── Skeleton ── */
+    .skeleton-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1px;
+      background: var(--border);
+      border: 1px solid var(--border);
+    }
+
+    .skeleton-featured {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--red-dim);
+      margin-bottom: 40px;
+    }
+
+    .skel {
+      background: var(--surface2);
+    }
+
+    .skel-img {
+      height: 300px;
+    }
+
+    .skel-body {
+      padding: 36px 40px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .skel-line {
+      height: 12px;
+      border-radius: 1px;
+      background: linear-gradient(90deg, var(--surface2) 25%, var(--border-bright) 50%, var(--surface2) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.5s infinite;
+    }
+
+    @keyframes shimmer {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
+    .skel-card {
+      background: var(--surface);
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    /* ── Error ── */
+    .error-state {
+      text-align: center;
+      padding: 80px 40px;
+    }
+
+    .error-icon {
+      font-size: 48px;
+      margin-bottom: 16px;
+      opacity: 0.5;
+    }
+
+    .error-title {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 8px;
+    }
+
+    .error-msg {
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-bottom: 24px;
+    }
+
+    .retry-btn {
+      background: var(--red);
+      color: #fff;
+      border: none;
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 10px 24px;
+      cursor: pointer;
+      border-radius: 1px;
+      transition: background 0.2s;
+    }
+
+    .retry-btn:hover { background: var(--accent); }
+
+    /* ── Footer ── */
+    .page-footer {
+      border-top: 1px solid var(--border);
+      padding: 24px 40px;
+      max-width: 1320px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .footer-note {
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+    }
+
+    #last-updated {
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+    }
+
+    /* ── Animation delays ── */
+    @keyframes fadeUp {
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .news-card:nth-child(1) { animation-delay: 0.05s; }
+    .news-card:nth-child(2) { animation-delay: 0.10s; }
+    .news-card:nth-child(3) { animation-delay: 0.15s; }
+    .news-card:nth-child(4) { animation-delay: 0.20s; }
+    .news-card:nth-child(5) { animation-delay: 0.25s; }
+    .news-card:nth-child(6) { animation-delay: 0.30s; }
+    .news-card:nth-child(7) { animation-delay: 0.35s; }
+    .news-card:nth-child(8) { animation-delay: 0.40s; }
+    .news-card:nth-child(9) { animation-delay: 0.45s; }
+    .news-card:nth-child(10) { animation-delay: 0.50s; }
+
+    /* ── Responsive ── */
+    @media (max-width: 900px) {
+      .masthead { padding: 0 20px; }
+      .hero-rule, .page-content { padding-left: 20px; padding-right: 20px; }
+      .featured-card { grid-template-columns: 1fr; }
+      .featured-img-wrap { max-height: 240px; }
+      .news-grid, .skeleton-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    @media (max-width: 600px) {
+      .news-grid, .skeleton-grid { grid-template-columns: 1fr; }
+      .skeleton-featured { grid-template-columns: 1fr; }
+      .hero-headline { font-size: 32px; }
+    }
+  </style>
+</head>
+<body>
+
+  <header class="masthead">
+    <div class="masthead-inner">
+      <div class="brand">
+        <span class="brand-name"><span>T</span>esla</span>
+        <span class="brand-tag">News Feed</span>
+      </div>
+      <div class="masthead-right">
+        <div class="live-badge">
+          <div class="live-dot"></div>
+          <span>Live</span>
+        </div>
+        <button class="refresh-btn" id="refreshBtn" onclick="loadNews()">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M13.5 8A5.5 5.5 0 1 1 8 2.5c1.8 0 3.4.86 4.4 2.2"/>
+            <polyline points="14,1 14,5 10,5"/>
+          </svg>
+          Refresh
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <div class="hero-rule">
+    <div class="section-label">Latest Headlines</div>
+    <h1 class="hero-headline">Tesla Intelligence</h1>
+  </div>
+
+  <main class="page-content">
+    <div id="news-container"></div>
+  </main>
+
+  <footer>
+    <div class="page-footer">
+      <span class="footer-note">Source: Google News via RSS · rss2json.com</span>
+      <span id="last-updated"></span>
+    </div>
+  </footer>
+
+  <script>
+    const FEED_URL = 'https://api.rss2json.com/v1/api.json?rss_url=' +
+      encodeURIComponent('https://news.google.com/rss/search?q=Tesla&hl=en-US&gl=US&ceid=US:en') +
+      '&api_key=&count=16';
+
+    const container = document.getElementById('news-container');
+    const refreshBtn = document.getElementById('refreshBtn');
+    const lastUpdated = document.getElementById('last-updated');
+
+    function formatDate(dateStr) {
+      const d = new Date(dateStr);
+      if (isNaN(d)) return '';
+      return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    }
+
+    function cleanDesc(html) {
+      const tmp = document.createElement('div');
+      tmp.innerHTML = html || '';
+      return tmp.textContent.replace(/\s+/g, ' ').trim().slice(0, 200);
+    }
+
+    function extractSource(item) {
+      // Google News RSS often puts source in author or at end of title
+      if (item.author) return item.author;
+      const m = item.title.match(/- ([^-]+)$/);
+      if (m) return m[1].trim();
+      return '';
+    }
+
+    function cleanTitle(title, source) {
+      if (source) {
+        return title.replace(new RegExp(' ?- ?' + source.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '$', 'i'), '').trim();
+      }
+      return title.trim();
+    }
+
+    function renderSkeleton() {
+      container.innerHTML = `
+        <div class="skeleton-featured">
+          <div class="skel skel-img"></div>
+          <div class="skel-body">
+            <div class="skel-line" style="width:30%;height:10px;"></div>
+            <div class="skel-line" style="width:85%;height:20px;animation-delay:.1s;"></div>
+            <div class="skel-line" style="width:65%;height:20px;animation-delay:.15s;"></div>
+            <div class="skel-line" style="width:90%;animation-delay:.2s;"></div>
+            <div class="skel-line" style="width:80%;animation-delay:.25s;"></div>
+            <div class="skel-line" style="width:70%;animation-delay:.3s;"></div>
+          </div>
+        </div>
+        <div class="skeleton-grid">
+          ${Array.from({length: 9}, (_, i) => `
+            <div class="skel-card">
+              <div class="skel-line" style="width:40%;height:9px;animation-delay:${i*0.05}s;"></div>
+              <div class="skel-line" style="width:90%;height:14px;animation-delay:${i*0.05+0.05}s;"></div>
+              <div class="skel-line" style="width:75%;height:14px;animation-delay:${i*0.05+0.1}s;"></div>
+              <div class="skel-line" style="width:85%;height:10px;animation-delay:${i*0.05+0.15}s;"></div>
+            </div>
+          `).join('')}
+        </div>
+      `;
+    }
+
+    function renderError(msg) {
+      container.innerHTML = `
+        <div class="error-state">
+          <div class="error-icon">⚡</div>
+          <div class="error-title">Feed Unavailable</div>
+          <div class="error-msg">${msg}</div>
+          <button class="retry-btn" onclick="loadNews()">Try Again</button>
+        </div>
+      `;
+    }
+
+    function renderNews(items) {
+      if (!items || items.length === 0) {
+        renderError('No articles found.');
+        return;
+      }
+
+      const [first, ...rest] = items;
+      const firstSource = extractSource(first);
+      const firstTitle = cleanTitle(first.title, firstSource);
+      const firstDesc = cleanDesc(first.description);
+      const hasImg = first.thumbnail && first.thumbnail.length > 10;
+
+      const featuredHTML = `
+        <a href="${first.link}" target="_blank" rel="noopener" class="featured-card${hasImg ? '' : ' no-image'}">
+          ${hasImg ? `
+            <div class="featured-img-wrap">
+              <img src="${first.thumbnail}" alt="" loading="lazy" onerror="this.parentElement.style.display='none'">
+            </div>
+          ` : ''}
+          <div class="featured-body">
+            <div>
+              <div class="featured-meta">
+                ${firstSource ? `<span class="source-chip">${firstSource}</span>` : ''}
+                <span class="date-str">${formatDate(first.pubDate)}</span>
+              </div>
+              <h2 class="featured-title">${firstTitle}</h2>
+              ${firstDesc ? `<p class="featured-desc">${firstDesc}</p>` : ''}
+            </div>
+            <span class="read-link">Read Article</span>
+          </div>
+        </a>
+      `;
+
+      const gridHTML = rest.slice(0, 9).map(item => {
+        const src = extractSource(item);
+        const title = cleanTitle(item.title, src);
+        const desc = cleanDesc(item.description);
+        const hasThumb = item.thumbnail && item.thumbnail.length > 10;
+        return `
+          <a href="${item.link}" target="_blank" rel="noopener" class="news-card">
+            ${hasThumb ? `<img class="card-thumb" src="${item.thumbnail}" alt="" loading="lazy" onerror="this.remove()">` : ''}
+            <div class="card-meta">
+              ${src ? `<span class="card-source">${src}</span>` : ''}
+              <span class="card-date">${formatDate(item.pubDate)}</span>
+            </div>
+            <h3 class="card-title">${title}</h3>
+            ${desc ? `<p class="card-desc">${desc}</p>` : ''}
+          </a>
+        `;
+      }).join('');
+
+      container.innerHTML = featuredHTML + `<div class="news-grid">${gridHTML}</div>`;
+    }
+
+    async function loadNews() {
+      renderSkeleton();
+      refreshBtn.classList.add('spinning');
+
+      try {
+        const res = await fetch(FEED_URL);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+
+        if (data.status !== 'ok') {
+          throw new Error(data.message || 'Feed error');
+        }
+
+        renderNews(data.items || []);
+        const now = new Date();
+        lastUpdated.textContent = 'Updated ' + now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+      } catch (err) {
+        renderError(err.message || 'Could not load news feed.');
+      } finally {
+        refreshBtn.classList.remove('spinning');
+      }
+    }
+
+    // Load on page open, auto-refresh every 10 minutes
+    loadNews();
+    setInterval(loadNews, 10 * 60 * 1000);
+  </script>
+
+</body>
+</html>
