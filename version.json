@@ -1,9 +1,9 @@
 {
-  "version": "v260306.06 1:48am",
-  "release": 6,
-  "sha": "0beacc1",
-  "fullSha": "0beacc14703050fd35e0d8261df47d0c432ef055",
+  "version": "v260306.07 1:57am",
+  "release": 7,
+  "sha": "8e91262",
+  "fullSha": "8e912628cd4e9d5fb1834a342031f2143e2093b3",
   "actor": "hrsonnad",
-  "pushedAt": "2026-03-06T07:48:55Z",
-  "commits": [{"sha": "0beacc1", "message": "Add public Tesla news feed page", "author": "Haydn"}]
+  "pushedAt": "2026-03-06T07:57:09Z",
+  "commits": [{"sha": "8e91262", "message": "Wire tesla-news page to Grok Edge Function, add RSS fallback", "author": "Haydn"}]
 }
