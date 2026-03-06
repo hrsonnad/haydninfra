@@ -4,15 +4,16 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>UFC Fight Cards</title>
-  <meta name="description" content="Upcoming UFC fight cards with live odds, fighter profiles, and AI-powered analysis.">
+  <meta name="description" content="Upcoming UFC fight cards with Kalshi market odds, fighter profiles, and AI-powered analysis.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     :root {
       --bg:           #f6f9fc;
       --surface:      #ffffff;
       --surface2:     #f0f3f7;
+      --surface3:     #e8ecf1;
       --border:       #e3e8ef;
       --border2:      #c8d0da;
       --red:          #df1b41;
@@ -30,7 +31,8 @@
       --text-muted:   #b0bec5;
       --shadow-sm:    0 2px 5px rgba(60,66,87,.06), 0 0 0 1px rgba(60,66,87,.04);
       --shadow-md:    0 4px 12px rgba(60,66,87,.09), 0 0 0 1px rgba(60,66,87,.04);
-      --radius:       8px;
+      --shadow-lg:    0 7px 24px rgba(60,66,87,.12), 0 0 0 1px rgba(60,66,87,.04);
+      --radius:       10px;
       --radius-sm:    6px;
       --font:         'Inter', system-ui, -apple-system, sans-serif;
     }
@@ -54,7 +56,7 @@
       border-bottom: 1px solid var(--border);
     }
     .header-inner {
-      max-width: 920px; margin: 0 auto;
+      max-width: 960px; margin: 0 auto;
       height: 56px; padding: 0 24px;
       display: flex; align-items: center; justify-content: space-between; gap: 16px;
     }
@@ -81,7 +83,7 @@
 
     /* ─── Layout ─────────────────────────────────────────── */
     .page-main {
-      max-width: 920px; margin: 0 auto;
+      max-width: 960px; margin: 0 auto;
       padding: 24px 24px 80px;
     }
 
@@ -150,7 +152,7 @@
     /* ─── Section divider ────────────────────────────────── */
     .sec-div {
       display: flex; align-items: center; gap: 12px;
-      margin: 24px 0 10px;
+      margin: 28px 0 12px;
     }
     .sec-div:first-of-type { margin-top: 0; }
     .sec-label {
@@ -165,7 +167,7 @@
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: var(--radius);
-      margin-bottom: 8px;
+      margin-bottom: 10px;
       overflow: hidden;
       box-shadow: var(--shadow-sm);
       opacity: 0; transform: translateY(8px);
@@ -195,11 +197,11 @@
       display: flex; align-items: center; gap: 6px;
     }
 
-    .fight-body { padding: 14px 16px 0; }
+    .fight-body { padding: 16px 18px 0; }
 
     .fight-meta {
       display: flex; align-items: center; gap: 8px;
-      margin-bottom: 12px; flex-wrap: wrap;
+      margin-bottom: 14px; flex-wrap: wrap;
     }
     .weight-pill {
       font-size: 11px; font-weight: 600;
@@ -219,93 +221,140 @@
       font-size: 11px; font-weight: 500; color: var(--text-dim);
     }
 
-    /* Fighters */
+    /* ─── Fighters ───────────────────────────────────────── */
     .fighters-row {
-      display: grid; grid-template-columns: 1fr 40px 1fr;
-      align-items: center; gap: 8px; margin-bottom: 12px;
+      display: grid; grid-template-columns: 1fr auto 1fr;
+      align-items: center; gap: 10px; margin-bottom: 14px;
     }
-    .fighter { display: flex; flex-direction: column; }
-    .fighter.r { align-items: flex-end; text-align: right; }
+    .fighter { display: flex; align-items: center; gap: 12px; }
+    .fighter.r { flex-direction: row-reverse; text-align: right; }
+
+    .f-headshot {
+      width: 56px; height: 56px; border-radius: 50%;
+      object-fit: cover; background: var(--surface2);
+      border: 2px solid var(--border);
+      flex-shrink: 0;
+    }
+    .f-headshot.placeholder {
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px; font-weight: 700; color: var(--text-muted);
+    }
+
+    .f-info { display: flex; flex-direction: column; min-width: 0; }
 
     .fighter-badges {
-      display: flex; align-items: center; gap: 5px; margin-bottom: 3px;
+      display: flex; align-items: center; gap: 5px; margin-bottom: 2px;
     }
     .fighter.r .fighter-badges { flex-direction: row-reverse; }
 
-    .f-flag { font-size: 14px; line-height: 1; }
+    .f-flag { font-size: 13px; line-height: 1; }
     .f-rank {
-      font-size: 10px; font-weight: 700;
+      font-size: 9px; font-weight: 700;
       color: var(--red); letter-spacing: 0.02em;
       background: var(--red-dim);
-      padding: 2px 6px; border-radius: 4px;
+      padding: 1px 5px; border-radius: 3px;
     }
     .f-rank.champ { color: var(--gold); background: var(--gold-dim); }
     .f-name {
-      font-size: clamp(15px, 2.8vw, 20px);
+      font-size: clamp(14px, 2.5vw, 18px);
       font-weight: 700; color: var(--navy);
-      line-height: 1.1; margin-bottom: 2px;
-      letter-spacing: -0.01em;
+      line-height: 1.15; letter-spacing: -0.01em;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
     .f-nick {
       font-style: italic; font-size: 11px;
-      color: var(--text-dim); margin-bottom: 2px;
+      color: var(--text-dim);
     }
     .f-rec { font-size: 12px; font-weight: 500; color: var(--text-mid); }
 
     .vs-col {
       display: flex; flex-direction: column; align-items: center;
+      padding: 0 4px;
     }
     .vs-text {
-      font-size: 12px; font-weight: 700;
-      color: var(--text-muted); letter-spacing: 0.04em;
+      font-size: 11px; font-weight: 700;
+      color: var(--text-muted); letter-spacing: 0.06em;
     }
 
-    /* Odds */
+    /* ─── Fighter stats row ──────────────────────────────── */
+    .fighter-stats-row {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 8px; margin-bottom: 14px;
+    }
+    .fighter-stats {
+      display: flex; gap: 6px; flex-wrap: wrap;
+    }
+    .fighter-stats.r { justify-content: flex-end; }
+    .f-stat {
+      font-size: 10px; font-weight: 500; color: var(--text-dim);
+      background: var(--surface2); padding: 2px 8px;
+      border-radius: 100px; border: 1px solid var(--border);
+      white-space: nowrap;
+    }
+    .f-stat strong { font-weight: 600; color: var(--text-mid); }
+
+    /* ─── Odds / Probability ─────────────────────────────── */
     .odds-section { margin-bottom: 0; }
-    .odds-row { display: flex; gap: 4px; }
-    .odds-chip {
-      flex: 1; display: flex; flex-direction: column;
-      align-items: center; gap: 2px;
-      padding: 8px 6px; border-radius: var(--radius-sm);
-      border: 1px solid var(--border); background: var(--surface2);
+    .prob-bar-wrap {
+      display: flex; flex-direction: column; gap: 6px;
     }
-    .odds-chip.fav {
-      background: var(--green-dim);
-      border-color: rgba(26,158,110,.18);
+    .prob-labels {
+      display: flex; justify-content: space-between; align-items: baseline;
     }
-    .odds-chip.draw { flex: 0.55; }
-    .odds-val {
-      font-size: 15px; font-weight: 700;
-      color: var(--text); letter-spacing: 0.01em;
+    .prob-fighter {
+      display: flex; align-items: center; gap: 6px;
     }
-    .odds-chip.fav .odds-val { color: var(--green); }
-    .odds-prob {
-      font-size: 11px; font-weight: 600;
-      color: var(--text-mid); opacity: 0.7;
+    .prob-name {
+      font-size: 11px; font-weight: 600; color: var(--text-mid);
+      text-transform: uppercase; letter-spacing: 0.04em;
     }
-    .odds-chip.fav .odds-prob { color: var(--green); }
-    .odds-lbl {
-      font-size: 10px; font-weight: 500;
-      letter-spacing: 0.06em; text-transform: uppercase;
-      color: var(--text-dim);
+    .prob-pct {
+      font-size: 18px; font-weight: 800; color: var(--navy);
+      letter-spacing: -0.02em; line-height: 1;
     }
-    .odds-source {
+    .prob-pct.fav { color: var(--green); }
+    .prob-bar-track {
+      height: 8px; border-radius: 100px;
+      background: var(--surface2);
+      overflow: hidden; display: flex;
+      border: 1px solid var(--border);
+    }
+    .prob-bar-fill {
+      height: 100%; border-radius: 100px;
+      transition: width 0.6s cubic-bezier(0.4,0,0.2,1);
+    }
+    .prob-bar-fill.f1 {
+      background: linear-gradient(90deg, #1a9e6e, #25b97f);
+    }
+    .prob-bar-fill.f2 {
+      background: var(--surface3);
+    }
+    .prob-source {
       display: flex; align-items: center; justify-content: flex-end;
-      gap: 4px; margin-top: 5px;
+      gap: 4px; margin-top: 2px;
       font-size: 10px; font-weight: 500; color: var(--text-muted);
       letter-spacing: 0.03em;
     }
-    .odds-source-dot {
+    .prob-source-dot {
       width: 5px; height: 5px; border-radius: 50%;
       background: var(--green);
     }
 
-    /* Fight footer */
+    /* Unavailable odds */
+    .odds-unavailable {
+      display: flex; align-items: center; justify-content: center;
+      gap: 6px; padding: 10px;
+      background: var(--surface2); border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      font-size: 12px; font-weight: 500; color: var(--text-muted);
+    }
+
+    /* ─── Fight footer ───────────────────────────────────── */
     .fight-footer {
-      padding: 10px 16px 12px;
+      padding: 12px 18px 14px;
       display: flex; align-items: flex-start;
       justify-content: space-between; gap: 14px;
-      border-top: 1px solid var(--border); margin-top: 12px;
+      border-top: 1px solid var(--border); margin-top: 14px;
     }
     .fight-preview {
       font-size: 13px; line-height: 1.55;
@@ -545,7 +594,7 @@
     }
     .skel-card {
       background: var(--surface); border: 1px solid var(--border);
-      border-radius: var(--radius); padding: 18px; margin-bottom: 8px;
+      border-radius: var(--radius); padding: 18px; margin-bottom: 10px;
       box-shadow: var(--shadow-sm);
     }
     .skel-h { height: 12px; margin-bottom: 8px; }
@@ -555,14 +604,18 @@
     .state-title { font-size: 16px; font-weight: 600; color: var(--text-mid); margin-bottom: 6px; }
     .state-sub { font-size: 13px; color: var(--text-dim); }
 
-    @media (max-width: 500px) {
+    /* ─── Responsive ─────────────────────────────────────── */
+    @media (max-width: 600px) {
       .fight-footer { flex-direction: column; gap: 10px; }
       .analyze-btn { width: 100%; justify-content: center; }
-      .odds-val { font-size: 14px; }
-      .fighters-row { grid-template-columns: 1fr 32px 1fr; gap: 4px; }
+      .fighters-row { grid-template-columns: 1fr 28px 1fr; gap: 6px; }
+      .f-headshot { width: 44px; height: 44px; }
+      .fighter { gap: 8px; }
       .page-main { padding: 16px 14px 80px; }
       .event-banner { flex-direction: column; align-items: flex-start; }
       .stats-grid { grid-template-columns: 1fr 1fr; }
+      .prob-pct { font-size: 16px; }
+      .fighter-stats-row { gap: 4px; }
     }
   </style>
 </head>
@@ -596,6 +649,7 @@
   const API = 'https://ixxnhvqyxkuwyshzdnlc.supabase.co/functions/v1/ufc-cards';
   const ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml4eG5odnF5eGt1d3lzaHpkbmxjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI3NTk2MTMsImV4cCI6MjA4ODMzNTYxM30.DB2xXD4EPOKA2WzfrTnJ7YMZRU8yCXcU5y6f-tT3V-g';
   const HEADERS = { 'Authorization': `Bearer ${ANON}` };
+  const ESPN_IMG = 'https://a.espncdn.com/combiner/i?img=/i/headshots/mma/players/full/';
   const diveCache = new Map();
   let selectedId = null;
 
@@ -690,21 +744,23 @@
       <div class="skel-card">
         <div class="skel skel-h" style="width:26%;margin-bottom:14px;animation-delay:${d}s"></div>
         <div style="display:grid;grid-template-columns:1fr 40px 1fr;gap:8px;margin-bottom:12px;">
-          <div>
-            <div class="skel skel-h" style="width:70%;height:16px;animation-delay:${d}s"></div>
-            <div class="skel skel-h" style="width:40%;animation-delay:${d+0.04}s"></div>
+          <div style="display:flex;gap:10px;align-items:center;">
+            <div class="skel" style="width:56px;height:56px;border-radius:50%;flex-shrink:0;animation-delay:${d}s"></div>
+            <div style="flex:1">
+              <div class="skel skel-h" style="width:70%;height:16px;animation-delay:${d}s"></div>
+              <div class="skel skel-h" style="width:40%;animation-delay:${d+0.04}s"></div>
+            </div>
           </div>
-          <div class="skel" style="height:16px;animation-delay:${d}s"></div>
-          <div>
-            <div class="skel skel-h" style="width:70%;height:16px;margin-left:auto;animation-delay:${d}s"></div>
-            <div class="skel skel-h" style="width:40%;margin-left:auto;animation-delay:${d+0.04}s"></div>
+          <div class="skel" style="height:16px;align-self:center;animation-delay:${d}s"></div>
+          <div style="display:flex;gap:10px;align-items:center;flex-direction:row-reverse;">
+            <div class="skel" style="width:56px;height:56px;border-radius:50%;flex-shrink:0;animation-delay:${d}s"></div>
+            <div style="flex:1">
+              <div class="skel skel-h" style="width:70%;height:16px;margin-left:auto;animation-delay:${d}s"></div>
+              <div class="skel skel-h" style="width:40%;margin-left:auto;animation-delay:${d+0.04}s"></div>
+            </div>
           </div>
         </div>
-        <div style="display:grid;grid-template-columns:1fr 0.55fr 1fr;gap:4px;">
-          <div class="skel" style="height:40px;animation-delay:${d+0.08}s"></div>
-          <div class="skel" style="height:40px;animation-delay:${d+0.08}s"></div>
-          <div class="skel" style="height:40px;animation-delay:${d+0.08}s"></div>
-        </div>
+        <div class="skel" style="height:8px;border-radius:100px;margin-bottom:6px;animation-delay:${d+0.08}s"></div>
       </div>
     `).join('');
   }
@@ -747,12 +803,15 @@
     document.getElementById('card-container').innerHTML = html;
   }
 
+  function headshotUrl(athleteId) {
+    if (!athleteId) return '';
+    return `${ESPN_IMG}${athleteId}.png&w=120&h=120`;
+  }
+
   function renderFight(f, delay) {
     const f1 = f.fighter1 || {}, f2 = f.fighter2 || {};
-    const odds = f.odds || {};
-    const f1Num = parseFloat(odds.fighter1 || '0');
-    const f2Num = parseFloat(odds.fighter2 || '0');
-    const f1Fav = odds.fighter1 && odds.fighter2 && f1Num < f2Num;
+    const odds = f.odds;
+    const hasOdds = odds && odds.f1Prob != null && odds.f2Prob != null;
 
     const rankBadge = (r) => {
       if (!r) return '';
@@ -766,6 +825,54 @@
     const fightTime = f.short_detail || (f.start_time ? fmtTime(f.start_time) : '');
     const rounds = f.rounds || 3;
 
+    const f1Img = headshotUrl(f1.athleteId);
+    const f2Img = headshotUrl(f2.athleteId);
+    const f1Initial = (f1.name || '?')[0];
+    const f2Initial = (f2.name || '?')[0];
+
+    // Fighter stats pills
+    const buildStatPills = (fighter) => {
+      const pills = [];
+      if (fighter.age) pills.push(`Age <strong>${fighter.age}</strong>`);
+      if (fighter.height) pills.push(`Ht <strong>${esc(fighter.height)}</strong>`);
+      if (fighter.reach) pills.push(`Rc <strong>${esc(fighter.reach)}</strong>`);
+      if (fighter.stance) pills.push(`<strong>${esc(fighter.stance)}</strong>`);
+      if (fighter.finish_rate) pills.push(`Finish <strong>${esc(fighter.finish_rate)}</strong>`);
+      return pills.map(p => `<span class="f-stat">${p}</span>`).join('');
+    };
+
+    // Odds section
+    let oddsHtml;
+    if (hasOdds) {
+      const f1Prob = odds.f1Prob;
+      const f2Prob = odds.f2Prob;
+      const f1Fav = f1Prob > f2Prob;
+      oddsHtml = `
+        <div class="prob-bar-wrap">
+          <div class="prob-labels">
+            <div class="prob-fighter">
+              <span class="prob-pct${f1Fav ? ' fav' : ''}">${f1Prob}%</span>
+              <span class="prob-name">${lastName(f1.name)}</span>
+            </div>
+            <div class="prob-fighter">
+              <span class="prob-name">${lastName(f2.name)}</span>
+              <span class="prob-pct${!f1Fav ? ' fav' : ''}">${f2Prob}%</span>
+            </div>
+          </div>
+          <div class="prob-bar-track">
+            <div class="prob-bar-fill f1" style="width:${f1Prob}%"></div>
+            <div class="prob-bar-fill f2" style="width:${f2Prob}%"></div>
+          </div>
+          <div class="prob-source"><span class="prob-source-dot"></span> Kalshi market data</div>
+        </div>`;
+    } else {
+      oddsHtml = `<div class="odds-unavailable">Market odds not available</div>`;
+    }
+
+    const f1Stats = buildStatPills(f1);
+    const f2Stats = buildStatPills(f2);
+    const hasStats = f1Stats || f2Stats;
+
     return `
       <div class="fight-card${f.is_title_fight ? ' is-title' : ''}" id="fc-${esc(f.id)}" style="animation-delay:${delay}s">
         ${titleBanner}
@@ -777,43 +884,44 @@
           </div>
           <div class="fighters-row">
             <div class="fighter">
-              <div class="fighter-badges">
-                ${f1.country_flag ? `<span class="f-flag">${f1.country_flag}</span>` : ''}
-                ${rankBadge(f1.rank)}
+              ${f1Img
+                ? `<img class="f-headshot" src="${f1Img}" alt="${esc(f1.name)}" onerror="this.outerHTML='<div class=\\'f-headshot placeholder\\'>${f1Initial}</div>'">`
+                : `<div class="f-headshot placeholder">${f1Initial}</div>`}
+              <div class="f-info">
+                <div class="fighter-badges">
+                  ${f1.country_flag ? `<span class="f-flag">${f1.country_flag}</span>` : ''}
+                  ${rankBadge(f1.rank)}
+                  ${f1.win_streak && f1.win_streak >= 3 ? `<span class="f-rank" style="background:var(--green-dim);color:var(--green)">🔥${f1.win_streak}W</span>` : ''}
+                </div>
+                <div class="f-name">${esc(f1.name || '')}</div>
+                ${f1.nickname ? `<div class="f-nick">"${esc(f1.nickname)}"</div>` : ''}
+                <div class="f-rec">${esc(f1.record || '')}</div>
               </div>
-              <div class="f-name">${esc(f1.name || '')}</div>
-              ${f1.nickname ? `<div class="f-nick">"${esc(f1.nickname)}"</div>` : ''}
-              <div class="f-rec">${esc(f1.record || '')}</div>
             </div>
             <div class="vs-col"><span class="vs-text">VS</span></div>
             <div class="fighter r">
-              <div class="fighter-badges">
-                ${rankBadge(f2.rank)}
-                ${f2.country_flag ? `<span class="f-flag">${f2.country_flag}</span>` : ''}
+              ${f2Img
+                ? `<img class="f-headshot" src="${f2Img}" alt="${esc(f2.name)}" onerror="this.outerHTML='<div class=\\'f-headshot placeholder\\'>${f2Initial}</div>'">`
+                : `<div class="f-headshot placeholder">${f2Initial}</div>`}
+              <div class="f-info">
+                <div class="fighter-badges">
+                  ${rankBadge(f2.rank)}
+                  ${f2.country_flag ? `<span class="f-flag">${f2.country_flag}</span>` : ''}
+                  ${f2.win_streak && f2.win_streak >= 3 ? `<span class="f-rank" style="background:var(--green-dim);color:var(--green)">🔥${f2.win_streak}W</span>` : ''}
+                </div>
+                <div class="f-name">${esc(f2.name || '')}</div>
+                ${f2.nickname ? `<div class="f-nick">"${esc(f2.nickname)}"</div>` : ''}
+                <div class="f-rec">${esc(f2.record || '')}</div>
               </div>
-              <div class="f-name">${esc(f2.name || '')}</div>
-              ${f2.nickname ? `<div class="f-nick">"${esc(f2.nickname)}"</div>` : ''}
-              <div class="f-rec">${esc(f2.record || '')}</div>
             </div>
           </div>
+          ${hasStats ? `
+          <div class="fighter-stats-row">
+            <div class="fighter-stats">${f1Stats}</div>
+            <div class="fighter-stats r">${f2Stats}</div>
+          </div>` : ''}
           <div class="odds-section">
-            <div class="odds-row">
-              <div class="odds-chip ${f1Fav ? 'fav' : ''}">
-                <span class="odds-val">${esc(odds.fighter1 || '—')}</span>
-                ${odds.f1Prob ? `<span class="odds-prob">${odds.f1Prob}%</span>` : ''}
-                <span class="odds-lbl">${lastName(f1.name)}</span>
-              </div>
-              ${odds.draw ? `<div class="odds-chip draw">
-                <span class="odds-val">${esc(odds.draw)}</span>
-                <span class="odds-lbl">Draw</span>
-              </div>` : ''}
-              <div class="odds-chip ${!f1Fav ? 'fav' : ''}">
-                <span class="odds-val">${esc(odds.fighter2 || '—')}</span>
-                ${odds.f2Prob ? `<span class="odds-prob">${odds.f2Prob}%</span>` : ''}
-                <span class="odds-lbl">${lastName(f2.name)}</span>
-              </div>
-            </div>
-            ${odds.source === 'kalshi' ? `<div class="odds-source"><span class="odds-source-dot"></span> Kalshi market data</div>` : ''}
+            ${oddsHtml}
           </div>
         </div>
         <div class="fight-footer">

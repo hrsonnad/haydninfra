@@ -135,6 +135,13 @@ function extractFight(comp: any, position: number) {
   const shortDetail = comp.status?.type?.shortDetail ?? '';
   const broadcast = comp.broadcast ?? comp.broadcasts?.[0]?.names?.[0] ?? '';
 
+  // Extract athlete IDs for headshot URLs
+  const getAthleteId = (c: any) => {
+    const uid = c.uid ?? '';
+    const match = uid.match(/~a:(\d+)/);
+    return match ? match[1] : c.id ?? '';
+  };
+
   return {
     position,
     rounds,
@@ -147,11 +154,13 @@ function extractFight(comp: any, position: number) {
       name: f1.athlete?.fullName ?? 'TBA',
       record: f1.records?.[0]?.summary ?? 'N/A',
       country: f1.athlete?.flag?.alt ?? '',
+      athleteId: getAthleteId(f1),
     },
     fighter2: {
       name: f2.athlete?.fullName ?? 'TBA',
       record: f2.records?.[0]?.summary ?? 'N/A',
       country: f2.athlete?.flag?.alt ?? '',
+      athleteId: getAthleteId(f2),
     },
   };
 }
@@ -359,9 +368,8 @@ Return:
     "weight_class": "Full Weight Class Name",
     "is_title_fight": boolean,
     "title_description": "e.g. UFC Lightweight Championship"|null,
-    "fighter1": { "name": "exact ESPN name", "nickname": string|null, "record": "exact ESPN record", "rank": "#1"|"C"|null, "country_flag": "emoji flag", "country": "Country Name" },
-    "fighter2": { "name": "exact ESPN name", "nickname": string|null, "record": "exact ESPN record", "rank": "#1"|"C"|null, "country_flag": "emoji flag", "country": "Country Name" },
-    "odds": { "fighter1": "-150", "fighter2": "+130", "draw": null },
+    "fighter1": { "name": "exact ESPN name", "nickname": string|null, "record": "exact ESPN record", "rank": "#1"|"C"|null, "country_flag": "emoji flag", "country": "Country Name", "style": "Striker|Grappler|Wrestler|Well-rounded|BJJ specialist|etc.", "age": number|null, "height": "6'1\\""|null, "reach": "74\\""|null, "stance": "Orthodox|Southpaw|Switch"|null, "win_streak": number|null, "finish_rate": "70%"|null },
+    "fighter2": { "name": "exact ESPN name", "nickname": string|null, "record": "exact ESPN record", "rank": "#1"|"C"|null, "country_flag": "emoji flag", "country": "Country Name", "style": "Striker|Grappler|Wrestler|Well-rounded|BJJ specialist|etc.", "age": number|null, "height": "6'1\\""|null, "reach": "74\\""|null, "stance": "Orthodox|Southpaw|Switch"|null, "win_streak": number|null, "finish_rate": "70%"|null },
     "preview": "1-2 sentence preview of the fight for fans"
   }]
 }`,
@@ -374,7 +382,7 @@ Return:
       // Fetch Kalshi market data for real odds
       const kalshiFights = await fetchKalshiMarkets();
 
-      // Merge ESPN timing data + Kalshi odds into enriched fights
+      // Merge ESPN timing data + athlete IDs + Kalshi odds into enriched fights
       const fights = (enrichedData.fights ?? []).map((fight: any, idx: number) => {
         const espnFight = fightList[idx];
         if (espnFight) {
@@ -383,17 +391,22 @@ Return:
           fight.status_detail = espnFight.statusDetail;
           fight.short_detail = espnFight.shortDetail;
           fight.fight_broadcast = espnFight.broadcast;
+          // Pass through ESPN athlete IDs for headshot images
+          if (espnFight.fighter1.athleteId) fight.fighter1.athleteId = espnFight.fighter1.athleteId;
+          if (espnFight.fighter2.athleteId) fight.fighter2.athleteId = espnFight.fighter2.athleteId;
         }
 
-        // Overlay Kalshi real-time odds if available
+        // Replace odds with Kalshi data only (no Grok fallback)
         const f1Name = fight.fighter1?.name ?? '';
         const f2Name = fight.fighter2?.name ?? '';
+        let kalshiOdds = null;
         if (kalshiFights.length && f1Name && f2Name) {
           const matched = matchKalshiFight(kalshiFights, f1Name, f2Name);
           if (matched) {
-            fight.odds = kalshiToOdds(matched, f1Name, f2Name);
+            kalshiOdds = kalshiToOdds(matched, f1Name, f2Name);
           }
         }
+        fight.odds = kalshiOdds; // null if no Kalshi data available
 
         return fight;
       });
