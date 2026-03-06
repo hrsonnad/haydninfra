@@ -1,9 +1,9 @@
 {
-  "version": "v260306.22 3:19am",
-  "release": 22,
-  "sha": "1110044",
-  "fullSha": "1110044f7fadae5759061a8646965339a53fd736",
+  "version": "v260306.23 3:22am",
+  "release": 23,
+  "sha": "58cfa10",
+  "fullSha": "58cfa1033e66606a825e8a87bba73ccb61ada513",
   "actor": "hrsonnad",
-  "pushedAt": "2026-03-06T09:19:58Z",
-  "commits": [{"sha": "1110044", "message": "Remove tesla-news edge function", "author": "hrsonnad"}]
+  "pushedAt": "2026-03-06T09:22:33Z",
+  "commits": [{"sha": "58cfa10", "message": "UFC redesign: headshots, probability bars, stats on card, Kalshi-only odds", "author": "Haydn"}]
 }
