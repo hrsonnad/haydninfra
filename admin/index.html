@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin — Knowledge Base</title>
+    <meta name="robots" content="noindex, nofollow">
+    <link rel="stylesheet" href="../styles/tailwind.out.css">
+    <link rel="stylesheet" href="../shared/admin.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    <script src="../shared/supabase.js"></script>
+    <script src="../shared/auth.js"></script>
+</head>
+<body>
+    <nav style="background:#fff; border-bottom:1px solid #e5e7eb; padding:0 24px; height:56px; display:flex; align-items:center;">
+        <div class="site-nav__inner" style="display:flex; align-items:center; justify-content:space-between; width:100%; max-width:1200px; margin:0 auto;">
+            <span style="font-weight:600; font-size:15px; color:#0f172a;">🗂 Knowledge Base — Admin</span>
+        </div>
+    </nav>
+
+    <main style="max-width:900px; margin:48px auto; padding:0 24px;">
+        <div id="admin-content" style="display:none;">
+            <h1 style="font-size:1.5rem; font-weight:700; color:#0f172a; margin-bottom:8px;">Dashboard</h1>
+            <p style="color:#64748b; margin-bottom:32px;">Welcome to your knowledge base admin.</p>
+
+            <div style="display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:16px;">
+                <a href="documents.html" style="display:block; background:#fff; border:1px solid #e5e7eb; border-radius:10px; padding:20px; text-decoration:none; color:#0f172a;">
+                    <div style="font-size:24px; margin-bottom:8px;">📄</div>
+                    <div style="font-weight:600;">Documents</div>
+                    <div style="font-size:13px; color:#64748b; margin-top:4px;">Files, notes, links</div>
+                </a>
+                <a href="projects.html" style="display:block; background:#fff; border:1px solid #e5e7eb; border-radius:10px; padding:20px; text-decoration:none; color:#0f172a;">
+                    <div style="font-size:24px; margin-bottom:8px;">🗂</div>
+                    <div style="font-weight:600;">Projects</div>
+                    <div style="font-size:13px; color:#64748b; margin-top:4px;">Active work</div>
+                </a>
+                <a href="notes.html" style="display:block; background:#fff; border:1px solid #e5e7eb; border-radius:10px; padding:20px; text-decoration:none; color:#0f172a;">
+                    <div style="font-size:24px; margin-bottom:8px;">📝</div>
+                    <div style="font-weight:600;">Notes</div>
+                    <div style="font-size:13px; color:#64748b; margin-top:4px;">Quick captures</div>
+                </a>
+                <a href="tags.html" style="display:block; background:#fff; border:1px solid #e5e7eb; border-radius:10px; padding:20px; text-decoration:none; color:#0f172a;">
+                    <div style="font-size:24px; margin-bottom:8px;">🏷</div>
+                    <div style="font-weight:600;">Tags</div>
+                    <div style="font-size:13px; color:#64748b; margin-top:4px;">Organize everything</div>
+                </a>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        requireAuth(function(user, supabase) {
+            document.getElementById('admin-content').style.display = 'block';
+        });
+    </script>
+</body>
+</html>

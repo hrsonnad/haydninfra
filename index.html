@@ -2,10 +2,58 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="refresh" content="0;url=en">
-    <title>Redirecting</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Haydn's Knowledge Base</title>
+    <meta name="robots" content="noindex, nofollow">
+    <link rel="stylesheet" href="styles/tailwind.out.css">
+    <link rel="stylesheet" href="shared/admin.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    <script src="shared/supabase.js"></script>
+    <script src="shared/auth.js"></script>
+    <style>
+        body { background: var(--aap-bg, #f8fafc); font-family: system-ui, -apple-system, sans-serif; margin: 0; }
+    </style>
 </head>
 <body>
-    <p>Redirecting to <a href="en">site</a>...</p>
+    <nav style="background:#fff; border-bottom:1px solid #e5e7eb; padding:0 24px; height:56px; display:flex; align-items:center; justify-content:space-between;">
+        <div class="site-nav__inner" style="display:flex; align-items:center; justify-content:space-between; width:100%; max-width:1200px; margin:0 auto;">
+            <span style="font-weight:600; font-size:15px; color:#0f172a;">🗂 Knowledge Base</span>
+        </div>
+    </nav>
+
+    <main style="max-width:640px; margin:80px auto; padding:0 24px; text-align:center;">
+        <h1 style="font-size:2rem; font-weight:700; color:#0f172a; margin-bottom:12px;">Personal Knowledge Base</h1>
+        <p style="color:#64748b; font-size:1.05rem; margin-bottom:40px;">Your private store for documents, notes, and project context.</p>
+
+        <div id="cta-logged-out" style="display:none;">
+            <p style="color:#94a3b8; font-size:14px;">Sign in to access your knowledge base.</p>
+        </div>
+
+        <div id="cta-logged-in" style="display:none;">
+            <a href="admin/index.html" style="display:inline-block; background:#2563eb; color:#fff; padding:12px 28px; border-radius:8px; text-decoration:none; font-weight:500; font-size:15px;">Go to Admin →</a>
+        </div>
+    </main>
+
+    <script>
+        window.addEventListener('load', function() {
+            if (!window.adminSupabase) return;
+            adminSupabase.auth.getSession().then(function(r) {
+                if (r.data.session) {
+                    document.getElementById('cta-logged-in').style.display = 'block';
+                } else {
+                    document.getElementById('cta-logged-out').style.display = 'block';
+                }
+            });
+            adminSupabase.auth.onAuthStateChange(function(event, session) {
+                if (session) {
+                    document.getElementById('cta-logged-in').style.display = 'block';
+                    document.getElementById('cta-logged-out').style.display = 'none';
+                } else {
+                    document.getElementById('cta-logged-in').style.display = 'none';
+                    document.getElementById('cta-logged-out').style.display = 'block';
+                }
+            });
+        });
+    </script>
 </body>
 </html>
