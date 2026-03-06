@@ -9,25 +9,27 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
-    /* ─── Variables ─────────────────────────────────────── */
     :root {
       --bg:           #f6f9fc;
       --surface:      #ffffff;
-      --surface2:     #f6f9fc;
+      --surface2:     #f0f3f7;
       --border:       #e3e8ef;
       --border2:      #c8d0da;
       --red:          #df1b41;
       --red-dim:      rgba(223,27,65,0.06);
       --green:        #1a9e6e;
-      --green-dim:    rgba(26,158,110,0.08);
+      --green-dim:    rgba(26,158,110,0.07);
       --blue:         #0570de;
+      --blue-dim:     rgba(5,112,222,0.06);
+      --gold:         #9a7b1a;
+      --gold-dim:     rgba(180,140,20,0.07);
       --navy:         #0a2540;
       --text:         #0a2540;
       --text-mid:     #425466;
       --text-dim:     #8898aa;
       --text-muted:   #b0bec5;
-      --shadow-sm:    0 2px 5px rgba(60,66,87,.07), 0 0 0 1px rgba(60,66,87,.04);
-      --shadow-md:    0 4px 12px rgba(60,66,87,.10), 0 0 0 1px rgba(60,66,87,.04);
+      --shadow-sm:    0 2px 5px rgba(60,66,87,.06), 0 0 0 1px rgba(60,66,87,.04);
+      --shadow-md:    0 4px 12px rgba(60,66,87,.09), 0 0 0 1px rgba(60,66,87,.04);
       --radius:       8px;
       --radius-sm:    6px;
       --font:         'Inter', system-ui, -apple-system, sans-serif;
@@ -52,29 +54,23 @@
       border-bottom: 1px solid var(--border);
     }
     .header-inner {
-      max-width: 900px; margin: 0 auto;
+      max-width: 920px; margin: 0 auto;
       height: 56px; padding: 0 24px;
       display: flex; align-items: center; justify-content: space-between; gap: 16px;
     }
     .header-logo {
-      font-size: 17px;
-      font-weight: 700;
-      color: var(--navy);
+      font-size: 17px; font-weight: 700; color: var(--navy);
       display: flex; align-items: center; gap: 8px;
     }
     .logo-badge {
-      background: var(--red);
-      color: #fff;
-      font-size: 11px;
-      font-weight: 700;
+      background: var(--red); color: #fff;
+      font-size: 11px; font-weight: 700;
       letter-spacing: 0.04em;
-      padding: 3px 7px;
-      border-radius: 4px;
+      padding: 3px 7px; border-radius: 4px;
     }
     .live-pill {
       display: flex; align-items: center; gap: 6px;
-      font-size: 12px; font-weight: 500;
-      color: var(--text-dim);
+      font-size: 12px; font-weight: 500; color: var(--text-dim);
     }
     .live-dot {
       width: 6px; height: 6px; border-radius: 50%;
@@ -85,16 +81,16 @@
 
     /* ─── Layout ─────────────────────────────────────────── */
     .page-main {
-      max-width: 900px; margin: 0 auto;
-      padding: 28px 24px 80px;
+      max-width: 920px; margin: 0 auto;
+      padding: 24px 24px 80px;
     }
 
-    /* ─── Event selector ─────────────────────────────────── */
-    .events-wrap { margin-bottom: 24px; }
+    /* ─── Event chips ────────────────────────────────────── */
+    .events-wrap { margin-bottom: 20px; }
     .events-scroll {
       display: flex; gap: 6px;
       overflow-x: auto; scrollbar-width: none;
-      -ms-overflow-style: none; padding-bottom: 2px;
+      padding-bottom: 2px;
     }
     .events-scroll::-webkit-scrollbar { display: none; }
     .event-chip {
@@ -123,10 +119,38 @@
       border-radius: 100px;
     }
 
+    /* ─── Event banner ───────────────────────────────────── */
+    .event-banner {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-sm);
+      padding: 18px 20px;
+      margin-bottom: 20px;
+      display: flex; align-items: center; justify-content: space-between;
+      flex-wrap: wrap; gap: 12px;
+    }
+    .event-banner-left { display: flex; flex-direction: column; gap: 4px; }
+    .event-title {
+      font-size: 20px; font-weight: 700; color: var(--navy);
+      letter-spacing: -0.02em;
+    }
+    .event-subtitle { font-size: 13px; color: var(--text-mid); }
+    .event-details {
+      display: flex; flex-wrap: wrap; gap: 14px;
+      align-items: center;
+    }
+    .event-detail {
+      display: flex; align-items: center; gap: 5px;
+      font-size: 12px; color: var(--text-dim);
+    }
+    .event-detail svg { width: 14px; height: 14px; flex-shrink: 0; }
+    .event-detail strong { font-weight: 600; color: var(--text-mid); }
+
     /* ─── Section divider ────────────────────────────────── */
     .sec-div {
       display: flex; align-items: center; gap: 12px;
-      margin: 28px 0 12px;
+      margin: 24px 0 10px;
     }
     .sec-div:first-of-type { margin-top: 0; }
     .sec-label {
@@ -134,16 +158,14 @@
       letter-spacing: 0.1em; text-transform: uppercase;
       color: var(--text-dim); white-space: nowrap;
     }
-    .sec-line {
-      flex: 1; height: 1px; background: var(--border);
-    }
+    .sec-line { flex: 1; height: 1px; background: var(--border); }
 
     /* ─── Fight card ─────────────────────────────────────── */
     .fight-card {
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: var(--radius);
-      margin-bottom: 10px;
+      margin-bottom: 8px;
       overflow: hidden;
       box-shadow: var(--shadow-sm);
       opacity: 0; transform: translateY(8px);
@@ -160,100 +182,97 @@
       box-shadow: 0 2px 12px rgba(201,168,76,.12), 0 0 0 1px rgba(201,168,76,.15);
     }
     .fight-card.is-title:hover {
-      box-shadow: 0 4px 20px rgba(201,168,76,.2), 0 0 0 1px rgba(201,168,76,.2);
+      box-shadow: 0 4px 20px rgba(201,168,76,.18), 0 0 0 1px rgba(201,168,76,.2);
     }
 
-    /* title banner */
     .title-banner {
-      padding: 8px 16px;
-      background: linear-gradient(90deg, rgba(201,168,76,.08), transparent);
-      border-bottom: 1px solid rgba(201,168,76,.2);
+      padding: 7px 16px;
+      background: linear-gradient(90deg, var(--gold-dim), transparent);
+      border-bottom: 1px solid rgba(180,140,20,.15);
       font-size: 11px; font-weight: 600;
       letter-spacing: 0.1em; text-transform: uppercase;
-      color: #8a6914;
+      color: var(--gold);
       display: flex; align-items: center; gap: 6px;
     }
 
-    /* fight body */
-    .fight-body { padding: 16px 18px 0; }
+    .fight-body { padding: 14px 16px 0; }
+
     .fight-meta {
-      display: flex; align-items: center; gap: 8px; margin-bottom: 14px;
+      display: flex; align-items: center; gap: 8px;
+      margin-bottom: 12px; flex-wrap: wrap;
     }
     .weight-pill {
       font-size: 11px; font-weight: 600;
       letter-spacing: 0.06em; text-transform: uppercase;
       color: var(--text-dim);
-      background: var(--surface2);
-      padding: 3px 10px; border-radius: 100px;
-      border: 1px solid var(--border);
+      background: var(--surface2); padding: 3px 10px;
+      border-radius: 100px; border: 1px solid var(--border);
+    }
+    .rounds-pill {
+      font-size: 10px; font-weight: 600;
+      color: var(--text-dim);
+      background: var(--surface2); padding: 3px 8px;
+      border-radius: 100px; border: 1px solid var(--border);
+    }
+    .fight-time {
+      margin-left: auto;
+      font-size: 11px; font-weight: 500; color: var(--text-dim);
     }
 
-    /* fighters row */
+    /* Fighters */
     .fighters-row {
-      display: grid; grid-template-columns: 1fr 48px 1fr;
-      align-items: center; gap: 8px; margin-bottom: 14px;
+      display: grid; grid-template-columns: 1fr 40px 1fr;
+      align-items: center; gap: 8px; margin-bottom: 12px;
     }
     .fighter { display: flex; flex-direction: column; }
     .fighter.r { align-items: flex-end; text-align: right; }
 
     .fighter-badges {
-      display: flex; align-items: center; gap: 5px; margin-bottom: 4px;
+      display: flex; align-items: center; gap: 5px; margin-bottom: 3px;
     }
     .fighter.r .fighter-badges { flex-direction: row-reverse; }
 
     .f-flag { font-size: 14px; line-height: 1; }
     .f-rank {
-      font-size: 11px; font-weight: 600;
+      font-size: 10px; font-weight: 700;
       color: var(--red); letter-spacing: 0.02em;
       background: var(--red-dim);
       padding: 2px 6px; border-radius: 4px;
     }
-    .f-rank.champ {
-      color: #8a6914;
-      background: rgba(201,168,76,.1);
-    }
+    .f-rank.champ { color: var(--gold); background: var(--gold-dim); }
     .f-name {
-      font-size: clamp(16px, 3vw, 22px);
-      font-weight: 700;
-      color: var(--navy);
-      line-height: 1.1; margin-bottom: 3px;
+      font-size: clamp(15px, 2.8vw, 20px);
+      font-weight: 700; color: var(--navy);
+      line-height: 1.1; margin-bottom: 2px;
       letter-spacing: -0.01em;
     }
     .f-nick {
-      font-style: italic; font-size: 12px;
-      color: var(--text-dim); margin-bottom: 3px;
+      font-style: italic; font-size: 11px;
+      color: var(--text-dim); margin-bottom: 2px;
     }
-    .f-rec {
-      font-size: 13px; font-weight: 500;
-      color: var(--text-mid);
-    }
+    .f-rec { font-size: 12px; font-weight: 500; color: var(--text-mid); }
 
-    /* VS center */
     .vs-col {
-      display: flex; flex-direction: column;
-      align-items: center; gap: 4px;
+      display: flex; flex-direction: column; align-items: center;
     }
     .vs-text {
-      font-size: 13px; font-weight: 700;
-      color: var(--text-dim); letter-spacing: 0.04em;
+      font-size: 12px; font-weight: 700;
+      color: var(--text-muted); letter-spacing: 0.04em;
     }
 
-    /* ─── Odds ───────────────────────────────────────────── */
-    .odds-row {
-      display: flex; gap: 4px;
-    }
+    /* Odds */
+    .odds-row { display: flex; gap: 4px; }
     .odds-chip {
       flex: 1; display: flex; flex-direction: column;
       align-items: center; gap: 2px;
-      padding: 9px 6px; border-radius: var(--radius-sm);
-      border: 1px solid var(--border);
-      background: var(--surface2);
+      padding: 8px 6px; border-radius: var(--radius-sm);
+      border: 1px solid var(--border); background: var(--surface2);
     }
     .odds-chip.fav {
       background: var(--green-dim);
-      border-color: rgba(26,158,110,.2);
+      border-color: rgba(26,158,110,.18);
     }
-    .odds-chip.draw { flex: 0.6; }
+    .odds-chip.draw { flex: 0.55; }
     .odds-val {
       font-size: 15px; font-weight: 700;
       color: var(--text); letter-spacing: 0.01em;
@@ -261,116 +280,143 @@
     .odds-chip.fav .odds-val { color: var(--green); }
     .odds-lbl {
       font-size: 10px; font-weight: 500;
-      letter-spacing: 0.08em; text-transform: uppercase;
+      letter-spacing: 0.06em; text-transform: uppercase;
       color: var(--text-dim);
     }
 
-    /* ─── Fight footer ───────────────────────────────────── */
+    /* Fight footer */
     .fight-footer {
-      padding: 12px 18px 14px;
+      padding: 10px 16px 12px;
       display: flex; align-items: flex-start;
       justify-content: space-between; gap: 14px;
       border-top: 1px solid var(--border); margin-top: 12px;
     }
     .fight-preview {
-      font-size: 13px; line-height: 1.6;
+      font-size: 13px; line-height: 1.55;
       color: var(--text-mid); flex: 1;
     }
     .analyze-btn {
       flex-shrink: 0;
       display: flex; align-items: center; gap: 6px;
-      padding: 8px 14px; background: var(--surface);
+      padding: 7px 14px; background: var(--surface);
       border: 1px solid var(--border); border-radius: var(--radius-sm);
       font-size: 12px; font-weight: 600;
-      letter-spacing: 0.04em;
       color: var(--text-mid); cursor: pointer;
       transition: all 0.15s; white-space: nowrap;
       box-shadow: var(--shadow-sm);
     }
     .analyze-btn:hover {
       border-color: var(--blue); color: var(--blue);
-      box-shadow: 0 2px 8px rgba(5,112,222,.1);
+      box-shadow: 0 2px 8px rgba(5,112,222,.08);
     }
     .analyze-btn.open {
-      background: #f0f7ff; border-color: var(--blue); color: var(--blue);
+      background: var(--blue-dim); border-color: var(--blue); color: var(--blue);
     }
     .analyze-chevron { transition: transform 0.22s ease; display: inline-block; }
     .analyze-btn.open .analyze-chevron { transform: rotate(180deg); }
 
-    /* ─── Deep dive panel ────────────────────────────────── */
+    /* ─── Deep dive ──────────────────────────────────────── */
     .deep-dive {
       max-height: 0; overflow: hidden; opacity: 0;
       transition: max-height 0.5s cubic-bezier(0.4,0,0.2,1), opacity 0.25s ease;
     }
-    .deep-dive.open { max-height: 4000px; opacity: 1; }
+    .deep-dive.open { max-height: 6000px; opacity: 1; }
     .dive-inner {
       border-top: 1px solid var(--border);
-      background: var(--surface2);
-      padding: 22px 20px;
+      background: var(--surface2); padding: 20px 18px;
     }
 
-    /* analyzing spinner */
     .analyzing {
       display: flex; flex-direction: column;
-      align-items: center; gap: 12px; padding: 44px 20px;
+      align-items: center; gap: 12px; padding: 40px 20px;
     }
     .spinner {
-      width: 28px; height: 28px;
+      width: 26px; height: 26px;
       border: 2px solid var(--border); border-top-color: var(--blue);
       border-radius: 50%; animation: spin 0.7s linear infinite;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
     .analyzing-lbl {
       font-size: 12px; font-weight: 500;
-      letter-spacing: 0.06em; text-transform: uppercase;
-      color: var(--text-dim);
+      letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-dim);
     }
 
-    /* dive section header */
     .dive-hdr {
       font-size: 11px; font-weight: 600;
       letter-spacing: 0.1em; text-transform: uppercase;
       color: var(--text-dim);
       display: flex; align-items: center; gap: 10px;
-      margin-bottom: 12px;
+      margin-bottom: 10px; margin-top: 18px;
     }
+    .dive-hdr:first-child { margin-top: 0; }
     .dive-hdr::after {
       content: ''; flex: 1; height: 1px; background: var(--border);
     }
 
-    /* fighter profiles grid */
+    /* Profiles */
     .profiles-grid {
       display: grid; grid-template-columns: 1fr 1fr;
-      gap: 10px; margin-bottom: 20px;
+      gap: 10px;
     }
     @media (max-width: 540px) { .profiles-grid { grid-template-columns: 1fr; } }
 
     .profile-card {
-      background: var(--surface);
-      border: 1px solid var(--border); border-radius: var(--radius-sm);
-      padding: 14px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius-sm); overflow: hidden;
       box-shadow: var(--shadow-sm);
     }
+    .profile-header {
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .profile-name-wrap { display: flex; flex-direction: column; }
     .profile-name {
-      font-size: 15px; font-weight: 700;
-      color: var(--navy);
-      margin-bottom: 4px;
+      font-size: 15px; font-weight: 700; color: var(--navy);
       letter-spacing: -0.01em;
     }
     .profile-style {
-      font-size: 12px; font-style: italic;
-      color: var(--text-mid); margin-bottom: 12px; line-height: 1.5;
+      font-size: 11px; font-style: italic; color: var(--text-dim); margin-top: 2px;
     }
+    .profile-physicals {
+      text-align: right; font-size: 11px; color: var(--text-dim); line-height: 1.5;
+    }
+    .profile-physicals strong { color: var(--text-mid); font-weight: 600; }
+
+    .profile-body { padding: 12px 14px; }
+
+    /* Stats grid */
+    .stats-grid {
+      display: grid; grid-template-columns: 1fr 1fr 1fr;
+      gap: 6px; margin-bottom: 12px;
+    }
+    .stat-box {
+      text-align: center; padding: 8px 4px;
+      background: var(--surface2); border-radius: 4px;
+      border: 1px solid var(--border);
+    }
+    .stat-val {
+      font-size: 15px; font-weight: 700; color: var(--navy);
+      line-height: 1;
+    }
+    .stat-lbl {
+      font-size: 9px; font-weight: 600;
+      letter-spacing: 0.06em; text-transform: uppercase;
+      color: var(--text-dim); margin-top: 3px;
+    }
+
     .mini-hdr {
       font-size: 10px; font-weight: 600;
-      letter-spacing: 0.1em; text-transform: uppercase;
-      color: var(--text-dim); margin-bottom: 6px;
+      letter-spacing: 0.08em; text-transform: uppercase;
+      color: var(--text-dim); margin-bottom: 5px; margin-top: 10px;
     }
-    .trait-list { list-style: none; margin-bottom: 12px; }
+    .mini-hdr:first-child { margin-top: 0; }
+
+    .trait-list { list-style: none; margin-bottom: 8px; }
     .trait-list li {
       font-size: 12px; color: var(--text-mid);
       padding: 2px 0; display: flex;
-      align-items: flex-start; gap: 7px; line-height: 1.5;
+      align-items: flex-start; gap: 7px; line-height: 1.45;
     }
     .trait-list li::before {
       content: ''; width: 5px; height: 5px; border-radius: 50%;
@@ -379,12 +425,13 @@
     .trait-list.str li::before { background: var(--green); }
     .trait-list.wk li::before { background: var(--red); }
 
-    .results-list { display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px; }
+    .results-list { display: flex; flex-direction: column; gap: 3px; }
     .result-row {
-      display: flex; align-items: center; gap: 7px; font-size: 12px;
+      display: flex; align-items: center; gap: 6px; font-size: 11px;
+      padding: 3px 0;
     }
     .res-badge {
-      font-size: 10px; font-weight: 700;
+      font-size: 9px; font-weight: 700;
       width: 18px; height: 18px; border-radius: 4px;
       display: flex; align-items: center; justify-content: center;
       flex-shrink: 0;
@@ -393,76 +440,78 @@
     .res-badge.L { background: rgba(223,27,65,.08); color: var(--red); }
     .res-badge.NC { background: rgba(255,180,0,.1); color: #b88a00; }
     .res-opp { color: var(--text); font-weight: 500; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .res-method { color: var(--text-mid); flex: 1.2; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .res-date { color: var(--text-dim); white-space: nowrap; }
+    .res-method { color: var(--text-mid); flex-shrink: 0; }
+    .res-date { color: var(--text-dim); white-space: nowrap; flex-shrink: 0; }
 
     .news-items { list-style: none; }
     .news-items li {
-      font-size: 12px; color: var(--text-mid); line-height: 1.55;
-      padding: 5px 0; border-bottom: 1px solid var(--border);
-      display: flex; align-items: flex-start; gap: 8px;
+      font-size: 12px; color: var(--text-mid); line-height: 1.5;
+      padding: 4px 0; border-bottom: 1px solid var(--border);
+      display: flex; align-items: flex-start; gap: 7px;
     }
     .news-items li:last-child { border-bottom: none; }
     .news-items li::before {
-      content: ''; width: 5px; height: 5px; border-radius: 50%;
-      background: var(--red); margin-top: 5px; flex-shrink: 0;
+      content: ''; width: 4px; height: 4px; border-radius: 50%;
+      background: var(--blue); margin-top: 6px; flex-shrink: 0;
+    }
+
+    .streak-badge {
+      display: inline-flex; align-items: center; gap: 3px;
+      font-size: 10px; font-weight: 600;
+      padding: 2px 7px; border-radius: 100px;
+      background: var(--green-dim); color: var(--green);
+      border: 1px solid rgba(26,158,110,.15);
+      margin-top: 6px;
     }
 
     /* H2H */
     .h2h-box {
       background: var(--surface); border: 1px solid var(--border);
       border-radius: var(--radius-sm); padding: 12px 14px;
-      font-size: 13px; color: var(--text-mid); margin-bottom: 20px;
+      font-size: 13px; color: var(--text-mid);
       box-shadow: var(--shadow-sm);
     }
 
-    /* Key factors */
-    .factors { margin-bottom: 20px; display: flex; flex-direction: column; gap: 6px; }
+    /* Factors */
+    .factors { display: flex; flex-direction: column; gap: 6px; }
     .factor {
       display: flex; align-items: flex-start; gap: 12px;
       background: var(--surface); border: 1px solid var(--border);
       border-left: 3px solid var(--blue); border-radius: var(--radius-sm);
-      padding: 10px 13px;
-      box-shadow: var(--shadow-sm);
+      padding: 10px 13px; box-shadow: var(--shadow-sm);
     }
     .factor-num {
-      font-size: 15px; font-weight: 700;
+      font-size: 14px; font-weight: 700;
       color: var(--blue); line-height: 1; flex-shrink: 0;
     }
-    .factor-text {
-      font-size: 13px; color: var(--text-mid); line-height: 1.55; padding-top: 1px;
-    }
+    .factor-text { font-size: 13px; color: var(--text-mid); line-height: 1.5; }
 
     /* Prediction */
     .pred-box {
       background: var(--surface); border: 1px solid var(--border);
-      border-radius: var(--radius-sm); padding: 16px; margin-bottom: 20px;
+      border-radius: var(--radius-sm); padding: 16px;
       box-shadow: var(--shadow-sm);
     }
     .pred-header {
       display: flex; align-items: center; gap: 10px;
-      margin-bottom: 10px; flex-wrap: wrap;
+      margin-bottom: 8px; flex-wrap: wrap;
     }
     .pred-winner {
-      font-size: 18px; font-weight: 700;
-      color: var(--navy); letter-spacing: -0.01em;
+      font-size: 17px; font-weight: 700; color: var(--navy);
     }
-    .pred-method {
-      font-size: 13px; font-weight: 500; color: var(--text-mid);
-    }
+    .pred-method { font-size: 13px; font-weight: 500; color: var(--text-mid); }
     .conf-badge {
       margin-left: auto; padding: 3px 10px; border-radius: 100px;
       font-size: 11px; font-weight: 600;
-      letter-spacing: 0.04em;
     }
-    .conf-badge.high { background: rgba(26,158,110,.1); color: var(--green); border: 1px solid rgba(26,158,110,.2); }
-    .conf-badge.medium { background: rgba(255,180,0,.1); color: #b88a00; border: 1px solid rgba(255,180,0,.2); }
-    .conf-badge.low { background: rgba(223,27,65,.08); color: var(--red); border: 1px solid rgba(223,27,65,.15); }
+    .conf-badge.high { background: rgba(26,158,110,.08); color: var(--green); border: 1px solid rgba(26,158,110,.18); }
+    .conf-badge.medium { background: rgba(255,180,0,.08); color: #b88a00; border: 1px solid rgba(255,180,0,.18); }
+    .conf-badge.low { background: rgba(223,27,65,.06); color: var(--red); border: 1px solid rgba(223,27,65,.12); }
     .pred-reasoning { font-size: 13px; color: var(--text-mid); line-height: 1.6; }
 
     /* Why watch */
     .why-box {
-      background: #f0f7ff; border: 1px solid rgba(5,112,222,.15);
+      background: var(--blue-dim); border: 1px solid rgba(5,112,222,.12);
       border-left: 3px solid var(--blue);
       border-radius: var(--radius-sm); padding: 12px 14px;
     }
@@ -475,35 +524,29 @@
     }
     .skel {
       background: linear-gradient(90deg, #eef1f6 25%, #f6f9fc 50%, #eef1f6 75%);
-      background-size: 200% 100%;
-      animation: shimmer 1.6s infinite;
+      background-size: 200% 100%; animation: shimmer 1.6s infinite;
       border-radius: 4px;
     }
     .skel-card {
       background: var(--surface); border: 1px solid var(--border);
-      border-radius: var(--radius); padding: 18px 18px; margin-bottom: 10px;
+      border-radius: var(--radius); padding: 18px; margin-bottom: 8px;
       box-shadow: var(--shadow-sm);
     }
     .skel-h { height: 12px; margin-bottom: 8px; }
 
-    /* ─── Error / empty ──────────────────────────────────── */
-    .state-box {
-      text-align: center; padding: 64px 20px;
-    }
+    .state-box { text-align: center; padding: 64px 20px; }
     .state-ico { font-size: 36px; margin-bottom: 14px; opacity: .4; }
-    .state-title {
-      font-size: 16px; font-weight: 600;
-      color: var(--text-mid); margin-bottom: 6px;
-    }
+    .state-title { font-size: 16px; font-weight: 600; color: var(--text-mid); margin-bottom: 6px; }
     .state-sub { font-size: 13px; color: var(--text-dim); }
 
-    /* ─── Responsive ─────────────────────────────────────── */
     @media (max-width: 500px) {
       .fight-footer { flex-direction: column; gap: 10px; }
       .analyze-btn { width: 100%; justify-content: center; }
       .odds-val { font-size: 14px; }
-      .fighters-row { grid-template-columns: 1fr 36px 1fr; gap: 4px; }
-      .page-main { padding: 20px 16px 80px; }
+      .fighters-row { grid-template-columns: 1fr 32px 1fr; gap: 4px; }
+      .page-main { padding: 16px 14px 80px; }
+      .event-banner { flex-direction: column; align-items: flex-start; }
+      .stats-grid { grid-template-columns: 1fr 1fr; }
     }
   </style>
 </head>
@@ -512,8 +555,7 @@
 <header class="site-header">
   <div class="header-inner">
     <div class="header-logo">
-      <span class="logo-badge">UFC</span>
-      Fight Cards
+      <span class="logo-badge">UFC</span> Fight Cards
     </div>
     <div class="live-pill">
       <div class="live-dot"></div>
@@ -530,6 +572,7 @@
       <div class="skel skel-chip" style="width:130px"></div>
     </div>
   </div>
+  <div id="event-banner"></div>
   <div id="card-container"></div>
 </main>
 
@@ -564,7 +607,7 @@
       const btn = document.createElement('button');
       btn.className = 'event-chip';
       btn.dataset.id = ev.id;
-      btn.innerHTML = `<span>${ev.title}</span><span class="event-chip-sub">${fmtDate(ev.date)}</span>`;
+      btn.innerHTML = `<span>${ev.shortName || ev.title}</span><span class="event-chip-sub">${fmtDate(ev.date)}</span>`;
       btn.addEventListener('click', () => {
         if (selectedId === ev.id) return;
         loadCard(ev);
@@ -581,9 +624,37 @@
     selectedId = id;
   }
 
+  /* ── Event banner ────────────────────────────────────── */
+  function renderBanner(event) {
+    const el = document.getElementById('event-banner');
+    const svg = {
+      calendar: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="12" height="11" rx="1.5"/><path d="M5 1v3M11 1v3M2 7h12"/></svg>',
+      pin: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 14s-5-4.5-5-8a5 5 0 1110 0c0 3.5-5 8-5 8z"/><circle cx="8" cy="6" r="1.5"/></svg>',
+      tv: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1.5" y="3" width="13" height="9" rx="1.5"/><path d="M5 14h6"/></svg>',
+    };
+
+    const dateStr = event.startTime
+      ? new Date(event.startTime).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })
+      : fmtDateLong(event.date);
+
+    el.innerHTML = `
+      <div class="event-banner">
+        <div class="event-banner-left">
+          <div class="event-title">${esc(event.title)}</div>
+          ${event.subtitle ? `<div class="event-subtitle">${esc(event.subtitle)}</div>` : ''}
+        </div>
+        <div class="event-details">
+          <div class="event-detail">${svg.calendar} <strong>${esc(dateStr)}</strong></div>
+          ${event.venue ? `<div class="event-detail">${svg.pin} ${esc(event.venue)}${event.location ? ', ' + esc(event.location) : ''}</div>` : ''}
+          ${event.broadcast ? `<div class="event-detail">${svg.tv} ${esc(event.broadcast)}</div>` : ''}
+        </div>
+      </div>`;
+  }
+
   /* ── Load fight card ─────────────────────────────────── */
   async function loadCard(event) {
     activateChip(event.id);
+    document.getElementById('event-banner').innerHTML = '';
     showSkeleton();
     try {
       const res = await fetch(`${API}?mode=card&event=${encodeURIComponent(event.title)}`, { headers: HEADERS });
@@ -591,6 +662,7 @@
       const data = await res.json();
       if (data.error) throw new Error(data.error);
       if (!data.fights?.length) throw new Error('No fights found for this event');
+      renderBanner(data.event || event);
       renderCard(data);
     } catch (err) {
       showError('Could not load card: ' + err.message);
@@ -598,24 +670,24 @@
   }
 
   function showSkeleton() {
-    document.getElementById('card-container').innerHTML = [0,0.07,0.14,0.21].map((d,i) => `
-      <div class="skel-card" style="animation:none;">
-        <div class="skel skel-h" style="width:28%;margin-bottom:14px;animation-delay:${d}s"></div>
-        <div style="display:grid;grid-template-columns:1fr 48px 1fr;gap:8px;margin-bottom:12px;">
+    document.getElementById('card-container').innerHTML = [0,0.06,0.12,0.18].map(d => `
+      <div class="skel-card">
+        <div class="skel skel-h" style="width:26%;margin-bottom:14px;animation-delay:${d}s"></div>
+        <div style="display:grid;grid-template-columns:1fr 40px 1fr;gap:8px;margin-bottom:12px;">
           <div>
-            <div class="skel skel-h" style="width:75%;height:18px;animation-delay:${d}s"></div>
-            <div class="skel skel-h" style="width:45%;animation-delay:${d+0.05}s"></div>
+            <div class="skel skel-h" style="width:70%;height:16px;animation-delay:${d}s"></div>
+            <div class="skel skel-h" style="width:40%;animation-delay:${d+0.04}s"></div>
           </div>
-          <div class="skel" style="height:18px;animation-delay:${d}s"></div>
+          <div class="skel" style="height:16px;animation-delay:${d}s"></div>
           <div>
-            <div class="skel skel-h" style="width:75%;height:18px;margin-left:auto;animation-delay:${d}s"></div>
-            <div class="skel skel-h" style="width:45%;margin-left:auto;animation-delay:${d+0.05}s"></div>
+            <div class="skel skel-h" style="width:70%;height:16px;margin-left:auto;animation-delay:${d}s"></div>
+            <div class="skel skel-h" style="width:40%;margin-left:auto;animation-delay:${d+0.04}s"></div>
           </div>
         </div>
-        <div style="display:grid;grid-template-columns:1fr 0.6fr 1fr;gap:4px;">
-          <div class="skel" style="height:42px;animation-delay:${d+0.1}s"></div>
-          <div class="skel" style="height:42px;animation-delay:${d+0.1}s"></div>
-          <div class="skel" style="height:42px;animation-delay:${d+0.1}s"></div>
+        <div style="display:grid;grid-template-columns:1fr 0.55fr 1fr;gap:4px;">
+          <div class="skel" style="height:40px;animation-delay:${d+0.08}s"></div>
+          <div class="skel" style="height:40px;animation-delay:${d+0.08}s"></div>
+          <div class="skel" style="height:40px;animation-delay:${d+0.08}s"></div>
         </div>
       </div>
     `).join('');
@@ -654,7 +726,7 @@
         <span class="sec-label">${SECTION_LABELS[sec]}</span>
         <span class="sec-line"></span>
       </div>`;
-      fights.forEach(f => { html += renderFight(f, delay); delay += 0.06; });
+      fights.forEach(f => { html += renderFight(f, delay); delay += 0.05; });
     });
     document.getElementById('card-container').innerHTML = html;
   }
@@ -669,11 +741,14 @@
     const rankBadge = (r) => {
       if (!r) return '';
       const isC = r === 'C' || r.toLowerCase() === 'c';
-      return `<span class="f-rank${isC ? ' champ' : ''}">${isC ? '🥇 C' : r}</span>`;
+      return `<span class="f-rank${isC ? ' champ' : ''}">${isC ? 'C' : r}</span>`;
     };
 
     const titleBanner = f.is_title_fight
       ? `<div class="title-banner">🏆 ${esc(f.title_description || 'Title Fight')}</div>` : '';
+
+    const fightTime = f.short_detail || (f.start_time ? fmtTime(f.start_time) : '');
+    const rounds = f.rounds || 3;
 
     return `
       <div class="fight-card${f.is_title_fight ? ' is-title' : ''}" id="fc-${esc(f.id)}" style="animation-delay:${delay}s">
@@ -681,6 +756,8 @@
         <div class="fight-body">
           <div class="fight-meta">
             <span class="weight-pill">${esc(f.weight_class || '')}</span>
+            <span class="rounds-pill">${rounds} Rds</span>
+            ${fightTime ? `<span class="fight-time">${esc(fightTime)}</span>` : ''}
           </div>
           <div class="fighters-row">
             <div class="fighter">
@@ -735,8 +812,7 @@
     const btn = document.getElementById(`abtn-${fightId}`);
     if (!panel || !btn) return;
 
-    const isOpen = panel.classList.contains('open');
-    if (isOpen) {
+    if (panel.classList.contains('open')) {
       panel.classList.remove('open');
       btn.classList.remove('open');
       return;
@@ -745,8 +821,19 @@
     btn.classList.add('open');
     panel.classList.add('open');
 
+    // Check in-memory cache
     if (diveCache.has(fightId)) {
       panel.innerHTML = `<div class="dive-inner">${diveCache.get(fightId)}</div>`;
+      return;
+    }
+
+    // Check localStorage cache
+    const lsKey = `ufc-dive:${f1}|${f2}`;
+    const lsCached = loadLocalCache(lsKey);
+    if (lsCached) {
+      const html = buildDive(lsCached);
+      diveCache.set(fightId, html);
+      panel.innerHTML = `<div class="dive-inner">${html}</div>`;
       return;
     }
 
@@ -762,6 +849,7 @@
       if (data.error) throw new Error(data.error);
       const html = buildDive(data);
       diveCache.set(fightId, html);
+      saveLocalCache(lsKey, data);
       panel.innerHTML = `<div class="dive-inner">${html}</div>`;
     } catch (err) {
       panel.innerHTML = `<div class="dive-inner"><div class="state-box" style="padding:32px 20px;">
@@ -775,6 +863,7 @@
     const pred = data.prediction || {}, h2h = data.head_to_head || {};
 
     const buildProfile = (f) => {
+      const stats = f.stats || {};
       const strengths = (f.strengths || []).map(s => `<li>${esc(s)}</li>`).join('');
       const weaknesses = (f.weaknesses || []).map(w => `<li>${esc(w)}</li>`).join('');
       const last5 = (f.last_5_fights || []).map(r => `
@@ -786,13 +875,40 @@
         </div>`).join('');
       const news = (f.recent_news || []).map(n => `<li>${esc(n)}</li>`).join('');
 
+      const physicals = [
+        f.age ? `Age <strong>${f.age}</strong>` : '',
+        f.height ? `Ht <strong>${esc(f.height)}</strong>` : '',
+        f.reach ? `Rc <strong>${esc(f.reach)}</strong>` : '',
+        f.stance ? `<strong>${esc(f.stance)}</strong>` : '',
+      ].filter(Boolean).join(' · ');
+
+      const statBoxes = [];
+      if (stats.sig_strikes_per_min != null) statBoxes.push({ val: stats.sig_strikes_per_min, lbl: 'Str/min' });
+      if (stats.sig_strike_accuracy) statBoxes.push({ val: stats.sig_strike_accuracy, lbl: 'Str Acc' });
+      if (stats.takedown_avg != null) statBoxes.push({ val: stats.takedown_avg, lbl: 'TD/15m' });
+      if (stats.takedown_accuracy) statBoxes.push({ val: stats.takedown_accuracy, lbl: 'TD Acc' });
+      if (stats.sub_avg != null) statBoxes.push({ val: stats.sub_avg, lbl: 'Sub/15m' });
+      if (f.finish_rate) statBoxes.push({ val: f.finish_rate, lbl: 'Finish %' });
+
       return `<div class="profile-card">
-        <div class="profile-name">${esc(f.name || '—')}</div>
-        <div class="profile-style">${esc(f.style || '')}</div>
-        ${strengths ? `<div class="mini-hdr">Strengths</div><ul class="trait-list str">${strengths}</ul>` : ''}
-        ${weaknesses ? `<div class="mini-hdr">Weaknesses</div><ul class="trait-list wk">${weaknesses}</ul>` : ''}
-        ${last5 ? `<div class="mini-hdr">Last 5 Fights</div><div class="results-list">${last5}</div>` : ''}
-        ${news ? `<div class="mini-hdr">Recent News</div><ul class="news-items">${news}</ul>` : ''}
+        <div class="profile-header">
+          <div class="profile-name-wrap">
+            <div class="profile-name">${esc(f.name || '—')}</div>
+            <div class="profile-style">${esc(f.style || '')}</div>
+          </div>
+          ${physicals ? `<div class="profile-physicals">${physicals}</div>` : ''}
+        </div>
+        <div class="profile-body">
+          ${statBoxes.length ? `
+            <div class="stats-grid">
+              ${statBoxes.map(s => `<div class="stat-box"><div class="stat-val">${esc(String(s.val))}</div><div class="stat-lbl">${esc(s.lbl)}</div></div>`).join('')}
+            </div>` : ''}
+          ${strengths ? `<div class="mini-hdr">Strengths</div><ul class="trait-list str">${strengths}</ul>` : ''}
+          ${weaknesses ? `<div class="mini-hdr">Weaknesses</div><ul class="trait-list wk">${weaknesses}</ul>` : ''}
+          ${last5 ? `<div class="mini-hdr">Last 5 Fights</div><div class="results-list">${last5}</div>` : ''}
+          ${f.win_streak && f.win_streak >= 2 ? `<div class="streak-badge">🔥 ${f.win_streak} fight win streak</div>` : ''}
+          ${news ? `<div class="mini-hdr" style="margin-top:10px">Recent News</div><ul class="news-items">${news}</ul>` : ''}
+        </div>
       </div>`;
     };
 
@@ -803,7 +919,7 @@
       </div>`).join('');
 
     const h2hSection = h2h.previous_meetings > 0 ? `
-      <div class="dive-hdr">Previous Meetings</div>
+      <div class="dive-hdr">Head to Head</div>
       <div class="h2h-box">${h2h.previous_meetings} previous meeting${h2h.previous_meetings > 1 ? 's' : ''}.
         ${h2h.history ? ' ' + esc(h2h.history) : ''}</div>` : '';
 
@@ -827,10 +943,37 @@
     `;
   }
 
+  /* ── Local cache (localStorage, 12h TTL) ─────────────── */
+  function saveLocalCache(key, data) {
+    try {
+      localStorage.setItem(key, JSON.stringify({ ts: Date.now(), data }));
+    } catch {}
+  }
+  function loadLocalCache(key) {
+    try {
+      const raw = localStorage.getItem(key);
+      if (!raw) return null;
+      const { ts, data } = JSON.parse(raw);
+      if (Date.now() - ts > 12 * 3600 * 1000) {
+        localStorage.removeItem(key);
+        return null;
+      }
+      return data;
+    } catch { return null; }
+  }
+
   /* ── Helpers ─────────────────────────────────────────── */
   function fmtDate(d) {
     if (!d) return '';
     return new Date(d + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  }
+  function fmtDateLong(d) {
+    if (!d) return '';
+    return new Date(d + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+  }
+  function fmtTime(iso) {
+    if (!iso) return '';
+    return new Date(iso).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZoneName: 'short' });
   }
   function lastName(name) {
     if (!name) return '—';
