@@ -52,12 +52,15 @@ serve(async (req) => {
 
   const warnings: string[] = [];
 
+  // Normalize path: paths are stored without .html, but the actual file has .html
+  const filePath = path.endsWith('.html') ? path : `${path}.html`;
+
   // Delete file from GitHub if token is configured
   if (GITHUB_TOKEN) {
     try {
       // Get file SHA (required for deletion)
       const shaRes = await fetch(
-        `https://api.github.com/repos/${GITHUB_REPO}/contents/${path}`,
+        `https://api.github.com/repos/${GITHUB_REPO}/contents/${filePath}`,
         {
           headers: {
             'Authorization': `Bearer ${GITHUB_TOKEN}`,
@@ -73,7 +76,7 @@ serve(async (req) => {
 
         // Delete the file
         const deleteRes = await fetch(
-          `https://api.github.com/repos/${GITHUB_REPO}/contents/${path}`,
+          `https://api.github.com/repos/${GITHUB_REPO}/contents/${filePath}`,
           {
             method: 'DELETE',
             headers: {
