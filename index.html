@@ -26,6 +26,13 @@
             font-size: 11px; font-weight: 600; letter-spacing: 0.08em;
             text-transform: uppercase; color: #94a3b8; margin-bottom: 12px;
         }
+        .pages-skeleton {
+            height: 60px; background: #f1f5f9; border-radius: 10px;
+            animation: shimmer 1.4s infinite;
+            background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+            background-size: 200% 100%;
+        }
+        @keyframes shimmer { to { background-position: -200% 0; } }
     </style>
 </head>
 <body>
@@ -37,20 +44,13 @@
 
     <main style="max-width:640px; margin:60px auto; padding:0 24px;">
         <h1 style="font-size:1.6rem; font-weight:700; color:#0f172a; margin-bottom:6px;">Haydn Sonnad</h1>
-        <p style="color:#64748b; font-size:14px; margin-bottom:40px;">Personal knowledge base & public pages.</p>
+        <p style="color:#64748b; font-size:14px; margin-bottom:40px;">Personal knowledge base &amp; public pages.</p>
 
-        <!-- Public Pages — always visible -->
+        <!-- Public Pages — always visible, loaded from DB -->
         <div style="margin-bottom:36px;">
             <div class="section-label">Public Pages</div>
             <div id="public-pages" style="display:flex; flex-direction:column; gap:8px;">
-                <a href="public/tesla-news.html" class="page-card">
-                    <span class="page-card-icon">⚡</span>
-                    <div>
-                        <div class="page-card-title">Tesla News</div>
-                        <div class="page-card-desc">Live feed powered by Grok</div>
-                    </div>
-                    <span class="page-card-arrow">→</span>
-                </a>
+                <div class="pages-skeleton"></div>
             </div>
         </div>
 
@@ -80,11 +80,43 @@
         </div>
     </main>
 
-    <!-- Scripts at end of body so DOM is always ready -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     <script src="shared/supabase.js"></script>
     <script src="shared/auth.js"></script>
     <script>
+        // Load public pages from DB (anon-readable via RLS)
+        async function loadPublicPages() {
+            const el = document.getElementById('public-pages');
+            try {
+                const { data, error } = await adminSupabase
+                    .from('public_pages')
+                    .select('title, description, icon, path')
+                    .eq('is_archived', false)
+                    .order('created_at', { ascending: true });
+
+                if (error) throw error;
+
+                if (!data || data.length === 0) {
+                    el.innerHTML = '<p style="color:#94a3b8;font-size:13px;">No public pages yet.</p>';
+                    return;
+                }
+
+                el.innerHTML = data.map(p => `
+                    <a href="${p.path}" class="page-card">
+                        <span class="page-card-icon">${p.icon || '📄'}</span>
+                        <div>
+                            <div class="page-card-title">${p.title}</div>
+                            ${p.description ? `<div class="page-card-desc">${p.description}</div>` : ''}
+                        </div>
+                        <span class="page-card-arrow">→</span>
+                    </a>
+                `).join('');
+            } catch (e) {
+                // Fallback: show nothing, don't break the page
+                el.innerHTML = '<p style="color:#94a3b8;font-size:13px;">Could not load pages.</p>';
+            }
+        }
+
         (function() {
             function updateCTA(session) {
                 document.getElementById('admin-section').style.display = session ? 'block' : 'none';
@@ -92,6 +124,7 @@
             }
             function init() {
                 if (!window.adminSupabase) { updateCTA(null); return; }
+                loadPublicPages();
                 adminSupabase.auth.getSession().then(function(r) {
                     updateCTA(r.data && r.data.session);
                 }).catch(function() { updateCTA(null); });
