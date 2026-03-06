@@ -326,5 +326,12 @@
             toastTimer = setTimeout(() => { el.className = ''; }, 2800);
         }
     </script>
+    <script>
+        /* Shell embed: hide nav when loaded inside the main shell iframe */
+        if (window.self !== window.top) {
+            var _nav = document.querySelector('nav');
+            if (_nav) _nav.style.display = 'none';
+        }
+    </script>
 </body>
 </html>
