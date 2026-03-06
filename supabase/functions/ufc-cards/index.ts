@@ -157,72 +157,94 @@ function extractFight(comp: any, position: number) {
 }
 
 /* ── Kalshi market data ─────────────────────────────────── */
-async function fetchKalshiMarkets(): Promise<any[]> {
+interface KalshiFight {
+  eventTicker: string;
+  market: any;
+}
+
+async function fetchKalshiMarkets(): Promise<KalshiFight[]> {
   try {
-    const res = await fetch(
-      `${KALSHI_API}/markets?series_ticker=KXUFCFIGHT&status=open&limit=200`,
-    );
-    if (!res.ok) return [];
-    const data = await res.json();
-    return data.markets ?? [];
+    const allMarkets: any[] = [];
+    let cursor = '';
+    // Paginate to get all open UFC fight markets
+    for (let i = 0; i < 5; i++) {
+      const url = `${KALSHI_API}/markets?series_ticker=KXUFCFIGHT&status=open&limit=200${cursor ? `&cursor=${cursor}` : ''}`;
+      const res = await fetch(url);
+      if (!res.ok) break;
+      const data = await res.json();
+      const markets = data.markets ?? [];
+      allMarkets.push(...markets);
+      if (!data.cursor || markets.length < 200) break;
+      cursor = data.cursor;
+    }
+
+    // Deduplicate by event_ticker (each fight has 2 markets, one per fighter)
+    const seen = new Set<string>();
+    const fights: KalshiFight[] = [];
+    for (const m of allMarkets) {
+      const et = m.event_ticker ?? '';
+      if (!et || seen.has(et)) continue;
+      seen.add(et);
+      fights.push({ eventTicker: et, market: m });
+    }
+    return fights;
   } catch {
     return [];
   }
 }
 
-function normalizeLastName(name: string): string {
+function normalizeName(name: string): string {
   return name
     .toLowerCase()
-    .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // strip accents
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
     .replace(/[^a-z\s]/g, '')
-    .trim()
-    .split(/\s+/)
-    .pop() ?? '';
+    .trim();
 }
 
-function matchKalshiMarket(
-  markets: any[],
+function getLastName(name: string): string {
+  return normalizeName(name).split(/\s+/).pop() ?? '';
+}
+
+function matchKalshiFight(
+  kalshiFights: KalshiFight[],
   fighter1Name: string,
   fighter2Name: string,
-): any | null {
-  const f1Last = normalizeLastName(fighter1Name);
-  const f2Last = normalizeLastName(fighter2Name);
+): KalshiFight | null {
+  const f1Last = getLastName(fighter1Name);
+  const f2Last = getLastName(fighter2Name);
   if (!f1Last || !f2Last) return null;
 
-  for (const m of markets) {
-    const ticker = (m.ticker ?? '').toLowerCase();
-    const yesTitle = (m.yes_sub_title ?? '').toLowerCase();
-    const noTitle = (m.no_sub_title ?? '').toLowerCase();
+  const f1Abbr = f1Last.slice(0, 3);
+  const f2Abbr = f2Last.slice(0, 3);
 
-    // Match by ticker suffix (first 3 chars of each last name)
-    const f1Abbr = f1Last.slice(0, 3);
-    const f2Abbr = f2Last.slice(0, 3);
-    const tickerMatch = ticker.includes(f1Abbr) && ticker.includes(f2Abbr);
+  for (const kf of kalshiFights) {
+    const et = kf.eventTicker.toLowerCase();
+    // event_ticker format: KXUFCFIGHT-26MAR07DURTUM (contains 3-char abbrevs of both fighters)
+    if (et.includes(f1Abbr) && et.includes(f2Abbr)) return kf;
 
-    // Match by sub_title containing last names
-    const titleMatch = (yesTitle.includes(f1Last) || yesTitle.includes(f2Last)) &&
-                       (noTitle.includes(f1Last) || noTitle.includes(f2Last));
-
-    if (tickerMatch || titleMatch) return m;
+    // Fallback: check market title for "LastName1 vs LastName2" pattern
+    const title = (kf.market.title ?? '').toLowerCase();
+    if (title.includes(f1Last) && title.includes(f2Last)) return kf;
   }
   return null;
 }
 
 function kalshiToOdds(
-  market: any,
+  kf: KalshiFight,
   fighter1Name: string,
   fighter2Name: string,
 ): { fighter1: string; fighter2: string; draw: null; source: string; f1Prob: number; f2Prob: number } {
-  // Determine which fighter is "yes" and which is "no"
-  const yesTitle = (market.yes_sub_title ?? '').toLowerCase();
-  const f1Last = normalizeLastName(fighter1Name);
+  const m = kf.market;
+  // yes_sub_title = full name of the fighter this market is about
+  const yesName = normalizeName(m.yes_sub_title ?? '');
+  const f1Last = getLastName(fighter1Name);
 
-  // Get mid-market probability from last price, falling back to mid of bid/ask
+  // Probability from last trade price, fallback to mid bid/ask
+  const lastPrice = parseFloat(m.last_price_dollars ?? '0');
+  const yesBid = parseFloat(m.yes_bid_dollars ?? '0');
+  const yesAsk = parseFloat(m.yes_ask_dollars ?? '0');
+
   let yesProb: number;
-  const lastPrice = parseFloat(market.last_price_dollars ?? '0');
-  const yesBid = parseFloat(market.yes_bid_dollars ?? '0');
-  const yesAsk = parseFloat(market.yes_ask_dollars ?? '0');
-
   if (lastPrice > 0) {
     yesProb = lastPrice;
   } else if (yesBid > 0 && yesAsk > 0) {
@@ -231,12 +253,10 @@ function kalshiToOdds(
     yesProb = yesBid || yesAsk || 0.5;
   }
 
-  const noProb = 1 - yesProb;
-
-  // Map yes/no to fighter1/fighter2
-  const f1IsYes = yesTitle.includes(f1Last);
-  const f1Prob = f1IsYes ? yesProb : noProb;
-  const f2Prob = f1IsYes ? noProb : yesProb;
+  // Map: if fighter1's last name is in yes_sub_title, fighter1 = yes side
+  const f1IsYes = yesName.includes(f1Last);
+  const f1Prob = f1IsYes ? yesProb : 1 - yesProb;
+  const f2Prob = 1 - f1Prob;
 
   return {
     fighter1: probToAmericanOdds(f1Prob),
@@ -352,7 +372,7 @@ Return:
       }
 
       // Fetch Kalshi market data for real odds
-      const kalshiMarkets = await fetchKalshiMarkets();
+      const kalshiFights = await fetchKalshiMarkets();
 
       // Merge ESPN timing data + Kalshi odds into enriched fights
       const fights = (enrichedData.fights ?? []).map((fight: any, idx: number) => {
@@ -368,8 +388,8 @@ Return:
         // Overlay Kalshi real-time odds if available
         const f1Name = fight.fighter1?.name ?? '';
         const f2Name = fight.fighter2?.name ?? '';
-        if (kalshiMarkets.length && f1Name && f2Name) {
-          const matched = matchKalshiMarket(kalshiMarkets, f1Name, f2Name);
+        if (kalshiFights.length && f1Name && f2Name) {
+          const matched = matchKalshiFight(kalshiFights, f1Name, f2Name);
           if (matched) {
             fight.odds = kalshiToOdds(matched, f1Name, f2Name);
           }
