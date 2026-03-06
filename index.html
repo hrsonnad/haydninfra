@@ -18,7 +18,7 @@
             --text-2: #6b6b6b;
             --text-3: #ababab;
             --bg: #ffffff;
-            --sidebar-bg: #fafafa;
+            --sidebar-bg: #ffffff;
             --hover: rgba(0,0,0,0.04);
             --active: rgba(0,0,0,0.07);
             --line: #f0f0f0;
@@ -41,7 +41,7 @@
 
         /* ── Sidebar ── */
         .sidebar {
-            width: 220px;
+            width: 196px;
             flex-shrink: 0;
             display: flex;
             flex-direction: column;
@@ -365,6 +365,27 @@
         .tree::-webkit-scrollbar { width: 4px; }
         .tree::-webkit-scrollbar-track { background: transparent; }
         .tree::-webkit-scrollbar-thumb { background: var(--line); border-radius: 4px; }
+
+        /* Welcome tagline */
+        .welcome-tagline {
+            position: absolute;
+            top: 30px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            font-family: var(--font);
+            font-size: 11px;
+            font-weight: 300;
+            color: var(--text-3);
+            letter-spacing: 0.08em;
+            pointer-events: none;
+            z-index: 4;
+            text-transform: lowercase;
+        }
+
+        /* iframe frame */
+        #page-frame { overflow: hidden; }
+        #content-frame { width: 100%; height: 100%; border: none; display: block; }
     </style>
 </head>
 <body>
@@ -380,6 +401,7 @@
 
         <main class="content">
             <div class="page page--active" id="page-welcome">
+                <div class="welcome-tagline">say hello to my little agents</div>
                 <canvas id="welcome-canvas"></canvas>
                 <canvas id="particle-canvas"></canvas>
             </div>
@@ -404,6 +426,10 @@
                     <div class="page-inner-sub">coming soon</div>
                 </div>
             </div>
+
+            <div class="page" id="page-frame">
+                <iframe id="content-frame" src="about:blank" title="Page content"></iframe>
+            </div>
         </main>
     </div>
 
@@ -417,6 +443,7 @@
         // ─── Tree data ───
         var isAuthed = false;
         var activePage = 'welcome';
+        var activeFrameItemId = null;
 
         var TREE = [
             { id: 'welcome', label: 'Welcome', type: 'page' },
@@ -486,14 +513,30 @@
             } else if (item.type === 'page') {
                 btn.addEventListener('click', function() { showPage(item.id); });
             } else if (item.type === 'link') {
-                btn.addEventListener('click', function() { window.open(item.href, '_blank'); });
+                (function(id, href) {
+                    btn.addEventListener('click', function() { loadFrame(id, href); });
+                })(item.id, item.href);
             }
 
             return wrap;
         }
 
+        function loadFrame(itemId, href) {
+            activePage = 'frame';
+            activeFrameItemId = itemId;
+            var pages = document.querySelectorAll('.page');
+            for (var i = 0; i < pages.length; i++) pages[i].classList.remove('page--active');
+            document.getElementById('page-frame').classList.add('page--active');
+            document.getElementById('content-frame').src = href;
+            var btns = document.querySelectorAll('.tree-btn');
+            for (var j = 0; j < btns.length; j++) {
+                btns[j].classList.toggle('tree-btn--active', btns[j].dataset.id === itemId);
+            }
+        }
+
         function showPage(id) {
             activePage = id;
+            activeFrameItemId = null;
             var pages = document.querySelectorAll('.page');
             for (var i = 0; i < pages.length; i++) pages[i].classList.remove('page--active');
             var p = document.getElementById('page-' + id);
@@ -510,6 +553,20 @@
         var wCanvas = document.getElementById('welcome-canvas');
         var wCtx = wCanvas.getContext('2d');
         var floaters = [];
+
+        // Icon colors (vibrant, matched to each icon's personality)
+        var iconColors = [
+            '#3B82F6', // Car — blue
+            '#22C55E', // Robot — green
+            '#8B5CF6', // Laptop — violet
+            '#F59E0B', // Horse — amber
+            '#10B981', // Palm — emerald
+            '#06B6D4', // Snowboard — cyan
+            '#EF4444', // Cowboy hat — red
+            '#F97316', // Coffee — orange
+            '#EC4899', // Guitar — pink
+            '#6366F1', // Mountain — indigo
+        ];
 
         // Icon drawing functions — each draws centered at (0,0) at given scale
         var iconDrawers = [
@@ -708,7 +765,9 @@
                     rotation: Math.random() * Math.PI * 2,
                     spin: (Math.random() - 0.5) * 0.005,
                     size: sz,
-                    opacity: 0.12 + Math.random() * 0.16,
+                    opacity: 0.13 + Math.random() * 0.14,
+                    color: iconColors[i],
+                    flash: 0,
                     draw: iconDrawers[i]
                 });
             }
@@ -716,16 +775,46 @@
 
         function updateFloaters() {
             var w = wCanvas.width, h = wCanvas.height;
-            for (var i = 0; i < floaters.length; i++) {
+            var n = floaters.length;
+            for (var i = 0; i < n; i++) {
                 var f = floaters[i];
                 f.x += f.vx;
                 f.y += f.vy;
                 f.rotation += f.spin;
+                if (f.flash > 0) f.flash = Math.max(0, f.flash - 0.035);
                 var margin = f.size * 0.5;
                 if (f.x < margin) { f.x = margin; f.vx = Math.abs(f.vx); }
                 if (f.x > w - margin) { f.x = w - margin; f.vx = -Math.abs(f.vx); }
                 if (f.y < margin) { f.y = margin; f.vy = Math.abs(f.vy); }
                 if (f.y > h - margin) { f.y = h - margin; f.vy = -Math.abs(f.vy); }
+            }
+            // Elastic collisions between floaters
+            for (var ai = 0; ai < n; ai++) {
+                for (var bi = ai + 1; bi < n; bi++) {
+                    var a = floaters[ai], b = floaters[bi];
+                    var dx = b.x - a.x, dy = b.y - a.y;
+                    var dist = Math.sqrt(dx * dx + dy * dy);
+                    var minDist = (a.size + b.size) * 0.52;
+                    if (dist < minDist && dist > 0.1) {
+                        var nx = dx / dist, ny = dy / dist;
+                        var dot = (b.vx - a.vx) * nx + (b.vy - a.vy) * ny;
+                        if (dot < 0) {
+                            a.vx += dot * nx; a.vy += dot * ny;
+                            b.vx -= dot * nx; b.vy -= dot * ny;
+                            // Cap speed after collision
+                            var sa = Math.sqrt(a.vx*a.vx + a.vy*a.vy);
+                            var sb2 = Math.sqrt(b.vx*b.vx + b.vy*b.vy);
+                            var cap = 0.9;
+                            if (sa > cap) { a.vx = a.vx/sa*cap; a.vy = a.vy/sa*cap; }
+                            if (sb2 > cap) { b.vx = b.vx/sb2*cap; b.vy = b.vy/sb2*cap; }
+                            a.flash = 1.0; b.flash = 1.0;
+                        }
+                        // Separate overlapping floaters
+                        var overlap = (minDist - dist) * 0.5 + 0.5;
+                        a.x -= nx * overlap; a.y -= ny * overlap;
+                        b.x += nx * overlap; b.y += ny * overlap;
+                    }
+                }
             }
         }
 
@@ -736,9 +825,9 @@
                 wCtx.save();
                 wCtx.translate(f.x, f.y);
                 wCtx.rotate(f.rotation);
-                wCtx.globalAlpha = f.opacity;
-                wCtx.strokeStyle = '#1a1a1a';
-                wCtx.lineWidth = 1.5;
+                wCtx.globalAlpha = Math.min(1, f.opacity + f.flash * 0.45);
+                wCtx.strokeStyle = f.color;
+                wCtx.lineWidth = 1.5 + f.flash * 2.5;
                 wCtx.lineCap = 'round';
                 wCtx.lineJoin = 'round';
                 f.draw(wCtx, f.size);

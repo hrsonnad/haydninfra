@@ -1120,5 +1120,12 @@
   init();
 </script>
 
+<script>
+/* Shell embed: hide site header when loaded inside the main shell iframe */
+if (window.self !== window.top) {
+    var _hdr = document.querySelector('.site-header');
+    if (_hdr) _hdr.style.display = 'none';
+}
+</script>
 </body>
 </html>
