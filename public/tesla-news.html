@@ -580,9 +580,11 @@
   </footer>
 
   <script>
-    const FEED_URL = 'https://api.rss2json.com/v1/api.json?rss_url=' +
+    // Edge Function (Grok-powered). Falls back to rss2json if not yet deployed.
+    const EDGE_URL = 'https://ixxnhvqyxkuwyshzdnlc.supabase.co/functions/v1/tesla-news';
+    const RSS_FALLBACK = 'https://api.rss2json.com/v1/api.json?rss_url=' +
       encodeURIComponent('https://news.google.com/rss/search?q=Tesla&hl=en-US&gl=US&ceid=US:en') +
-      '&api_key=&count=16';
+      '&count=16';
 
     const container = document.getElementById('news-container');
     const refreshBtn = document.getElementById('refreshBtn');
@@ -594,25 +596,10 @@
       return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
     }
 
-    function cleanDesc(html) {
-      const tmp = document.createElement('div');
-      tmp.innerHTML = html || '';
-      return tmp.textContent.replace(/\s+/g, ' ').trim().slice(0, 200);
-    }
-
-    function extractSource(item) {
-      // Google News RSS often puts source in author or at end of title
-      if (item.author) return item.author;
-      const m = item.title.match(/- ([^-]+)$/);
-      if (m) return m[1].trim();
-      return '';
-    }
-
-    function cleanTitle(title, source) {
-      if (source) {
-        return title.replace(new RegExp(' ?- ?' + source.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '$', 'i'), '').trim();
-      }
-      return title.trim();
+    function sentimentColor(s) {
+      if (s === 'positive') return '#22c55e';
+      if (s === 'negative') return '#ef4444';
+      return 'var(--text-muted)';
     }
 
     function renderSkeleton() {
@@ -652,33 +639,77 @@
       `;
     }
 
-    function renderNews(items) {
-      if (!items || items.length === 0) {
-        renderError('No articles found.');
-        return;
+    // Render articles from Grok Edge Function
+    function renderGrokArticles(articles) {
+      if (!articles || articles.length === 0) { renderError('No articles found.'); return; }
+      const [first, ...rest] = articles;
+
+      const featuredHTML = `
+        <a href="${first.url || '#'}" target="_blank" rel="noopener" class="featured-card no-image">
+          <div class="featured-body" style="padding:40px 48px;">
+            <div>
+              <div class="featured-meta">
+                ${first.source ? `<span class="source-chip">${first.source}</span>` : ''}
+                <span class="date-str">${formatDate(first.date)}</span>
+                ${first.sentiment ? `<span style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:${sentimentColor(first.sentiment)}">${first.sentiment}</span>` : ''}
+              </div>
+              <h2 class="featured-title">${first.title}</h2>
+              <p class="featured-desc">${first.summary}</p>
+            </div>
+            ${first.url ? `<span class="read-link">Read Article</span>` : ''}
+          </div>
+        </a>
+      `;
+
+      const gridHTML = rest.map(a => `
+        <a href="${a.url || '#'}" target="_blank" rel="noopener" class="news-card" ${!a.url ? 'style="cursor:default;"' : ''}>
+          <div class="card-meta">
+            ${a.source ? `<span class="card-source">${a.source}</span>` : ''}
+            <span class="card-date">${formatDate(a.date)}</span>
+            ${a.sentiment ? `<span style="font-family:'DM Mono',monospace;font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:${sentimentColor(a.sentiment)}">${a.sentiment}</span>` : ''}
+          </div>
+          <h3 class="card-title">${a.title}</h3>
+          <p class="card-desc">${a.summary}</p>
+        </a>
+      `).join('');
+
+      container.innerHTML = featuredHTML + `<div class="news-grid">${gridHTML}</div>`;
+    }
+
+    // Fallback: render articles from rss2json
+    function renderRssArticles(items) {
+      if (!items || items.length === 0) { renderError('No articles found.'); return; }
+      const [first, ...rest] = items;
+
+      function extractSource(item) {
+        if (item.author) return item.author;
+        const m = item.title.match(/- ([^-]+)$/);
+        return m ? m[1].trim() : '';
+      }
+      function cleanTitle(title, source) {
+        if (!source) return title.trim();
+        return title.replace(new RegExp(' ?- ?' + source.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '$', 'i'), '').trim();
+      }
+      function cleanDesc(html) {
+        const tmp = document.createElement('div');
+        tmp.innerHTML = html || '';
+        return tmp.textContent.replace(/\s+/g, ' ').trim().slice(0, 200);
       }
 
-      const [first, ...rest] = items;
       const firstSource = extractSource(first);
-      const firstTitle = cleanTitle(first.title, firstSource);
-      const firstDesc = cleanDesc(first.description);
       const hasImg = first.thumbnail && first.thumbnail.length > 10;
 
       const featuredHTML = `
         <a href="${first.link}" target="_blank" rel="noopener" class="featured-card${hasImg ? '' : ' no-image'}">
-          ${hasImg ? `
-            <div class="featured-img-wrap">
-              <img src="${first.thumbnail}" alt="" loading="lazy" onerror="this.parentElement.style.display='none'">
-            </div>
-          ` : ''}
+          ${hasImg ? `<div class="featured-img-wrap"><img src="${first.thumbnail}" alt="" loading="lazy" onerror="this.parentElement.style.display='none'"></div>` : ''}
           <div class="featured-body">
             <div>
               <div class="featured-meta">
                 ${firstSource ? `<span class="source-chip">${firstSource}</span>` : ''}
                 <span class="date-str">${formatDate(first.pubDate)}</span>
               </div>
-              <h2 class="featured-title">${firstTitle}</h2>
-              ${firstDesc ? `<p class="featured-desc">${firstDesc}</p>` : ''}
+              <h2 class="featured-title">${cleanTitle(first.title, firstSource)}</h2>
+              <p class="featured-desc">${cleanDesc(first.description)}</p>
             </div>
             <span class="read-link">Read Article</span>
           </div>
@@ -687,8 +718,6 @@
 
       const gridHTML = rest.slice(0, 9).map(item => {
         const src = extractSource(item);
-        const title = cleanTitle(item.title, src);
-        const desc = cleanDesc(item.description);
         const hasThumb = item.thumbnail && item.thumbnail.length > 10;
         return `
           <a href="${item.link}" target="_blank" rel="noopener" class="news-card">
@@ -697,8 +726,8 @@
               ${src ? `<span class="card-source">${src}</span>` : ''}
               <span class="card-date">${formatDate(item.pubDate)}</span>
             </div>
-            <h3 class="card-title">${title}</h3>
-            ${desc ? `<p class="card-desc">${desc}</p>` : ''}
+            <h3 class="card-title">${cleanTitle(item.title, src)}</h3>
+            <p class="card-desc">${cleanDesc(item.description)}</p>
           </a>
         `;
       }).join('');
@@ -711,19 +740,31 @@
       refreshBtn.classList.add('spinning');
 
       try {
-        const res = await fetch(FEED_URL);
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = await res.json();
-
-        if (data.status !== 'ok') {
-          throw new Error(data.message || 'Feed error');
+        // Try Grok Edge Function first
+        const res = await fetch(EDGE_URL);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.articles) {
+            renderGrokArticles(data.articles);
+            const now = new Date();
+            lastUpdated.textContent = 'Grok · Updated ' + now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+            return;
+          }
         }
-
-        renderNews(data.items || []);
-        const now = new Date();
-        lastUpdated.textContent = 'Updated ' + now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
-      } catch (err) {
-        renderError(err.message || 'Could not load news feed.');
+        throw new Error('Edge function not ready');
+      } catch (_) {
+        // Fallback to rss2json
+        try {
+          const res = await fetch(RSS_FALLBACK);
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          const data = await res.json();
+          if (data.status !== 'ok') throw new Error(data.message || 'Feed error');
+          renderRssArticles(data.items || []);
+          const now = new Date();
+          lastUpdated.textContent = 'RSS · Updated ' + now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+        } catch (err) {
+          renderError(err.message || 'Could not load news feed.');
+        }
       } finally {
         refreshBtn.classList.remove('spinning');
       }
