@@ -1,9 +1,9 @@
 {
-  "version": "v260306.07 1:57am",
-  "release": 7,
-  "sha": "8e91262",
-  "fullSha": "8e912628cd4e9d5fb1834a342031f2143e2093b3",
+  "version": "v260306.08 1:58am",
+  "release": 8,
+  "sha": "00d511f",
+  "fullSha": "00d511f8b25183f5c43a5173421ad61f93f65eff",
   "actor": "hrsonnad",
-  "pushedAt": "2026-03-06T07:57:09Z",
-  "commits": [{"sha": "8e91262", "message": "Wire tesla-news page to Grok Edge Function, add RSS fallback", "author": "Haydn"}]
+  "pushedAt": "2026-03-06T07:58:17Z",
+  "commits": [{"sha": "00d511f", "message": "Use grok-4-1-fast-reasoning model for tesla-news", "author": "Haydn"}]
 }
