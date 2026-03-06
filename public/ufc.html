@@ -492,13 +492,15 @@
 
 <script>
   const API = 'https://ixxnhvqyxkuwyshzdnlc.supabase.co/functions/v1/ufc-cards';
+  const ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml4eG5odnF5eGt1d3lzaHpkbmxjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI3NTk2MTMsImV4cCI6MjA4ODMzNTYxM30.DB2xXD4EPOKA2WzfrTnJ7YMZRU8yCXcU5y6f-tT3V-g';
+  const HEADERS = { 'Authorization': `Bearer ${ANON}` };
   const diveCache = new Map();
   let selectedId = null;
 
   /* ── Init ────────────────────────────────────────────── */
   async function init() {
     try {
-      const res = await fetch(`${API}?mode=events`);
+      const res = await fetch(`${API}?mode=events`, { headers: HEADERS });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       if (data.error) throw new Error(data.error);
@@ -541,7 +543,7 @@
     activateChip(event.id);
     showSkeleton();
     try {
-      const res = await fetch(`${API}?mode=card&event=${encodeURIComponent(event.title)}`);
+      const res = await fetch(`${API}?mode=card&event=${encodeURIComponent(event.title)}`, { headers: HEADERS });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       if (data.error) throw new Error(data.error);
@@ -711,7 +713,7 @@
     </div></div>`;
 
     try {
-      const res = await fetch(`${API}?mode=fight&f1=${encodeURIComponent(f1)}&f2=${encodeURIComponent(f2)}`);
+      const res = await fetch(`${API}?mode=fight&f1=${encodeURIComponent(f1)}&f2=${encodeURIComponent(f2)}`, { headers: HEADERS });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       if (data.error) throw new Error(data.error);
