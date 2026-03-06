@@ -3,90 +3,369 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Haydn's Knowledge Base</title>
+    <title>haydns.ai</title>
     <meta name="robots" content="noindex, nofollow">
-    <link rel="stylesheet" href="styles/tailwind.out.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="shared/admin.css">
     <style>
-        body { background: var(--aap-bg, #f8fafc); font-family: system-ui, -apple-system, sans-serif; margin: 0; }
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-        .page-card {
-            display: flex; align-items: center; gap: 14px;
-            background: #fff; border: 1px solid #e5e7eb; border-radius: 10px;
-            padding: 16px 20px; text-decoration: none; color: #0f172a;
-            transition: box-shadow 0.15s, border-color 0.15s;
+        :root {
+            --s-bg: #F6F9FC;
+            --s-surface: #FFFFFF;
+            --s-text: #0A2540;
+            --s-text-secondary: #425466;
+            --s-text-muted: #8898AA;
+            --s-border: #E3E8EE;
+            --s-border-light: #EBEEF1;
+            --s-accent: #635BFF;
+            --s-accent-light: rgba(99, 91, 255, 0.08);
+            --s-wine: #7B1A2C;
+            --s-radius: 12px;
+            --s-shadow-sm: 0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.02);
+            --s-shadow-md: 0 4px 16px rgba(0,0,0,0.06), 0 1px 4px rgba(0,0,0,0.03);
+            --s-shadow-lg: 0 12px 40px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.04);
+            --s-ease: cubic-bezier(0.4, 0, 0.2, 1);
         }
-        .page-card:hover { border-color: #94a3b8; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
-        .page-card-icon { font-size: 22px; flex-shrink: 0; }
-        .page-card-title { font-weight: 600; font-size: 14px; }
-        .page-card-desc { font-size: 12px; color: #64748b; margin-top: 2px; }
-        .page-card-arrow { margin-left: auto; color: #94a3b8; font-size: 16px; }
 
-        .section-label {
-            font-size: 11px; font-weight: 600; letter-spacing: 0.08em;
-            text-transform: uppercase; color: #94a3b8; margin-bottom: 12px;
+        body {
+            font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+            background: var(--s-bg);
+            color: var(--s-text);
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
         }
-        .pages-skeleton {
-            height: 60px; background: #f1f5f9; border-radius: 10px;
-            animation: shimmer 1.4s infinite;
-            background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+
+        /* Subtle mesh gradient */
+        body::after {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(ellipse at 10% 0%, rgba(99, 91, 255, 0.04) 0%, transparent 50%),
+                radial-gradient(ellipse at 90% 20%, rgba(0, 209, 178, 0.03) 0%, transparent 45%),
+                radial-gradient(ellipse at 40% 100%, rgba(255, 108, 108, 0.03) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* ── Nav ── */
+        .s-nav {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            height: 64px;
+            display: flex;
+            align-items: center;
+            padding: 0 24px;
+            background: rgba(255, 255, 255, 0.82);
+            backdrop-filter: blur(20px) saturate(1.6);
+            -webkit-backdrop-filter: blur(20px) saturate(1.6);
+            border-bottom: 1px solid var(--s-border-light);
+        }
+
+        .s-nav__inner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            max-width: 1120px;
+            margin: 0 auto;
+        }
+
+        .s-nav__left {
+            display: flex;
+            align-items: center;
+            gap: 36px;
+        }
+
+        .s-nav__brand {
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: var(--s-text);
+            text-decoration: none;
+            letter-spacing: -0.04em;
+        }
+
+        .s-nav__links {
+            display: flex;
+            align-items: center;
+            gap: 2px;
+            list-style: none;
+        }
+
+        .s-nav__link {
+            padding: 6px 14px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--s-text-secondary);
+            text-decoration: none;
+            border-radius: 8px;
+            transition: color 0.15s, background 0.15s;
+        }
+        .s-nav__link:hover {
+            color: var(--s-text);
+            background: rgba(10, 37, 64, 0.04);
+        }
+        .s-nav__link--active {
+            color: var(--s-text);
+        }
+
+        /* ── Main ── */
+        .s-main {
+            position: relative;
+            z-index: 1;
+            max-width: 1120px;
+            margin: 0 auto;
+            padding: 56px 24px 120px;
+        }
+
+        .s-section {
+            margin-bottom: 56px;
+        }
+
+        .s-section__header {
+            display: flex;
+            align-items: baseline;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .s-section__title {
+            font-size: 0.78rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--s-text-muted);
+        }
+
+        .s-section__line {
+            flex: 1;
+            height: 1px;
+            background: var(--s-border-light);
+        }
+
+        /* ── Card grid ── */
+        .s-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+            gap: 16px;
+        }
+
+        .s-card {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 24px;
+            background: var(--s-surface);
+            border: 1px solid var(--s-border-light);
+            border-radius: var(--s-radius);
+            text-decoration: none;
+            color: var(--s-text);
+            box-shadow: var(--s-shadow-sm);
+            transition: all 0.25s var(--s-ease);
+            opacity: 0;
+            animation: s-fadeIn 0.45s var(--s-ease) forwards;
+        }
+
+        .s-card:hover {
+            border-color: var(--s-border);
+            box-shadow: var(--s-shadow-lg);
+            transform: translateY(-2px);
+        }
+
+        .s-card:active {
+            transform: translateY(0);
+            box-shadow: var(--s-shadow-md);
+        }
+
+        .s-card__icon {
+            width: 48px; height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--s-accent-light);
+            border-radius: 10px;
+            font-size: 22px;
+            flex-shrink: 0;
+        }
+
+        .s-card__body {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .s-card__title {
+            font-weight: 700;
+            font-size: 0.95rem;
+            line-height: 1.4;
+            margin-bottom: 3px;
+        }
+
+        .s-card__desc {
+            font-size: 0.82rem;
+            color: var(--s-text-muted);
+            line-height: 1.5;
+        }
+
+        .s-card__arrow {
+            color: var(--s-border);
+            font-size: 1.15rem;
+            flex-shrink: 0;
+            transition: transform 0.3s var(--s-ease), color 0.2s;
+        }
+        .s-card:hover .s-card__arrow {
+            transform: translateX(4px);
+            color: var(--s-accent);
+        }
+
+        /* Admin card */
+        .s-card--admin {
+            border-style: dashed;
+            background: rgba(255, 255, 255, 0.65);
+        }
+        .s-card--admin .s-card__icon {
+            background: rgba(10, 37, 64, 0.05);
+        }
+        .s-card--admin:hover {
+            border-style: solid;
+        }
+
+        /* Stagger */
+        .s-card:nth-child(1) { animation-delay: 0.06s; }
+        .s-card:nth-child(2) { animation-delay: 0.12s; }
+        .s-card:nth-child(3) { animation-delay: 0.18s; }
+        .s-card:nth-child(4) { animation-delay: 0.24s; }
+        .s-card:nth-child(5) { animation-delay: 0.30s; }
+        .s-card:nth-child(6) { animation-delay: 0.36s; }
+
+        /* ── Skeleton ── */
+        .s-skeleton {
+            height: 96px;
+            border-radius: var(--s-radius);
+            background: linear-gradient(90deg, var(--s-border-light) 25%, var(--s-border) 50%, var(--s-border-light) 75%);
             background-size: 200% 100%;
+            animation: s-shimmer 1.5s ease infinite;
         }
-        @keyframes shimmer { to { background-position: -200% 0; } }
+
+        /* ── Empty ── */
+        .s-empty {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 56px 24px;
+            color: var(--s-text-muted);
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        /* ── Footer ── */
+        .s-footer {
+            position: relative;
+            z-index: 1;
+            max-width: 1120px;
+            margin: 0 auto;
+            padding: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 0.78rem;
+            color: var(--s-text-muted);
+            border-top: 1px solid var(--s-border-light);
+        }
+        .s-footer a {
+            color: var(--s-text-secondary);
+            text-decoration: none;
+            font-weight: 600;
+            transition: color 0.15s;
+        }
+        .s-footer a:hover { color: var(--s-text); }
+
+        /* ── Animations ── */
+        @keyframes s-fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes s-shimmer {
+            to { background-position: -200% 0; }
+        }
+
+        /* ── Responsive ── */
+        @media (max-width: 768px) {
+            .s-nav { height: 56px; padding: 0 16px; }
+            .s-nav__links { display: none; }
+            .s-main { padding: 36px 16px 80px; }
+            .s-grid { grid-template-columns: 1fr; gap: 12px; }
+            .s-card { padding: 20px; }
+            .s-footer { padding: 20px 16px; }
+        }
+
+        @media (max-width: 380px) {
+            .s-main { padding: 28px 12px 64px; }
+            .s-card { padding: 16px; gap: 12px; }
+            .s-card__icon { width: 42px; height: 42px; font-size: 18px; }
+        }
+
+        /* Auth widget in nav */
+        .s-nav .auth-widget { margin-left: 8px; }
     </style>
 </head>
 <body>
-    <nav style="background:#fff; border-bottom:1px solid #e5e7eb; padding:0 24px; height:56px; display:flex; align-items:center;">
-        <div class="site-nav__inner" style="display:flex; align-items:center; justify-content:space-between; width:100%; max-width:640px; margin:0 auto;">
-            <span style="font-weight:600; font-size:15px; color:#0f172a;">🗂 Knowledge Base</span>
+
+    <nav class="s-nav">
+        <div class="s-nav__inner site-nav__inner">
+            <div class="s-nav__left">
+                <a href="index.html" class="s-nav__brand">haydns.ai</a>
+                <ul class="s-nav__links" id="nav-links"></ul>
+            </div>
+            <!-- auth.js inserts widget here -->
         </div>
     </nav>
 
-    <main style="max-width:640px; margin:60px auto; padding:0 24px;">
-        <h1 style="font-size:1.6rem; font-weight:700; color:#0f172a; margin-bottom:6px;">Haydn Sonnad</h1>
-        <p style="color:#64748b; font-size:14px; margin-bottom:40px;">Personal knowledge base &amp; public pages.</p>
+    <main class="s-main">
 
-        <!-- Public Pages — always visible, loaded from DB -->
-        <div style="margin-bottom:36px;">
-            <div class="section-label">Public Pages</div>
-            <div id="public-pages" style="display:flex; flex-direction:column; gap:8px;">
-                <div class="pages-skeleton"></div>
+        <section class="s-section">
+            <div class="s-section__header">
+                <h2 class="s-section__title">Pages</h2>
+                <div class="s-section__line"></div>
             </div>
-        </div>
+            <div id="public-pages" class="s-grid">
+                <div class="s-skeleton"></div>
+            </div>
+        </section>
 
-        <!-- Admin — shown when logged in -->
-        <div id="admin-section" style="display:none;">
-            <div class="section-label">Admin</div>
-            <div style="display:flex; flex-direction:column; gap:8px;">
-                <a href="admin/index.html" class="page-card">
-                    <span class="page-card-icon">🗂</span>
-                    <div>
-                        <div class="page-card-title">Admin Dashboard</div>
-                        <div class="page-card-desc">Documents, projects, notes, tags</div>
+        <section id="admin-section" class="s-section" style="display:none;">
+            <div class="s-section__header">
+                <h2 class="s-section__title">Workspace</h2>
+                <div class="s-section__line"></div>
+            </div>
+            <div class="s-grid">
+                <a href="admin/index.html" class="s-card s-card--admin" style="animation-delay:0.05s;">
+                    <span class="s-card__icon">&#9881;&#65039;</span>
+                    <div class="s-card__body">
+                        <div class="s-card__title">Admin Dashboard</div>
+                        <div class="s-card__desc">Manage documents, projects, notes, and tags</div>
                     </div>
-                    <span class="page-card-arrow">→</span>
+                    <span class="s-card__arrow">&rarr;</span>
                 </a>
             </div>
-        </div>
+        </section>
 
-        <!-- Sign in prompt — shown when logged out -->
-        <div id="signin-section" style="display:none;">
-            <div class="section-label">Admin Access</div>
-            <p style="color:#94a3b8; font-size:13px; margin-bottom:12px;">Sign in to access the admin dashboard.</p>
-            <button onclick="document.getElementById('authLoginBtn') && document.getElementById('authLoginBtn').click()"
-                style="background:#2563eb; color:#fff; padding:10px 24px; border-radius:8px; border:none; font-weight:500; font-size:14px; cursor:pointer;">
-                Sign In
-            </button>
-        </div>
     </main>
+
+    <footer class="s-footer">
+        <a href="index.html">haydns.ai</a>
+    </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     <script src="shared/supabase.js"></script>
     <script src="shared/auth.js"></script>
     <script>
-        // Load public pages from DB (anon-readable via RLS)
         async function loadPublicPages() {
             const el = document.getElementById('public-pages');
+            const navLinks = document.getElementById('nav-links');
             try {
                 const { data, error } = await adminSupabase
                     .from('public_pages')
@@ -97,30 +376,34 @@
                 if (error) throw error;
 
                 if (!data || data.length === 0) {
-                    el.innerHTML = '<p style="color:#94a3b8;font-size:13px;">No public pages yet.</p>';
+                    el.innerHTML = '<div class="s-empty">No pages yet.</div>';
                     return;
                 }
 
-                el.innerHTML = data.map(p => `
-                    <a href="${p.path}" class="page-card">
-                        <span class="page-card-icon">${p.icon || '📄'}</span>
-                        <div>
-                            <div class="page-card-title">${p.title}</div>
-                            ${p.description ? `<div class="page-card-desc">${p.description}</div>` : ''}
+                // Render cards
+                el.innerHTML = data.map((p, i) => `
+                    <a href="${p.path}" class="s-card" style="animation-delay: ${0.06 + i * 0.06}s">
+                        <span class="s-card__icon">${p.icon || '📄'}</span>
+                        <div class="s-card__body">
+                            <div class="s-card__title">${p.title}</div>
+                            ${p.description ? `<div class="s-card__desc">${p.description}</div>` : ''}
                         </div>
-                        <span class="page-card-arrow">→</span>
+                        <span class="s-card__arrow">&rarr;</span>
                     </a>
                 `).join('');
+
+                // Populate nav links
+                navLinks.innerHTML = data.map(p =>
+                    `<li><a href="${p.path}" class="s-nav__link">${p.title}</a></li>`
+                ).join('');
             } catch (e) {
-                // Fallback: show nothing, don't break the page
-                el.innerHTML = '<p style="color:#94a3b8;font-size:13px;">Could not load pages.</p>';
+                el.innerHTML = '<div class="s-empty">Could not load pages.</div>';
             }
         }
 
         (function() {
             function updateCTA(session) {
                 document.getElementById('admin-section').style.display = session ? 'block' : 'none';
-                document.getElementById('signin-section').style.display = session ? 'none' : 'block';
             }
             function init() {
                 if (!window.adminSupabase) { updateCTA(null); return; }
