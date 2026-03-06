@@ -1,9 +1,9 @@
 {
-  "version": "v260306.16 2:51am",
-  "release": 16,
-  "sha": "3f5303a",
-  "fullSha": "3f5303a2090035ffa8c39df78be9c9ff1a7b91a2",
+  "version": "v260306.17 2:58am",
+  "release": 17,
+  "sha": "ffd6b47",
+  "fullSha": "ffd6b4718a5739f8d393e04b4df0f38eba46223e",
   "actor": "hrsonnad",
-  "pushedAt": "2026-03-06T08:51:59Z",
-  "commits": [{"sha": "9a29929", "message": "Fix UFC edge function CORS: allow Authorization header in preflight", "author": "Haydn"}, {"sha": "3f5303a", "message": "Redesign UFC page: Stripe-inspired light theme, Inter font, clean cards", "author": "Haydn"}]
+  "pushedAt": "2026-03-06T08:58:46Z",
+  "commits": [{"sha": "ffd6b47", "message": "Redesign haydns.ai landing page with Stripe-inspired design", "author": "Haydn"}]
 }
