@@ -390,6 +390,22 @@
             text-transform: lowercase;
         }
 
+        .welcome-bottom {
+            position: absolute;
+            bottom: 30px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            font-family: var(--font);
+            font-size: 11px;
+            font-weight: 300;
+            color: var(--text-3);
+            letter-spacing: 0.08em;
+            pointer-events: none;
+            z-index: 4;
+            text-transform: lowercase;
+        }
+
         /* iframe frame */
         #page-frame { overflow: hidden; }
         #content-frame { width: 100%; height: 100%; border: none; display: block; }
@@ -411,6 +427,7 @@
                 <div class="welcome-tagline">In a world of agents, have agency</div>
                 <canvas id="welcome-canvas"></canvas>
                 <canvas id="particle-canvas"></canvas>
+                <div class="welcome-bottom">say hello to my little agents</div>
             </div>
 
             <div class="page" id="page-resume">
