@@ -261,7 +261,14 @@
             box-shadow: 0 8px 30px rgba(0,0,0,0.08), 0 2px 8px rgba(0,0,0,0.04);
             bottom: calc(100% + 6px);
             top: auto;
+            left: 0;
+            right: auto;
             font-family: var(--font);
+            transform: translateY(8px);
+        }
+
+        .sidebar-footer .auth-dropdown.auth-dropdown--open {
+            transform: translateY(0);
         }
 
         .sidebar-footer .auth-dropdown__user {
