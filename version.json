@@ -1,9 +1,9 @@
 {
-  "version": "v260306.23 3:22am",
-  "release": 23,
-  "sha": "58cfa10",
-  "fullSha": "58cfa1033e66606a825e8a87bba73ccb61ada513",
+  "version": "v260306.24 4:57pm",
+  "release": 24,
+  "sha": "39c5439",
+  "fullSha": "39c5439a7ea2336a62913ec6a2aa72f65e71face",
   "actor": "hrsonnad",
-  "pushedAt": "2026-03-06T09:22:33Z",
-  "commits": [{"sha": "58cfa10", "message": "UFC redesign: headshots, probability bars, stats on card, Kalshi-only odds", "author": "Haydn"}]
+  "pushedAt": "2026-03-06T22:57:05Z",
+  "commits": [{"sha": "39c5439", "message": "Redesign homepage: clean workspace UI with floating icon screensaver", "author": "Haydn"}]
 }
