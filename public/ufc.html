@@ -261,6 +261,7 @@
     }
 
     /* Odds */
+    .odds-section { margin-bottom: 0; }
     .odds-row { display: flex; gap: 4px; }
     .odds-chip {
       flex: 1; display: flex; flex-direction: column;
@@ -278,10 +279,25 @@
       color: var(--text); letter-spacing: 0.01em;
     }
     .odds-chip.fav .odds-val { color: var(--green); }
+    .odds-prob {
+      font-size: 11px; font-weight: 600;
+      color: var(--text-mid); opacity: 0.7;
+    }
+    .odds-chip.fav .odds-prob { color: var(--green); }
     .odds-lbl {
       font-size: 10px; font-weight: 500;
       letter-spacing: 0.06em; text-transform: uppercase;
       color: var(--text-dim);
+    }
+    .odds-source {
+      display: flex; align-items: center; justify-content: flex-end;
+      gap: 4px; margin-top: 5px;
+      font-size: 10px; font-weight: 500; color: var(--text-muted);
+      letter-spacing: 0.03em;
+    }
+    .odds-source-dot {
+      width: 5px; height: 5px; border-radius: 50%;
+      background: var(--green);
     }
 
     /* Fight footer */
@@ -559,7 +575,7 @@
     </div>
     <div class="live-pill">
       <div class="live-dot"></div>
-      <span>Live Odds</span>
+      <span>Kalshi Odds</span>
     </div>
   </div>
 </header>
@@ -780,19 +796,24 @@
               <div class="f-rec">${esc(f2.record || '')}</div>
             </div>
           </div>
-          <div class="odds-row">
-            <div class="odds-chip ${f1Fav ? 'fav' : ''}">
-              <span class="odds-val">${esc(odds.fighter1 || '—')}</span>
-              <span class="odds-lbl">${lastName(f1.name)}</span>
+          <div class="odds-section">
+            <div class="odds-row">
+              <div class="odds-chip ${f1Fav ? 'fav' : ''}">
+                <span class="odds-val">${esc(odds.fighter1 || '—')}</span>
+                ${odds.f1Prob ? `<span class="odds-prob">${odds.f1Prob}%</span>` : ''}
+                <span class="odds-lbl">${lastName(f1.name)}</span>
+              </div>
+              ${odds.draw ? `<div class="odds-chip draw">
+                <span class="odds-val">${esc(odds.draw)}</span>
+                <span class="odds-lbl">Draw</span>
+              </div>` : ''}
+              <div class="odds-chip ${!f1Fav ? 'fav' : ''}">
+                <span class="odds-val">${esc(odds.fighter2 || '—')}</span>
+                ${odds.f2Prob ? `<span class="odds-prob">${odds.f2Prob}%</span>` : ''}
+                <span class="odds-lbl">${lastName(f2.name)}</span>
+              </div>
             </div>
-            ${odds.draw ? `<div class="odds-chip draw">
-              <span class="odds-val">${esc(odds.draw)}</span>
-              <span class="odds-lbl">Draw</span>
-            </div>` : ''}
-            <div class="odds-chip ${!f1Fav ? 'fav' : ''}">
-              <span class="odds-val">${esc(odds.fighter2 || '—')}</span>
-              <span class="odds-lbl">${lastName(f2.name)}</span>
-            </div>
+            ${odds.source === 'kalshi' ? `<div class="odds-source"><span class="odds-source-dot"></span> Kalshi market data</div>` : ''}
           </div>
         </div>
         <div class="fight-footer">

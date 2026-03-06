@@ -3,6 +3,7 @@ import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 const GROK_API_KEY = Deno.env.get('GROK_API_KEY');
 const GROK_URL = 'https://api.x.ai/v1/chat/completions';
 const ESPN_URL = 'https://site.api.espn.com/apis/site/v2/sports/mma/ufc/scoreboard';
+const KALSHI_API = 'https://api.elections.kalshi.com/trade-api/v2';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? 'https://ixxnhvqyxkuwyshzdnlc.supabase.co';
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
@@ -155,6 +156,109 @@ function extractFight(comp: any, position: number) {
   };
 }
 
+/* ── Kalshi market data ─────────────────────────────────── */
+async function fetchKalshiMarkets(): Promise<any[]> {
+  try {
+    const res = await fetch(
+      `${KALSHI_API}/markets?series_ticker=KXUFCFIGHT&status=open&limit=200`,
+    );
+    if (!res.ok) return [];
+    const data = await res.json();
+    return data.markets ?? [];
+  } catch {
+    return [];
+  }
+}
+
+function normalizeLastName(name: string): string {
+  return name
+    .toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // strip accents
+    .replace(/[^a-z\s]/g, '')
+    .trim()
+    .split(/\s+/)
+    .pop() ?? '';
+}
+
+function matchKalshiMarket(
+  markets: any[],
+  fighter1Name: string,
+  fighter2Name: string,
+): any | null {
+  const f1Last = normalizeLastName(fighter1Name);
+  const f2Last = normalizeLastName(fighter2Name);
+  if (!f1Last || !f2Last) return null;
+
+  for (const m of markets) {
+    const ticker = (m.ticker ?? '').toLowerCase();
+    const yesTitle = (m.yes_sub_title ?? '').toLowerCase();
+    const noTitle = (m.no_sub_title ?? '').toLowerCase();
+
+    // Match by ticker suffix (first 3 chars of each last name)
+    const f1Abbr = f1Last.slice(0, 3);
+    const f2Abbr = f2Last.slice(0, 3);
+    const tickerMatch = ticker.includes(f1Abbr) && ticker.includes(f2Abbr);
+
+    // Match by sub_title containing last names
+    const titleMatch = (yesTitle.includes(f1Last) || yesTitle.includes(f2Last)) &&
+                       (noTitle.includes(f1Last) || noTitle.includes(f2Last));
+
+    if (tickerMatch || titleMatch) return m;
+  }
+  return null;
+}
+
+function kalshiToOdds(
+  market: any,
+  fighter1Name: string,
+  fighter2Name: string,
+): { fighter1: string; fighter2: string; draw: null; source: string; f1Prob: number; f2Prob: number } {
+  // Determine which fighter is "yes" and which is "no"
+  const yesTitle = (market.yes_sub_title ?? '').toLowerCase();
+  const f1Last = normalizeLastName(fighter1Name);
+
+  // Get mid-market probability from last price, falling back to mid of bid/ask
+  let yesProb: number;
+  const lastPrice = parseFloat(market.last_price_dollars ?? '0');
+  const yesBid = parseFloat(market.yes_bid_dollars ?? '0');
+  const yesAsk = parseFloat(market.yes_ask_dollars ?? '0');
+
+  if (lastPrice > 0) {
+    yesProb = lastPrice;
+  } else if (yesBid > 0 && yesAsk > 0) {
+    yesProb = (yesBid + yesAsk) / 2;
+  } else {
+    yesProb = yesBid || yesAsk || 0.5;
+  }
+
+  const noProb = 1 - yesProb;
+
+  // Map yes/no to fighter1/fighter2
+  const f1IsYes = yesTitle.includes(f1Last);
+  const f1Prob = f1IsYes ? yesProb : noProb;
+  const f2Prob = f1IsYes ? noProb : yesProb;
+
+  return {
+    fighter1: probToAmericanOdds(f1Prob),
+    fighter2: probToAmericanOdds(f2Prob),
+    draw: null,
+    source: 'kalshi',
+    f1Prob: Math.round(f1Prob * 100),
+    f2Prob: Math.round(f2Prob * 100),
+  };
+}
+
+function probToAmericanOdds(prob: number): string {
+  if (prob <= 0 || prob >= 1) return prob >= 1 ? '-10000' : '+10000';
+  if (prob >= 0.5) {
+    const odds = Math.round(-(prob / (1 - prob)) * 100);
+    return String(odds);
+  } else {
+    const odds = Math.round(((1 - prob) / prob) * 100);
+    return `+${odds}`;
+  }
+}
+
 /* ── Main handler ───────────────────────────────────────── */
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: cors });
@@ -247,7 +351,10 @@ Return:
         await cacheSet(cacheKey, enrichedData, 6); // cache for 6 hours
       }
 
-      // Merge ESPN timing data into enriched fights
+      // Fetch Kalshi market data for real odds
+      const kalshiMarkets = await fetchKalshiMarkets();
+
+      // Merge ESPN timing data + Kalshi odds into enriched fights
       const fights = (enrichedData.fights ?? []).map((fight: any, idx: number) => {
         const espnFight = fightList[idx];
         if (espnFight) {
@@ -257,6 +364,17 @@ Return:
           fight.short_detail = espnFight.shortDetail;
           fight.fight_broadcast = espnFight.broadcast;
         }
+
+        // Overlay Kalshi real-time odds if available
+        const f1Name = fight.fighter1?.name ?? '';
+        const f2Name = fight.fighter2?.name ?? '';
+        if (kalshiMarkets.length && f1Name && f2Name) {
+          const matched = matchKalshiMarket(kalshiMarkets, f1Name, f2Name);
+          if (matched) {
+            fight.odds = kalshiToOdds(matched, f1Name, f2Name);
+          }
+        }
+
         return fight;
       });
 
