@@ -1,9 +1,9 @@
 {
-  "version": "v260306.10 2:06am",
-  "release": 10,
-  "sha": "578ae93",
-  "fullSha": "578ae93545fcdc23ac5bb2690f967fbd8fa36a0a",
+  "version": "v260306.11 2:18am",
+  "release": 11,
+  "sha": "615b11a",
+  "fullSha": "615b11a8744eab389f103d6ff66ace059aacc6b6",
   "actor": "hrsonnad",
-  "pushedAt": "2026-03-06T08:06:08Z",
-  "commits": [{"sha": "578ae93", "message": "Add public pages admin: DB-driven index, archive/delete controls", "author": "Haydn"}]
+  "pushedAt": "2026-03-06T08:18:58Z",
+  "commits": [{"sha": "615b11a", "message": "Add UFC fight cards page with Grok-powered analysis", "author": "Haydn"}]
 }
