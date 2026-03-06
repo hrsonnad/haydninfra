@@ -1,9 +1,9 @@
 {
-  "version": "v260306.28 5:36pm",
-  "release": 28,
-  "sha": "9384b8c",
-  "fullSha": "9384b8cb07c09ed08fd2ff7866ef6e9b85e4662f",
+  "version": "v260306.29 5:38pm",
+  "release": 29,
+  "sha": "a403236",
+  "fullSha": "a403236aa41ba6243f12e8d03c955650fa15587b",
   "actor": "hrsonnad",
-  "pushedAt": "2026-03-06T23:36:45Z",
-  "commits": [{"sha": "9384b8c", "message": "Update hero tagline to 'In a world of agents, have agency'", "author": "Haydn"}]
+  "pushedAt": "2026-03-06T23:38:29Z",
+  "commits": [{"sha": "a403236", "message": "Add 'say hello to my little agents' at bottom of welcome page", "author": "Haydn"}]
 }
