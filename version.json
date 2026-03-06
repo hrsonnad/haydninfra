@@ -1,9 +1,9 @@
 {
-  "version": "v260306.03 1:04am",
-  "release": 3,
-  "sha": "a002898",
-  "fullSha": "a0028981db422963dd8b239c49c17bd3d6c80bca",
+  "version": "v260306.04 1:09am",
+  "release": 4,
+  "sha": "bdd64bb",
+  "fullSha": "bdd64bbedf3da2705ecdf5577970a8ef25826076",
   "actor": "hrsonnad",
-  "pushedAt": "2026-03-06T07:04:19Z",
-  "commits": [{"sha": "a002898", "message": "Fix index.html and add admin dashboard", "author": "Haydn"}]
+  "pushedAt": "2026-03-06T07:09:41Z",
+  "commits": [{"sha": "bdd64bb", "message": "Fix auth widget: move scripts to end of body, fix supabase.js naming conflict", "author": "Haydn"}]
 }
