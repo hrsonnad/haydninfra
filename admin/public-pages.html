@@ -262,17 +262,30 @@
         }
 
         async function deletePage(id, title) {
-            if (!confirm(`Permanently remove "${title}" from the registry?\n\nThe HTML file on disk is not deleted — only the navigation entry is removed.`)) return;
+            if (!confirm(`Permanently delete "${title}"?\n\nThis will delete the HTML file from the repo and remove it from the registry. This cannot be undone.`)) return;
 
-            const { error } = await adminSupabase
-                .from('public_pages')
-                .delete()
-                .eq('id', id);
+            const btn = document.querySelector(`button[onclick*="deletePage('${id}'"]`);
+            if (btn) { btn.disabled = true; btn.textContent = 'Deleting…'; }
 
-            if (error) { toast('Delete failed', 'error'); return; }
+            const { data, error } = await adminSupabase.functions.invoke('delete-public-page', {
+                body: { id },
+            });
+
+            if (error || data?.error) {
+                const msg = (error?.message || data?.error || 'unknown error');
+                toast('Delete failed: ' + msg, 'error');
+                if (btn) { btn.disabled = false; btn.textContent = 'Delete'; }
+                return;
+            }
+
             allPages = allPages.filter(p => p.id !== id);
             renderTable();
-            toast('Page removed', 'success');
+            if (data?.warnings?.length) {
+                toast('Deleted (with warnings — check console)', 'success');
+                console.warn('delete-public-page warnings:', data.warnings);
+            } else {
+                toast('Page deleted and file removed from repo', 'success');
+            }
         }
 
         async function addPage() {
