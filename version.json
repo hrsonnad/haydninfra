@@ -1,9 +1,9 @@
 {
-  "version": "v260306.13 2:30am",
-  "release": 13,
-  "sha": "1682c41",
-  "fullSha": "1682c4118b568b5cd7e1a06b72654647c9967a07",
+  "version": "v260306.14 2:42am",
+  "release": 14,
+  "sha": "3c76ce8",
+  "fullSha": "3c76ce816f70df2d4b9cbb717f41ee8754466950",
   "actor": "hrsonnad",
-  "pushedAt": "2026-03-06T08:30:07Z",
-  "commits": [{"sha": "1682c41", "message": "Add CNAME for haydns.ai custom domain", "author": "Haydn"}]
+  "pushedAt": "2026-03-06T08:42:14Z",
+  "commits": [{"sha": "3c76ce8", "message": "Fix UFC data: use ESPN API for accurate schedules, Grok for enrichment", "author": "Haydn"}]
 }
