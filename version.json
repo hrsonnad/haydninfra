@@ -1,9 +1,9 @@
 {
-  "version": "v260306.19 3:11am",
-  "release": 19,
-  "sha": "9432d39",
-  "fullSha": "9432d39a7028abc3245fa211447b0f83333992ad",
+  "version": "v260306.20 3:14am",
+  "release": 20,
+  "sha": "85344fa",
+  "fullSha": "85344fa38e44ac7932d320538f88da83eb111498",
   "actor": "hrsonnad",
-  "pushedAt": "2026-03-06T09:11:37Z",
-  "commits": [{"sha": "9432d39", "message": "UFC: integrate Kalshi prediction market data for real-time odds", "author": "Haydn"}]
+  "pushedAt": "2026-03-06T09:14:30Z",
+  "commits": [{"sha": "85344fa", "message": "Fix Kalshi market matching: deduplicate by event_ticker, robust name matching", "author": "Haydn"}]
 }
