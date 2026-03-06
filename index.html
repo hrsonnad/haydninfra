@@ -419,11 +419,77 @@
             line-height: 1.5;
         }
 
+        .resume-export-btn {
+            position: absolute;
+            top: 20px;
+            right: 24px;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 7px 14px;
+            background: var(--bg);
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: var(--font);
+            font-size: 12px;
+            font-weight: 400;
+            color: var(--text-2);
+            transition: all 120ms ease;
+        }
+
+        .resume-export-btn:hover {
+            background: var(--hover);
+            border-color: #ddd;
+            color: var(--text);
+        }
+
+        .resume-export-btn svg {
+            width: 14px;
+            height: 14px;
+        }
+
+        .resume-export-btn--loading {
+            pointer-events: none;
+            opacity: 0.5;
+        }
+
+        /* PDF-specific overrides (applied during export) */
+        .resume--pdf {
+            padding: 32px 36px 32px !important;
+            max-width: none !important;
+        }
+
+        .resume--pdf .resume-header { margin-bottom: 28px; }
+        .resume--pdf .resume-name { font-size: 24px; }
+        .resume--pdf .resume-profile { font-size: 11px; line-height: 1.55; margin-top: 10px; }
+        .resume--pdf .resume-contact-item { font-size: 10px; }
+        .resume--pdf .resume-divider { margin: 20px 0; }
+        .resume--pdf .resume-section-title { font-size: 9px; margin-bottom: 16px; }
+        .resume--pdf .resume-role { margin-bottom: 22px; }
+        .resume--pdf .resume-role-title { font-size: 13px; }
+        .resume--pdf .resume-role-date { font-size: 10px; }
+        .resume--pdf .resume-role-company { font-size: 11px; }
+        .resume--pdf .resume-role-summary { font-size: 11px; line-height: 1.5; margin-bottom: 10px; }
+        .resume--pdf .resume-group { margin-bottom: 8px; }
+        .resume--pdf .resume-group-label { font-size: 10px; margin-bottom: 3px; }
+        .resume--pdf .resume-bullets li { font-size: 10.5px; line-height: 1.45; padding-left: 12px; margin-bottom: 2px; }
+        .resume--pdf .resume-bullets li::before { top: 7px; width: 3px; height: 3px; }
+        .resume--pdf .resume-sub-bullets li { font-size: 9.5px; padding-left: 12px; }
+        .resume--pdf .resume-sub-bullets li::before { top: 7px; width: 2px; height: 2px; }
+        .resume--pdf .resume-grid { gap: 16px 36px; }
+        .resume--pdf .resume-skill-group-label { font-size: 10px; margin-bottom: 4px; }
+        .resume--pdf .resume-skill-item { font-size: 10px; line-height: 1.5; }
+        .resume--pdf .resume-accolade { margin-bottom: 6px; }
+        .resume--pdf .resume-accolade-text { font-size: 10.5px; }
+
         @media (max-width: 600px) {
             .resume { padding: 36px 20px 60px; }
             .resume-name { font-size: 24px; }
             .resume-grid { grid-template-columns: 1fr; gap: 20px; }
             .resume-role-header { flex-direction: column; gap: 2px; }
+            .resume-export-btn { top: 12px; right: 12px; }
         }
 
         /* ── Auth overrides ── */
@@ -647,8 +713,12 @@
             </div>
 
             <div class="page" id="page-resume">
+                <button class="resume-export-btn" id="resume-export-btn" onclick="exportResumePDF()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                    Export PDF
+                </button>
                 <div class="resume-scroll">
-                    <div class="resume">
+                    <div class="resume" id="resume-content">
 
                         <div class="resume-header">
                             <div class="resume-name">Haydn Sonnad</div>
@@ -828,6 +898,7 @@
         </main>
     </div>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.2/html2pdf.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     <script src="shared/supabase.js"></script>
     <script src="shared/auth.js"></script>
@@ -1371,6 +1442,34 @@
             init();
         }
     })();
+
+    function exportResumePDF() {
+        var btn = document.getElementById('resume-export-btn');
+        btn.classList.add('resume-export-btn--loading');
+        btn.innerHTML = 'Generating...';
+
+        var el = document.getElementById('resume-content');
+        el.classList.add('resume--pdf');
+
+        var opt = {
+            margin: 0,
+            filename: 'Haydn_Sonnad_Resume.pdf',
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2, useCORS: true, letterRendering: true },
+            jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' },
+            pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+        };
+
+        html2pdf().set(opt).from(el).save().then(function() {
+            el.classList.remove('resume--pdf');
+            btn.classList.remove('resume-export-btn--loading');
+            btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Export PDF';
+        }).catch(function() {
+            el.classList.remove('resume--pdf');
+            btn.classList.remove('resume-export-btn--loading');
+            btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Export PDF';
+        });
+    }
     </script>
 </body>
 </html>
