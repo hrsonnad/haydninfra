@@ -9,29 +9,74 @@
     <link rel="stylesheet" href="shared/admin.css">
     <style>
         body { background: var(--aap-bg, #f8fafc); font-family: system-ui, -apple-system, sans-serif; margin: 0; }
+
+        .page-card {
+            display: flex; align-items: center; gap: 14px;
+            background: #fff; border: 1px solid #e5e7eb; border-radius: 10px;
+            padding: 16px 20px; text-decoration: none; color: #0f172a;
+            transition: box-shadow 0.15s, border-color 0.15s;
+        }
+        .page-card:hover { border-color: #94a3b8; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+        .page-card-icon { font-size: 22px; flex-shrink: 0; }
+        .page-card-title { font-weight: 600; font-size: 14px; }
+        .page-card-desc { font-size: 12px; color: #64748b; margin-top: 2px; }
+        .page-card-arrow { margin-left: auto; color: #94a3b8; font-size: 16px; }
+
+        .section-label {
+            font-size: 11px; font-weight: 600; letter-spacing: 0.08em;
+            text-transform: uppercase; color: #94a3b8; margin-bottom: 12px;
+        }
     </style>
 </head>
 <body>
     <nav style="background:#fff; border-bottom:1px solid #e5e7eb; padding:0 24px; height:56px; display:flex; align-items:center;">
-        <div class="site-nav__inner" style="display:flex; align-items:center; justify-content:space-between; width:100%; max-width:1200px; margin:0 auto;">
+        <div class="site-nav__inner" style="display:flex; align-items:center; justify-content:space-between; width:100%; max-width:640px; margin:0 auto;">
             <span style="font-weight:600; font-size:15px; color:#0f172a;">🗂 Knowledge Base</span>
         </div>
     </nav>
 
-    <main style="max-width:640px; margin:80px auto; padding:0 24px; text-align:center;">
-        <h1 style="font-size:2rem; font-weight:700; color:#0f172a; margin-bottom:12px;">Personal Knowledge Base</h1>
-        <p style="color:#64748b; font-size:1.05rem; margin-bottom:40px;">Your private store for documents, notes, and project context.</p>
+    <main style="max-width:640px; margin:60px auto; padding:0 24px;">
+        <h1 style="font-size:1.6rem; font-weight:700; color:#0f172a; margin-bottom:6px;">Haydn Sonnad</h1>
+        <p style="color:#64748b; font-size:14px; margin-bottom:40px;">Personal knowledge base & public pages.</p>
 
-        <div id="cta-logged-out" style="display:none;">
-            <p style="color:#94a3b8; font-size:14px; margin-bottom:16px;">Sign in to access your knowledge base.</p>
-            <button onclick="document.getElementById('authLoginBtn') && document.getElementById('authLoginBtn').click()"
-                style="background:#2563eb; color:#fff; padding:12px 28px; border-radius:8px; border:none; font-weight:500; font-size:15px; cursor:pointer;">
-                Sign In
-            </button>
+        <!-- Public Pages — always visible -->
+        <div style="margin-bottom:36px;">
+            <div class="section-label">Public Pages</div>
+            <div id="public-pages" style="display:flex; flex-direction:column; gap:8px;">
+                <a href="public/tesla-news.html" class="page-card">
+                    <span class="page-card-icon">⚡</span>
+                    <div>
+                        <div class="page-card-title">Tesla News</div>
+                        <div class="page-card-desc">Live feed powered by Grok</div>
+                    </div>
+                    <span class="page-card-arrow">→</span>
+                </a>
+            </div>
         </div>
 
-        <div id="cta-logged-in" style="display:none;">
-            <a href="admin/index.html" style="display:inline-block; background:#2563eb; color:#fff; padding:12px 28px; border-radius:8px; text-decoration:none; font-weight:500; font-size:15px;">Go to Admin →</a>
+        <!-- Admin — shown when logged in -->
+        <div id="admin-section" style="display:none;">
+            <div class="section-label">Admin</div>
+            <div style="display:flex; flex-direction:column; gap:8px;">
+                <a href="admin/index.html" class="page-card">
+                    <span class="page-card-icon">🗂</span>
+                    <div>
+                        <div class="page-card-title">Admin Dashboard</div>
+                        <div class="page-card-desc">Documents, projects, notes, tags</div>
+                    </div>
+                    <span class="page-card-arrow">→</span>
+                </a>
+            </div>
+        </div>
+
+        <!-- Sign in prompt — shown when logged out -->
+        <div id="signin-section" style="display:none;">
+            <div class="section-label">Admin Access</div>
+            <p style="color:#94a3b8; font-size:13px; margin-bottom:12px;">Sign in to access the admin dashboard.</p>
+            <button onclick="document.getElementById('authLoginBtn') && document.getElementById('authLoginBtn').click()"
+                style="background:#2563eb; color:#fff; padding:10px 24px; border-radius:8px; border:none; font-weight:500; font-size:14px; cursor:pointer;">
+                Sign In
+            </button>
         </div>
     </main>
 
@@ -42,8 +87,8 @@
     <script>
         (function() {
             function updateCTA(session) {
-                document.getElementById('cta-logged-in').style.display = session ? 'block' : 'none';
-                document.getElementById('cta-logged-out').style.display = session ? 'none' : 'block';
+                document.getElementById('admin-section').style.display = session ? 'block' : 'none';
+                document.getElementById('signin-section').style.display = session ? 'none' : 'block';
             }
             function init() {
                 if (!window.adminSupabase) { updateCTA(null); return; }
