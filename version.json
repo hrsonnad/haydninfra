@@ -1,9 +1,9 @@
 {
-  "version": "v260306.04 1:09am",
-  "release": 4,
-  "sha": "bdd64bb",
-  "fullSha": "bdd64bbedf3da2705ecdf5577970a8ef25826076",
+  "version": "v260306.05 1:35am",
+  "release": 5,
+  "sha": "a6b462c",
+  "fullSha": "a6b462c998f5c69f32322787a335373d9cd9cdf2",
   "actor": "hrsonnad",
-  "pushedAt": "2026-03-06T07:09:41Z",
-  "commits": [{"sha": "bdd64bb", "message": "Fix auth widget: move scripts to end of body, fix supabase.js naming conflict", "author": "Haydn"}]
+  "pushedAt": "2026-03-06T07:35:27Z",
+  "commits": [{"sha": "a6b462c", "message": "Add Resume Hub: modules, r\u00e9sum\u00e9s, and cover letter management", "author": "Haydn"}]
 }
