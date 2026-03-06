@@ -1,9 +1,9 @@
 {
-  "version": "v260306.08 1:58am",
-  "release": 8,
-  "sha": "00d511f",
-  "fullSha": "00d511f8b25183f5c43a5173421ad61f93f65eff",
+  "version": "v260306.09 1:59am",
+  "release": 9,
+  "sha": "654bb07",
+  "fullSha": "654bb072b580ce632d595db6886d6d45f5c3cdab",
   "actor": "hrsonnad",
-  "pushedAt": "2026-03-06T07:58:17Z",
-  "commits": [{"sha": "00d511f", "message": "Use grok-4-1-fast-reasoning model for tesla-news", "author": "Haydn"}]
+  "pushedAt": "2026-03-06T07:59:45Z",
+  "commits": [{"sha": "654bb07", "message": "Add public pages nav to index \u2014 always visible without auth", "author": "Haydn"}]
 }
