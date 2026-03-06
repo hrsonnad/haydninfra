@@ -1,9 +1,9 @@
 {
-  "version": "v260306.14 2:42am",
-  "release": 14,
-  "sha": "3c76ce8",
-  "fullSha": "3c76ce816f70df2d4b9cbb717f41ee8754466950",
+  "version": "v260306.15 2:45am",
+  "release": 15,
+  "sha": "b16b042",
+  "fullSha": "b16b042a1961882fc0540faffea60f1f005d3908",
   "actor": "hrsonnad",
-  "pushedAt": "2026-03-06T08:42:14Z",
-  "commits": [{"sha": "3c76ce8", "message": "Fix UFC data: use ESPN API for accurate schedules, Grok for enrichment", "author": "Haydn"}]
+  "pushedAt": "2026-03-06T08:45:16Z",
+  "commits": [{"sha": "b16b042", "message": "Fix UFC page: add Supabase anon key Authorization header to all API calls", "author": "Haydn"}]
 }
