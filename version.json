@@ -1,9 +1,9 @@
 {
-  "version": "v260307.01 6:00pm",
-  "release": 1,
-  "sha": "70612bd",
-  "fullSha": "70612bd44fa7161d7cf2fca68c4d2b7f89233205",
+  "version": "v260307.02 6:12pm",
+  "release": 2,
+  "sha": "fe7c015",
+  "fullSha": "fe7c015a53bc7ef5ae9a74491043e1e28e70f10d",
   "actor": "hrsonnad",
-  "pushedAt": "2026-03-07T00:00:52Z",
-  "commits": [{"sha": "70612bd", "message": "Add hash-based URL routing for all pages", "author": "Haydn"}]
+  "pushedAt": "2026-03-07T00:12:53Z",
+  "commits": [{"sha": "fe7c015", "message": "Redesign admin pages with monochrome theme; remove resume builder", "author": "Haydn"}]
 }
