@@ -303,9 +303,23 @@
     var REPO = 'hrsonnad/workflow-kit';
     var PROXY = 'https://ixxnhvqyxkuwyshzdnlc.supabase.co/functions/v1/github-proxy';
 
+    function ghFetchOnce(path) {
+        var timeout = new Promise(function(_, reject) {
+            setTimeout(function() { reject(new Error('timeout')); }, 6000);
+        });
+        return Promise.race([
+            fetch(PROXY + '?path=' + encodeURIComponent(path))
+                .then(function(r) { return r.ok ? r.json() : null; }),
+            timeout
+        ]);
+    }
+
     function ghFetch(path) {
-        return fetch(PROXY + '?path=' + encodeURIComponent(path))
-            .then(function(r) { return r.ok ? r.json() : null; });
+        return ghFetchOnce(path).catch(function() {
+            return new Promise(function(resolve) { setTimeout(resolve, 1000); })
+                .then(function() { return ghFetchOnce(path); })
+                .catch(function() { return null; });
+        });
     }
 
     function fetchRepoData() {
