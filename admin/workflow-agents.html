@@ -96,6 +96,11 @@
             display: flex; align-items: center; justify-content: center; flex-shrink: 0;
             font-size: 14px; background: #fafafa;
         }
+        .agent-icon canvas {
+            width: 24px;
+            height: 24px;
+            display: block;
+        }
 
         .agent-name { font-size: 13px; font-weight: 500; color: var(--text); }
         .agent-role { font-size: 12px; color: var(--text-3); font-weight: 300; margin-top: 1px; }
@@ -270,7 +275,7 @@
 
                         <div class="agent-card">
                             <div class="agent-header" onclick="toggleAgent(this)">
-                                <div class="agent-icon">🤖</div>
+                                <div class="agent-icon"><canvas width="24" height="24" data-icon="robot"></canvas></div>
                                 <div>
                                     <div class="agent-name">Orchestrator Agent</div>
                                     <div class="agent-role">Intake, decomposition, sequencing, and assignment</div>
@@ -315,7 +320,7 @@
 
                         <div class="agent-card">
                             <div class="agent-header" onclick="toggleAgent(this)">
-                                <div class="agent-icon">💻</div>
+                                <div class="agent-icon"><canvas width="24" height="24" data-icon="laptop"></canvas></div>
                                 <div>
                                     <div class="agent-name">Spec Agent</div>
                                     <div class="agent-role">Converts story intent into testable acceptance criteria</div>
@@ -359,7 +364,7 @@
 
                         <div class="agent-card">
                             <div class="agent-header" onclick="toggleAgent(this)">
-                                <div class="agent-icon">🏎️</div>
+                                <div class="agent-icon"><canvas width="24" height="24" data-icon="car"></canvas></div>
                                 <div>
                                     <div class="agent-name">Build Agent</div>
                                     <div class="agent-role">Implementation planning and code execution</div>
@@ -404,7 +409,7 @@
 
                         <div class="agent-card">
                             <div class="agent-header" onclick="toggleAgent(this)">
-                                <div class="agent-icon">🏇</div>
+                                <div class="agent-icon"><canvas width="24" height="24" data-icon="horse"></canvas></div>
                                 <div>
                                     <div class="agent-name">QA Agent</div>
                                     <div class="agent-role">Test matrix, acceptance validation, and regression checks</div>
@@ -450,7 +455,7 @@
 
                         <div class="agent-card">
                             <div class="agent-header" onclick="toggleAgent(this)">
-                                <div class="agent-icon">☕</div>
+                                <div class="agent-icon"><canvas width="24" height="24" data-icon="coffee"></canvas></div>
                                 <div>
                                     <div class="agent-name">Release Agent</div>
                                     <div class="agent-role">Ship packet, rollback plan, and post-deploy verification</div>
@@ -654,6 +659,131 @@
         var isOpen = body.classList.contains('agent-body--open');
         body.classList.toggle('agent-body--open', !isOpen);
         chevron.classList.toggle('agent-chevron--open', !isOpen);
+    }
+
+    function drawAgentIcons() {
+        var iconDrawers = {
+            car: function(ctx, s) {
+                ctx.beginPath();
+                ctx.moveTo(-s*.44, s*.08);
+                ctx.lineTo(-s*.44, -s*.02);
+                ctx.lineTo(-s*.32, -s*.02);
+                ctx.lineTo(-s*.18, -s*.28);
+                ctx.lineTo(s*.14, -s*.28);
+                ctx.lineTo(s*.28, -s*.02);
+                ctx.lineTo(s*.46, -s*.02);
+                ctx.lineTo(s*.46, s*.08);
+                ctx.lineTo(s*.38, s*.08);
+                ctx.stroke();
+                ctx.beginPath(); ctx.arc(-s*.22, s*.12, s*.07, 0, Math.PI*2); ctx.stroke();
+                ctx.beginPath(); ctx.arc(s*.26, s*.12, s*.07, 0, Math.PI*2); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(-s*.44, s*.08); ctx.lineTo(-s*.32, s*.08); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(-s*.12, s*.08); ctx.lineTo(s*.16, s*.08); ctx.stroke();
+            },
+            robot: function(ctx, s) {
+                ctx.strokeRect(-s*.18, -s*.26, s*.36, s*.28);
+                ctx.beginPath(); ctx.arc(-s*.07, -s*.14, s*.03, 0, Math.PI*2); ctx.stroke();
+                ctx.beginPath(); ctx.arc(s*.07, -s*.14, s*.03, 0, Math.PI*2); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(0, -s*.26); ctx.lineTo(0, -s*.36); ctx.stroke();
+                ctx.beginPath(); ctx.arc(0, -s*.38, s*.025, 0, Math.PI*2); ctx.stroke();
+                ctx.strokeRect(-s*.22, s*.06, s*.44, s*.28);
+                ctx.beginPath();
+                ctx.moveTo(-s*.1, s*.34); ctx.lineTo(-s*.12, s*.48);
+                ctx.moveTo(s*.1, s*.34); ctx.lineTo(s*.12, s*.48);
+                ctx.stroke();
+            },
+            laptop: function(ctx, s) {
+                ctx.beginPath();
+                ctx.moveTo(-s*.28, -s*.24);
+                ctx.lineTo(s*.28, -s*.24);
+                ctx.lineTo(s*.24, s*.06);
+                ctx.lineTo(-s*.24, s*.06);
+                ctx.closePath();
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(-s*.38, s*.1);
+                ctx.lineTo(s*.38, s*.1);
+                ctx.lineTo(s*.42, s*.2);
+                ctx.lineTo(-s*.42, s*.2);
+                ctx.closePath();
+                ctx.stroke();
+            },
+            horse: function(ctx, s) {
+                ctx.beginPath();
+                ctx.moveTo(-s*.3, -s*.1);
+                ctx.quadraticCurveTo(-s*.1, -s*.28, s*.1, -s*.18);
+                ctx.lineTo(s*.26, -s*.36);
+                ctx.lineTo(s*.36, -s*.4);
+                ctx.lineTo(s*.38, -s*.32);
+                ctx.lineTo(s*.28, -s*.24);
+                ctx.quadraticCurveTo(s*.18, -s*.08, s*.14, s*.04);
+                ctx.lineTo(s*.2, s*.32);
+                ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(s*.06, s*.02); ctx.lineTo(s*.02, s*.32); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(-s*.12, -s*.04); ctx.lineTo(-s*.2, s*.32); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(-s*.22, -s*.04); ctx.lineTo(-s*.3, s*.32); ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(-s*.3, -s*.1);
+                ctx.quadraticCurveTo(-s*.46, -s*.06, -s*.42, s*.06);
+                ctx.stroke();
+            },
+            coffee: function(ctx, s) {
+                ctx.beginPath();
+                ctx.moveTo(-s*.18, -s*.14);
+                ctx.lineTo(-s*.14, s*.24);
+                ctx.lineTo(s*.14, s*.24);
+                ctx.lineTo(s*.18, -s*.14);
+                ctx.closePath();
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(s*.18, -s*.04);
+                ctx.quadraticCurveTo(s*.34, -s*.02, s*.34, s*.1);
+                ctx.quadraticCurveTo(s*.34, s*.2, s*.18, s*.16);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(-s*.06, -s*.18);
+                ctx.quadraticCurveTo(-s*.1, -s*.3, -s*.04, -s*.38);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(s*.06, -s*.2);
+                ctx.quadraticCurveTo(s*.1, -s*.32, s*.04, -s*.42);
+                ctx.stroke();
+            }
+        };
+
+        var iconColors = {
+            car: '#3B82F6',
+            robot: '#22C55E',
+            laptop: '#8B5CF6',
+            horse: '#F59E0B',
+            coffee: '#F97316'
+        };
+
+        var canvases = document.querySelectorAll('.agent-icon canvas[data-icon]');
+        for (var i = 0; i < canvases.length; i++) {
+            var canvas = canvases[i];
+            var key = canvas.getAttribute('data-icon');
+            var draw = iconDrawers[key];
+            if (!draw) continue;
+            var ctx = canvas.getContext('2d');
+            if (!ctx) continue;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.save();
+            ctx.translate(canvas.width / 2, canvas.height / 2);
+            ctx.strokeStyle = iconColors[key] || '#1a1a1a';
+            ctx.lineWidth = 1.5;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            draw(ctx, 16);
+            ctx.restore();
+        }
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', drawAgentIcons);
+    } else {
+        drawAgentIcons();
     }
     </script>
 </body>
