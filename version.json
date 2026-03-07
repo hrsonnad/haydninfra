@@ -1,9 +1,9 @@
 {
-  "version": "v260307.25 10:34pm",
-  "release": 25,
-  "sha": "13d82aa",
-  "fullSha": "13d82aac4bb31f8d2ab0c9e9e0c58873d6318bae",
+  "version": "v260307.26 10:41pm",
+  "release": 26,
+  "sha": "ef299ab",
+  "fullSha": "ef299ab2ca44086da12ef147c8daa64cd7a7580b",
   "actor": "hrsonnad",
-  "pushedAt": "2026-03-07T04:34:21Z",
-  "commits": [{"sha": "13d82aa", "message": "Add retry and timeout to github-proxy fetches on Read.me page", "author": "Haydn"}]
+  "pushedAt": "2026-03-07T04:41:16Z",
+  "commits": [{"sha": "ef299ab", "message": "Fix dark mode legibility on workflow-readme and agent-playbook pages", "author": "Haydn"}]
 }
