@@ -1,0 +1,935 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nav Manager — Admin</title>
+    <meta name="robots" content="noindex, nofollow">
+    <script>(function(){try{var t=localStorage.getItem('theme');if(t==='dark'||(t!=='light'&&window.matchMedia('(prefers-color-scheme:dark)').matches))document.documentElement.classList.add('dark')}catch(e){}})();</script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../shared/admin.css">
+    <style>
+        /* ── Nav tree editor ── */
+        .nm-layout {
+            display: grid;
+            grid-template-columns: 1fr 260px;
+            gap: 20px;
+            align-items: start;
+        }
+        @media (max-width: 900px) {
+            .nm-layout { grid-template-columns: 1fr; }
+        }
+
+        .nm-tree-wrap {
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            background: var(--bg);
+            overflow: hidden;
+        }
+        .nm-tree-header {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--line);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            background: var(--hover);
+        }
+        .nm-tree-header span {
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-2);
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+        }
+        .nm-tree-body {
+            padding: 8px;
+            min-height: 200px;
+        }
+
+        /* pinned node */
+        .nm-node-pinned {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 7px 10px;
+            border-radius: 5px;
+            background: var(--hover);
+            margin-bottom: 2px;
+            opacity: 0.55;
+            cursor: default;
+            user-select: none;
+        }
+        .nm-node-pinned-label {
+            font-size: 13px;
+            color: var(--text-2);
+            flex: 1;
+        }
+        .nm-node-pin-badge {
+            font-size: 10px;
+            color: var(--text-3);
+            border: 1px solid var(--line);
+            border-radius: 3px;
+            padding: 1px 5px;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        /* sortable nodes */
+        .nm-node {
+            border-radius: 5px;
+            margin-bottom: 2px;
+            background: var(--bg);
+            border: 1px solid transparent;
+            transition: border-color 0.12s, background 0.12s;
+        }
+        .nm-node:hover { border-color: var(--line); }
+        .nm-node.sortable-chosen { background: var(--hover); border-color: var(--line); }
+        .nm-node.sortable-ghost { opacity: 0.35; border: 1px dashed var(--text-3); }
+
+        .nm-node-row {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 8px;
+            cursor: default;
+        }
+        .nm-drag-handle {
+            color: var(--text-3);
+            cursor: grab;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            padding: 2px;
+            border-radius: 3px;
+            transition: color 0.12s;
+        }
+        .nm-drag-handle:hover { color: var(--text-2); }
+        .nm-drag-handle:active { cursor: grabbing; }
+
+        .nm-chevron {
+            flex-shrink: 0;
+            width: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-3);
+            cursor: pointer;
+            transition: transform 0.15s;
+        }
+        .nm-chevron.open { transform: rotate(90deg); }
+
+        .nm-type-badge {
+            flex-shrink: 0;
+            font-size: 10px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            border-radius: 3px;
+            padding: 1px 5px;
+            color: var(--text-3);
+            background: var(--hover);
+            border: 1px solid var(--line);
+        }
+        .nm-type-badge.branch { background: #f0f4ff; border-color: #d0dcff; color: #4466cc; }
+        .dark .nm-type-badge.branch { background: rgba(68,102,204,0.12); border-color: rgba(68,102,204,0.25); color: #7fa0f0; }
+
+        .nm-node-label {
+            flex: 1;
+            font-size: 13px;
+            color: var(--text);
+            min-width: 0;
+        }
+        .nm-node-href {
+            font-size: 11px;
+            color: var(--text-3);
+            flex: 1;
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .nm-node-actions {
+            display: flex;
+            gap: 3px;
+            flex-shrink: 0;
+            opacity: 0;
+            transition: opacity 0.12s;
+        }
+        .nm-node-row:hover .nm-node-actions { opacity: 1; }
+
+        .nm-icon-btn {
+            width: 24px;
+            height: 24px;
+            border: none;
+            background: none;
+            cursor: pointer;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-3);
+            transition: background 0.12s, color 0.12s;
+            padding: 0;
+            flex-shrink: 0;
+        }
+        .nm-icon-btn:hover { background: var(--hover); color: var(--text); }
+        .nm-icon-btn.danger:hover { background: #fee2e2; color: #dc2626; }
+
+        .nm-children {
+            padding-left: 20px;
+            border-left: 1px solid var(--line);
+            margin-left: 18px;
+            margin-bottom: 4px;
+        }
+        .nm-children.collapsed { display: none; }
+
+        .nm-add-child-row {
+            padding: 3px 8px 3px 28px;
+        }
+
+        /* sidebar panel */
+        .nm-sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+        .nm-card {
+            background: var(--bg);
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .nm-card-header {
+            padding: 10px 14px;
+            border-bottom: 1px solid var(--line);
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--text-2);
+            background: var(--hover);
+        }
+        .nm-card-body { padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+
+        .nm-form-group { display: flex; flex-direction: column; gap: 4px; }
+        .nm-form-label {
+            font-size: 11px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-3);
+        }
+        .nm-form-input, .nm-form-select {
+            padding: 7px 10px;
+            border: 1px solid var(--line);
+            border-radius: 5px;
+            font-family: inherit;
+            font-size: 13px;
+            color: var(--text);
+            background: var(--bg);
+            outline: none;
+            transition: border-color 0.12s;
+            width: 100%;
+        }
+        .nm-form-input:focus, .nm-form-select:focus { border-color: var(--text-3); }
+        .nm-form-input::placeholder { color: var(--text-3); }
+
+        .nm-form-check {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            color: var(--text-2);
+            cursor: pointer;
+        }
+        .nm-form-check input { cursor: pointer; }
+
+        .nm-preview {
+            font-size: 12px;
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            color: var(--text-3);
+            padding: 10px;
+            background: var(--hover);
+            border-radius: 5px;
+            white-space: pre;
+            overflow-x: auto;
+            max-height: 220px;
+            overflow-y: auto;
+            line-height: 1.6;
+        }
+
+        .nm-save-bar {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            background: var(--bg);
+            border-bottom: 1px solid var(--line);
+            padding: 10px 0 10px 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        .nm-save-status {
+            font-size: 12px;
+            color: var(--text-3);
+        }
+        .nm-save-status.saved { color: #16a34a; }
+        .nm-save-status.error { color: #dc2626; }
+
+        /* ── add node inline form ── */
+        .nm-add-form {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+            flex-wrap: wrap;
+            padding: 6px 8px;
+            border-radius: 5px;
+            background: var(--hover);
+            border: 1px dashed var(--line);
+            margin-top: 4px;
+        }
+        .nm-add-form input, .nm-add-form select {
+            padding: 5px 8px;
+            border: 1px solid var(--line);
+            border-radius: 4px;
+            font-family: inherit;
+            font-size: 12px;
+            color: var(--text);
+            background: var(--bg);
+            outline: none;
+        }
+        .nm-add-form input:focus, .nm-add-form select:focus { border-color: var(--text-3); }
+        .nm-add-form input[name="label"] { flex: 1; min-width: 80px; }
+        .nm-add-form input[name="href"] { flex: 2; min-width: 120px; }
+
+        .nm-btn-ghost {
+            padding: 5px 10px;
+            border: 1px solid var(--line);
+            border-radius: 4px;
+            background: none;
+            font-family: inherit;
+            font-size: 12px;
+            color: var(--text-2);
+            cursor: pointer;
+            transition: background 0.12s, border-color 0.12s;
+            white-space: nowrap;
+        }
+        .nm-btn-ghost:hover { background: var(--hover); border-color: var(--text-3); }
+
+        .nm-inline-edit {
+            flex: 1;
+            padding: 2px 6px;
+            border: 1px solid var(--text-3);
+            border-radius: 4px;
+            font-family: inherit;
+            font-size: 13px;
+            color: var(--text);
+            background: var(--bg);
+            outline: none;
+        }
+    </style>
+</head>
+<body style="margin:0; background:var(--bg); font-family:'Outfit',system-ui,sans-serif;">
+
+    <div class="admin-mobile-topbar" id="admin-mobile-topbar" style="display:none;">
+        <span class="admin-mobile-brand">admin <a href="../index.html">← site</a></span>
+        <button class="admin-hamburger" id="admin-hamburger" aria-label="Open navigation">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/></svg>
+        </button>
+    </div>
+    <div class="admin-sidebar-backdrop" id="admin-backdrop"></div>
+
+    <div class="admin-shell" id="admin-shell" style="display:none;">
+
+        <!-- Sidebar -->
+        <aside class="admin-sidebar" id="admin-sidebar">
+            <div class="admin-sidebar-brand">
+                admin
+                <a href="../index.html" style="margin-left:auto;">← site</a>
+            </div>
+            <nav class="admin-tree">
+                <a href="index.html" class="admin-tree-btn">Dashboard</a>
+                <div style="height:1px; background:var(--line); margin:8px 4px;"></div>
+                <a href="documents.html" class="admin-tree-btn admin-tree-btn--muted">Documents</a>
+                <a href="projects.html" class="admin-tree-btn admin-tree-btn--muted">Projects</a>
+                <a href="notes.html" class="admin-tree-btn admin-tree-btn--muted">Notes</a>
+                <a href="tags.html" class="admin-tree-btn admin-tree-btn--muted">Tags</a>
+                <div style="height:1px; background:var(--line); margin:8px 4px;"></div>
+                <a href="public-pages.html" class="admin-tree-btn admin-tree-btn--muted">Public Pages</a>
+                <a href="nav-manager.html" class="admin-tree-btn admin-tree-btn--active">Nav Manager</a>
+            </nav>
+            <div class="admin-sidebar-footer">
+                <div class="site-nav__inner"></div>
+            </div>
+        </aside>
+
+        <!-- Content -->
+        <div class="admin-content">
+            <div class="admin-topbar">
+                <span class="admin-topbar-title">Nav Manager</span>
+                <div class="admin-topbar-actions">
+                    <button class="btn-primary" id="save-btn" onclick="saveTree()">Save</button>
+                </div>
+            </div>
+
+            <div class="admin-main" id="main-content">
+
+                <div class="nm-save-bar">
+                    <div style="font-size:13px; color:var(--text-2);">
+                        Drag to reorder. Nest nodes by dragging into a branch. Welcome is always first.
+                    </div>
+                    <span class="nm-save-status" id="save-status"></span>
+                </div>
+
+                <div class="nm-layout">
+                    <!-- Tree editor -->
+                    <div>
+                        <div class="nm-tree-wrap">
+                            <div class="nm-tree-header">
+                                <span>Sidebar Nav Tree</span>
+                                <button class="nm-btn-ghost" onclick="showAddForm(null)">+ Add top-level node</button>
+                            </div>
+                            <div class="nm-tree-body" id="tree-editor">
+                                <!-- pinned Welcome -->
+                                <div class="nm-node-pinned">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12" y2="16.5" stroke-linecap="round" stroke-width="2.5"/></svg>
+                                    <span class="nm-node-pinned-label">Welcome</span>
+                                    <span class="nm-node-pin-badge">pinned · always first</span>
+                                </div>
+                                <!-- dynamic tree renders here -->
+                                <div id="sortable-root"></div>
+                                <!-- pinned Private -->
+                                <div class="nm-node-pinned" style="margin-top:2px;">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+                                    <span class="nm-node-pinned-label">Private (admin links)</span>
+                                    <span class="nm-node-pin-badge">pinned · auth-gated</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sidebar info + preview -->
+                    <div class="nm-sidebar">
+                        <div class="nm-card">
+                            <div class="nm-card-header">Node types</div>
+                            <div class="nm-card-body" style="gap:8px;">
+                                <div style="font-size:12px; color:var(--text-2); line-height:1.5;">
+                                    <strong>Branch</strong> — collapsible section with children. No href needed.<br><br>
+                                    <strong>Link</strong> — loads a page into the iframe. Requires href (relative to site root, e.g. <code style="font-size:11px;">public/ufc.html</code>).<br><br>
+                                    <strong>Page</strong> — built-in page (welcome, resume, etc). Use only for known page IDs.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="nm-card">
+                            <div class="nm-card-header">Tree preview (JSON)</div>
+                            <div class="nm-card-body" style="padding:10px;">
+                                <pre class="nm-preview" id="tree-preview">loading…</pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Node Modal -->
+    <div class="modal-overlay" id="edit-modal">
+        <div class="modal">
+            <button class="modal-close" onclick="closeEditModal()" aria-label="Close">&times;</button>
+            <h2 id="edit-modal-title">Edit Node</h2>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Icon <span style="color:var(--text-3);text-transform:none;letter-spacing:0;font-weight:400;">(emoji)</span></label>
+                    <input class="form-input" id="em-icon" type="text" maxlength="4" placeholder="📄">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Label</label>
+                    <input class="form-input" id="em-label" type="text" placeholder="Page name">
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Type</label>
+                <select class="form-input" id="em-type" onchange="onEditTypeChange()">
+                    <option value="branch">Branch (folder)</option>
+                    <option value="link">Link (loads page)</option>
+                    <option value="page">Page (built-in)</option>
+                </select>
+            </div>
+            <div class="form-group" id="em-href-group">
+                <label class="form-label">Path <span style="color:var(--text-3);text-transform:none;letter-spacing:0;font-weight:400;">(relative to site root)</span></label>
+                <input class="form-input" id="em-href" type="text" placeholder="public/my-page.html">
+            </div>
+            <div class="form-group" id="em-open-group">
+                <label class="nm-form-check" style="margin-top:4px;">
+                    <input type="checkbox" id="em-open"> Open by default
+                </label>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-cancel" onclick="closeEditModal()">Cancel</button>
+                <button class="btn-primary" onclick="applyEditModal()">Apply</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirm -->
+    <div class="modal-overlay" id="del-modal">
+        <div class="modal" style="max-width:380px;">
+            <button class="modal-close" onclick="closeDelModal()" aria-label="Close">&times;</button>
+            <h2>Remove Node</h2>
+            <div class="confirm-body">
+                Remove <strong id="del-label"></strong> from the nav?
+                <div class="confirm-note">This only removes the navigation entry. No files are deleted.</div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-cancel" onclick="closeDelModal()">Cancel</button>
+                <button class="action-btn danger" id="del-confirm-btn" style="padding:7px 14px; font-size:12px;">Remove</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
+    <script src="../shared/supabase.js"></script>
+    <script src="../shared/auth.js"></script>
+    <script src="../shared/theme.js"></script>
+    <script>
+    // ── State ──
+    let navTree = [];        // middle nodes (excludes Welcome + Private)
+    let configRowId = null;  // UUID of the nav_config row
+
+    // ── Boot ──
+    requireAuth(async function() {
+        document.getElementById('admin-shell').style.display = 'flex';
+        var mq = window.matchMedia('(max-width: 768px)');
+        if (mq.matches) document.getElementById('admin-mobile-topbar').style.display = 'flex';
+        mq.addEventListener('change', e => {
+            document.getElementById('admin-mobile-topbar').style.display = e.matches ? 'flex' : 'none';
+        });
+        await loadTree();
+    });
+
+    async function loadTree() {
+        const { data, error } = await adminSupabase
+            .from('nav_config')
+            .select('id, tree')
+            .limit(1)
+            .single();
+
+        if (error) { toast('Failed to load nav config', 'error'); return; }
+        configRowId = data.id;
+        navTree = Array.isArray(data.tree) ? data.tree : [];
+        renderEditor();
+        updatePreview();
+    }
+
+    // ── Render ──
+    function renderEditor() {
+        const root = document.getElementById('sortable-root');
+        root.innerHTML = '';
+        navTree.forEach((node, i) => root.appendChild(makeEditorNode(node, navTree, i)));
+        initSortable(root, navTree);
+    }
+
+    function makeEditorNode(node, parentArr, idx) {
+        const wrap = document.createElement('div');
+        wrap.className = 'nm-node';
+        wrap.dataset.id = node.id;
+
+        const row = document.createElement('div');
+        row.className = 'nm-node-row';
+
+        // drag handle
+        row.innerHTML = `
+            <span class="nm-drag-handle" title="Drag to reorder">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="5" r="1.5" fill="currentColor" stroke="none"/><circle cx="15" cy="5" r="1.5" fill="currentColor" stroke="none"/><circle cx="9" cy="12" r="1.5" fill="currentColor" stroke="none"/><circle cx="15" cy="12" r="1.5" fill="currentColor" stroke="none"/><circle cx="9" cy="19" r="1.5" fill="currentColor" stroke="none"/><circle cx="15" cy="19" r="1.5" fill="currentColor" stroke="none"/></svg>
+            </span>
+        `;
+
+        // chevron for branches
+        if (node.type === 'branch') {
+            const chev = document.createElement('span');
+            chev.className = 'nm-chevron' + (node.open !== false ? ' open' : '');
+            chev.innerHTML = '<svg width="10" height="10" viewBox="0 0 16 16" fill="currentColor"><path d="M6 3l5 5-5 5z"/></svg>';
+            chev.addEventListener('click', () => {
+                node.open = !node.open;
+                chev.classList.toggle('open', node.open);
+                childrenEl.classList.toggle('collapsed', !node.open);
+                updatePreview();
+            });
+            row.appendChild(chev);
+        } else {
+            const spacer = document.createElement('span');
+            spacer.style.cssText = 'width:18px; flex-shrink:0;';
+            row.appendChild(spacer);
+        }
+
+        // type badge
+        const badge = document.createElement('span');
+        badge.className = 'nm-type-badge' + (node.type === 'branch' ? ' branch' : '');
+        badge.textContent = node.type;
+        row.appendChild(badge);
+
+        // icon + label
+        const labelEl = document.createElement('span');
+        labelEl.className = 'nm-node-label';
+        labelEl.textContent = (node.icon ? node.icon + ' ' : '') + node.label;
+        row.appendChild(labelEl);
+
+        // href hint
+        if (node.href) {
+            const hrefEl = document.createElement('span');
+            hrefEl.className = 'nm-node-href';
+            hrefEl.textContent = node.href;
+            row.appendChild(hrefEl);
+        }
+
+        // actions
+        const actions = document.createElement('div');
+        actions.className = 'nm-node-actions';
+        actions.innerHTML = `
+            <button class="nm-icon-btn" title="Edit" onclick="openEditModal(this)">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            </button>
+            <button class="nm-icon-btn danger" title="Remove" onclick="openDelModal(this)">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+            </button>
+        `;
+        row.appendChild(actions);
+        wrap.appendChild(row);
+
+        // children container
+        const childrenEl = document.createElement('div');
+        childrenEl.className = 'nm-children' + (node.open === false ? ' collapsed' : '');
+
+        if (node.type === 'branch') {
+            if (!Array.isArray(node.children)) node.children = [];
+            node.children.forEach((child, ci) => childrenEl.appendChild(makeEditorNode(child, node.children, ci)));
+            initSortable(childrenEl, node.children);
+
+            // add child button
+            const addRow = document.createElement('div');
+            addRow.className = 'nm-add-child-row';
+            const addBtn = document.createElement('button');
+            addBtn.className = 'nm-btn-ghost';
+            addBtn.style.fontSize = '11px';
+            addBtn.textContent = '+ Add child';
+            addBtn.addEventListener('click', () => showAddForm(node.children, addRow));
+            addRow.appendChild(addBtn);
+            childrenEl.appendChild(addRow);
+
+            wrap.appendChild(childrenEl);
+        }
+
+        return wrap;
+    }
+
+    function initSortable(el, arr) {
+        Sortable.create(el, {
+            animation: 120,
+            handle: '.nm-drag-handle',
+            ghostClass: 'sortable-ghost',
+            chosenClass: 'sortable-chosen',
+            group: { name: 'nav', pull: true, put: true },
+            filter: '.nm-add-child-row, .nm-node-pinned',
+            onEnd(evt) {
+                // Rebuild arr from DOM order
+                const movedId = evt.item.dataset.id;
+                // We do a full re-sync after every move
+                syncTreeFromDOM();
+            }
+        });
+    }
+
+    // After any drag, re-read the DOM to rebuild navTree order
+    function syncTreeFromDOM() {
+        const root = document.getElementById('sortable-root');
+        navTree = readChildren(root);
+        updatePreview();
+    }
+
+    function readChildren(container) {
+        const result = [];
+        container.querySelectorAll(':scope > .nm-node').forEach(nodeEl => {
+            const id = nodeEl.dataset.id;
+            // find original node data by id (deep search)
+            const orig = findNode(navTree, id) || {};
+            const row = nodeEl.querySelector('.nm-node-row');
+            const labelEl = row.querySelector('.nm-node-label');
+            const rawLabel = labelEl ? labelEl.textContent.trim() : '';
+            // strip icon prefix if present
+            const icon = orig.icon || null;
+            const label = icon ? rawLabel.replace(icon + ' ', '') : rawLabel;
+            const childrenContainer = nodeEl.querySelector(':scope > .nm-children');
+            const children = childrenContainer ? readChildren(childrenContainer) : undefined;
+            const node = {
+                id: orig.id || id,
+                label: orig.label || label,
+                type: orig.type || 'link',
+                ...(orig.icon ? { icon: orig.icon } : {}),
+                ...(orig.href ? { href: orig.href } : {}),
+                ...(orig.type === 'branch' ? { open: orig.open !== false, children: children || [] } : {}),
+            };
+            result.push(node);
+        });
+        return result;
+    }
+
+    function findNode(tree, id) {
+        for (const node of tree) {
+            if (node.id === id) return node;
+            if (node.children) {
+                const found = findNode(node.children, id);
+                if (found) return found;
+            }
+        }
+        return null;
+    }
+
+    // ── Add node form ──
+    let addFormTarget = null; // array to push into
+    let addFormAnchor = null; // DOM element to insert near
+
+    function showAddForm(targetArr, anchorEl) {
+        // Remove any existing open forms
+        document.querySelectorAll('.nm-add-form').forEach(f => f.remove());
+
+        addFormTarget = targetArr || navTree;
+
+        const form = document.createElement('div');
+        form.className = 'nm-add-form';
+        form.innerHTML = `
+            <select name="type">
+                <option value="branch">Branch</option>
+                <option value="link" selected>Link</option>
+                <option value="page">Page</option>
+            </select>
+            <input name="label" type="text" placeholder="Label" autocomplete="off">
+            <input name="href" type="text" placeholder="href (e.g. public/page.html)">
+            <button type="button" class="nm-btn-ghost" onclick="submitAddForm(this)">Add</button>
+            <button type="button" class="nm-btn-ghost" onclick="this.closest('.nm-add-form').remove()">Cancel</button>
+        `;
+        form.querySelector('select[name=type]').addEventListener('change', function() {
+            form.querySelector('input[name=href]').style.display = this.value === 'branch' ? 'none' : '';
+        });
+
+        if (anchorEl) {
+            anchorEl.parentNode.insertBefore(form, anchorEl);
+        } else {
+            document.getElementById('sortable-root').appendChild(form);
+        }
+        form.querySelector('input[name=label]').focus();
+    }
+
+    function submitAddForm(btn) {
+        const form = btn.closest('.nm-add-form');
+        const type = form.querySelector('select[name=type]').value;
+        const label = form.querySelector('input[name=label]').value.trim();
+        const href = form.querySelector('input[name=href]').value.trim();
+
+        if (!label) { toast('Label is required', 'error'); return; }
+        if ((type === 'link' || type === 'page') && !href && type !== 'page') { toast('Href required for links', 'error'); return; }
+
+        const id = 'nav-' + label.toLowerCase().replace(/[^a-z0-9]/g, '-') + '-' + Date.now().toString(36);
+        const node = {
+            id,
+            label,
+            type,
+            ...(href ? { href } : {}),
+            ...(type === 'branch' ? { open: true, children: [] } : {}),
+        };
+        addFormTarget.push(node);
+        form.remove();
+        renderEditor();
+        updatePreview();
+    }
+
+    // ── Edit modal ──
+    let editTarget = null;
+
+    function openEditModal(btn) {
+        const nodeEl = btn.closest('.nm-node');
+        const id = nodeEl.dataset.id;
+        editTarget = findNode(navTree, id);
+        if (!editTarget) return;
+
+        document.getElementById('em-icon').value = editTarget.icon || '';
+        document.getElementById('em-label').value = editTarget.label || '';
+        document.getElementById('em-type').value = editTarget.type || 'link';
+        document.getElementById('em-href').value = editTarget.href || '';
+        document.getElementById('em-open').checked = editTarget.open !== false;
+        onEditTypeChange();
+        document.getElementById('edit-modal').classList.add('open');
+        setTimeout(() => document.getElementById('em-label').focus(), 50);
+    }
+
+    function onEditTypeChange() {
+        const type = document.getElementById('em-type').value;
+        document.getElementById('em-href-group').style.display = type === 'branch' ? 'none' : '';
+        document.getElementById('em-open-group').style.display = type === 'branch' ? '' : 'none';
+    }
+
+    function applyEditModal() {
+        if (!editTarget) return;
+        const icon = document.getElementById('em-icon').value.trim();
+        const label = document.getElementById('em-label').value.trim();
+        const type = document.getElementById('em-type').value;
+        const href = document.getElementById('em-href').value.trim();
+        const open = document.getElementById('em-open').checked;
+
+        if (!label) { toast('Label is required', 'error'); return; }
+
+        editTarget.label = label;
+        editTarget.type = type;
+        if (icon) editTarget.icon = icon; else delete editTarget.icon;
+        if (type !== 'branch') {
+            editTarget.href = href || editTarget.href;
+            delete editTarget.open;
+        } else {
+            editTarget.open = open;
+            delete editTarget.href;
+            if (!Array.isArray(editTarget.children)) editTarget.children = [];
+        }
+        closeEditModal();
+        renderEditor();
+        updatePreview();
+    }
+
+    function closeEditModal() {
+        document.getElementById('edit-modal').classList.remove('open');
+        editTarget = null;
+    }
+
+    document.getElementById('edit-modal').addEventListener('click', function(e) {
+        if (e.target === this) closeEditModal();
+    });
+
+    // ── Delete modal ──
+    let deleteTargetId = null;
+
+    function openDelModal(btn) {
+        const nodeEl = btn.closest('.nm-node');
+        deleteTargetId = nodeEl.dataset.id;
+        const node = findNode(navTree, deleteTargetId);
+        document.getElementById('del-label').textContent = node ? node.label : deleteTargetId;
+        document.getElementById('del-modal').classList.add('open');
+    }
+
+    function closeDelModal() {
+        document.getElementById('del-modal').classList.remove('open');
+        deleteTargetId = null;
+    }
+
+    document.getElementById('del-modal').addEventListener('click', function(e) {
+        if (e.target === this) closeDelModal();
+    });
+
+    document.getElementById('del-confirm-btn').addEventListener('click', function() {
+        if (!deleteTargetId) return;
+        removeNode(navTree, deleteTargetId);
+        closeDelModal();
+        renderEditor();
+        updatePreview();
+        toast('Node removed', 'success');
+    });
+
+    function removeNode(tree, id) {
+        for (let i = 0; i < tree.length; i++) {
+            if (tree[i].id === id) { tree.splice(i, 1); return true; }
+            if (tree[i].children && removeNode(tree[i].children, id)) return true;
+        }
+        return false;
+    }
+
+    // ── Preview ──
+    function updatePreview() {
+        const pre = document.getElementById('tree-preview');
+        pre.textContent = JSON.stringify(navTree, null, 2);
+    }
+
+    // ── Save ──
+    async function saveTree() {
+        // Sync from DOM one last time before saving
+        syncTreeFromDOM();
+
+        const btn = document.getElementById('save-btn');
+        const status = document.getElementById('save-status');
+        btn.disabled = true;
+        btn.textContent = 'Saving…';
+        status.className = 'nm-save-status';
+        status.textContent = '';
+
+        let res;
+        if (configRowId) {
+            res = await adminSupabase
+                .from('nav_config')
+                .update({ tree: navTree, updated_at: new Date().toISOString() })
+                .eq('id', configRowId);
+        } else {
+            res = await adminSupabase
+                .from('nav_config')
+                .insert({ tree: navTree })
+                .select()
+                .single();
+            if (!res.error && res.data) configRowId = res.data.id;
+        }
+
+        btn.disabled = false;
+        btn.textContent = 'Save';
+
+        if (res.error) {
+            status.className = 'nm-save-status error';
+            status.textContent = 'Save failed: ' + res.error.message;
+            toast('Save failed', 'error');
+        } else {
+            status.className = 'nm-save-status saved';
+            status.textContent = 'Saved ✓';
+            toast('Nav tree saved', 'success');
+            setTimeout(() => { status.textContent = ''; status.className = 'nm-save-status'; }, 3000);
+        }
+    }
+
+    // ── Toast ──
+    let toastTimer;
+    function toast(msg, type = '') {
+        const el = document.getElementById('toast');
+        el.textContent = msg;
+        el.className = 'show' + (type ? ' ' + type : '');
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => { el.className = ''; }, 2800);
+    }
+    </script>
+    <script>
+        if (window.self !== window.top) {
+            var _sidebar = document.querySelector('.admin-sidebar');
+            if (_sidebar) _sidebar.style.display = 'none';
+            var _mtb = document.getElementById('admin-mobile-topbar');
+            if (_mtb) _mtb.style.display = 'none';
+        }
+    </script>
+    <script>
+        (function() {
+            var sidebar = document.getElementById('admin-sidebar');
+            var backdrop = document.getElementById('admin-backdrop');
+            var btn = document.getElementById('admin-hamburger');
+            if (!sidebar || !backdrop || !btn) return;
+            btn.addEventListener('click', function() {
+                var open = sidebar.classList.toggle('open');
+                backdrop.classList.toggle('visible', open);
+            });
+            backdrop.addEventListener('click', function() {
+                sidebar.classList.remove('open');
+                backdrop.classList.remove('visible');
+            });
+        })();
+    </script>
+</body>
+</html>

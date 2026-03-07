@@ -1048,31 +1048,26 @@
         var activePage = 'welcome';
         var activeFrameItemId = null;
 
-        var TREE = [
-            { id: 'welcome', label: 'Welcome', type: 'page' },
+        // Welcome is always pinned first; Private is always appended last (hardcoded for security)
+        var TREE_WELCOME = { id: 'welcome', label: 'Welcome', type: 'page' };
+        var TREE_PRIVATE = { id: 'private-pages', label: 'Private', type: 'branch', open: false, locked: true, children: [
+            { id: 'admin-dash', label: 'Dashboard', type: 'link', href: 'admin/index.html', requiresAuth: true },
+            { id: 'admin-resume', label: 'Resume Hub', type: 'link', href: 'admin/resume.html', requiresAuth: true },
+            { id: 'admin-pages', label: 'Page Manager', type: 'link', href: 'admin/public-pages.html', requiresAuth: true },
+            { id: 'admin-nav', label: 'Nav Manager', type: 'link', href: 'admin/nav-manager.html', requiresAuth: true }
+        ]};
+
+        // Minimal fallback tree used if DB is unavailable
+        var TREE_FALLBACK_MIDDLE = [
             { id: 'about', label: 'About.me', type: 'branch', open: true, children: [
                 { id: 'resume', label: 'Resume', type: 'page' }
             ]},
             { id: 'projects', label: 'Projects', type: 'branch', open: true, children: [
                 { id: 'prtfolio', label: 'Prtfolio.ai', type: 'page' }
-            ]},
-            { id: 'public-pages', label: 'Public', type: 'branch', open: true, children: [
-                { id: 'orchestration', label: 'Orchestration', type: 'branch', open: true, children: [
-                    { id: 'wk-readme', label: 'Read.me', type: 'link', href: 'admin/workflow-readme.html' },
-                    { id: 'wk-agents', label: 'Agents', type: 'branch', open: true, children: [
-                        { id: 'wk-planning', label: 'Planning', type: 'link', href: 'admin/workflow-agents.html' }
-                    ]}
-                ]},
-                { id: 'just-for-fun', label: 'Just for Fun', type: 'branch', open: true, children: [
-                    { id: 'just-for-fun-ufc', label: 'UFC', type: 'link', href: 'public/ufc.html' }
-                ]}
-            ] },
-            { id: 'private-pages', label: 'Private', type: 'branch', open: false, locked: true, children: [
-                { id: 'admin-dash', label: 'Dashboard', type: 'link', href: 'admin/index.html', requiresAuth: true },
-                { id: 'admin-resume', label: 'Resume Hub', type: 'link', href: 'admin/resume.html', requiresAuth: true },
-                { id: 'admin-pages', label: 'Page Manager', type: 'link', href: 'admin/public-pages.html', requiresAuth: true }
             ]}
         ];
+
+        var TREE = [TREE_WELCOME].concat(TREE_FALLBACK_MIDDLE).concat([TREE_PRIVATE]);
 
         function renderTree() {
             var el = document.getElementById('tree');
@@ -1775,51 +1770,18 @@
             renderTree();
         }
 
-        async function loadPublicPages() {
+        async function loadNavTree() {
             if (!window.adminSupabase) return;
-            var node = null;
-            for (var i = 0; i < TREE.length; i++) {
-                if (TREE[i].id === 'public-pages') { node = TREE[i]; break; }
-            }
-            if (!node) return;
-            var staticChildren = Array.isArray(node.children) ? node.children.slice() : [];
             try {
                 var res = await adminSupabase
-                    .from('public_pages')
-                    .select('title, path')
-                    .eq('is_archived', false)
-                    .order('created_at', { ascending: true });
+                    .from('nav_config')
+                    .select('tree')
+                    .limit(1)
+                    .single();
                 if (res.error) throw res.error;
-                var dynamicChildren = (res.data || []).map(function(p) {
-                    return { id: 'pub-' + p.title.toLowerCase().replace(/[^a-z0-9]/g, '-'), label: p.title, type: 'link', href: p.path };
-                });
-                // Avoid duplicate nav links when a static page already exists (e.g., UFC).
-                var existingByHref = {};
-                var existingByLabel = {};
-                function norm(s) { return (s || '').toLowerCase().trim(); }
-                staticChildren.forEach(function(c) {
-                    if (c && c.type === 'link') {
-                        existingByHref[norm(c.href)] = true;
-                        existingByLabel[norm(c.label)] = true;
-                    }
-                    if (c && c.children) {
-                        c.children.forEach(function(gc) {
-                            if (gc && gc.type === 'link') {
-                                existingByHref[norm(gc.href)] = true;
-                                existingByLabel[norm(gc.label)] = true;
-                            }
-                        });
-                    }
-                });
-                dynamicChildren = dynamicChildren.filter(function(c) {
-                    var href = norm(c.href);
-                    var label = norm(c.label);
-                    if (existingByHref[href] || existingByLabel[label]) return false;
-                    if (href === 'public/ufc.html' || label === 'ufc fight cards') return false;
-                    return true;
-                });
-                node.children = staticChildren.concat(dynamicChildren);
-            } catch (e) { /* silent */ }
+                var middle = Array.isArray(res.data && res.data.tree) ? res.data.tree : [];
+                TREE = [TREE_WELCOME].concat(middle).concat([TREE_PRIVATE]);
+            } catch (e) { /* silent — keep fallback tree */ }
             renderTree();
         }
 
@@ -1873,7 +1835,7 @@
                     setAuth(r.data && r.data.session);
                 }).catch(function() { setAuth(null); });
                 adminSupabase.auth.onAuthStateChange(function(_, s) { setAuth(s); });
-                loadPublicPages();
+                loadNavTree();
             }
 
             loop();
