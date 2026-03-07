@@ -1,13 +1,13 @@
-# CLAUDE.md - Personal Knowledge Base + Context MCP
+# Agent Context — haydninfra
 
-This file provides context for Claude (AI assistant) when working on this codebase.
+This file provides context for any AI agent (Cursor, Codex, Claude, Gemini, etc.) working in this codebase. Read it at the start of every session.
 
 > **IMPORTANT: You have direct database access!**
-> Always run SQL migrations directly using `psql` - never ask the user to run SQL manually.
+> Always run SQL migrations directly using `psql` — never ask the user to run SQL manually.
 > Connection string is in `CLAUDE.local.md`.
 
 > **IMPORTANT: Push changes immediately!**
-> This is a GitHub Pages site - changes only go live after pushing.
+> This is a GitHub Pages site — changes only go live after pushing.
 > Always `git push` as soon as changes are ready.
 
 ## What this repo is
@@ -31,7 +31,7 @@ A personal knowledge base and Google Drive replacement for storing information a
 ## Deployment
 
 Push to main and it's live. No build step, no PR process.
-**For Claude:** Always push changes immediately after making them.
+**Always push changes immediately after making them.**
 
 ## Database Schema
 
@@ -89,7 +89,7 @@ All tables have RLS enabled. Users can only access their own rows (`auth.uid() =
 ### Supabase CLI Access
 
 ```bash
-export SUPABASE_ACCESS_TOKEN=<token from CLAUDE.local.md>
+export SUPABASE_ACCESS_TOKEN=<token from CLAUDE.local.md / local env>
 supabase functions deploy <function-name>
 supabase functions logs <function-name>
 supabase secrets set KEY=value
