@@ -1,9 +1,9 @@
 {
-  "version": "v260307.05 6:43pm",
-  "release": 5,
-  "sha": "deb31ac",
-  "fullSha": "deb31acd43829597d2b41969d71a4d6d0a540dd3",
+  "version": "v260307.06 6:47pm",
+  "release": 6,
+  "sha": "d8c3462",
+  "fullSha": "d8c34621785755dc683c12e4180616cbac288d4d",
   "actor": "hrsonnad",
-  "pushedAt": "2026-03-07T00:43:39Z",
-  "commits": [{"sha": "deb31ac", "message": "Restore resume page and Resume Hub that were removed in fe7c015", "author": "Haydn"}]
+  "pushedAt": "2026-03-07T00:47:02Z",
+  "commits": [{"sha": "d8c3462", "message": "Make site mobile-friendly with hamburger drawer navigation", "author": "Haydn"}]
 }
