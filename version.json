@@ -1,9 +1,9 @@
 {
-  "version": "v260307.22 10:15pm",
-  "release": 22,
-  "sha": "eb9197e",
-  "fullSha": "eb9197ee61f2be5a369927d356fa8ebd56e38822",
+  "version": "v260307.23 10:18pm",
+  "release": 23,
+  "sha": "0fa398e",
+  "fullSha": "0fa398e74faf45beb1a5c21d2ad16cb2cb61cd80",
   "actor": "hrsonnad",
-  "pushedAt": "2026-03-07T04:15:26Z",
-  "commits": [{"sha": "eb9197e", "message": "Add dark mode to haydns.ai \u2014 all pages", "author": "Haydn"}]
+  "pushedAt": "2026-03-07T04:18:37Z",
+  "commits": [{"sha": "0fa398e", "message": "Fix dark mode selector: html.dark :root \u2192 html.dark", "author": "Haydn"}]
 }
