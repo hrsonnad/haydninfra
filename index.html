@@ -147,6 +147,10 @@
             color: var(--text);
         }
 
+        .tree-children .tree-children .tree-btn {
+            padding-left: 54px;
+        }
+
         .sidebar-footer {
             padding: 12px;
             margin-top: auto;
@@ -1037,7 +1041,11 @@
             { id: 'private-pages', label: 'Private Pages', type: 'branch', open: false, locked: true, children: [
                 { id: 'admin-dash', label: 'Dashboard', type: 'link', href: 'admin/index.html' },
                 { id: 'admin-resume', label: 'Resume Hub', type: 'link', href: 'admin/resume.html' },
-                { id: 'admin-pages', label: 'Page Manager', type: 'link', href: 'admin/public-pages.html' }
+                { id: 'admin-pages', label: 'Page Manager', type: 'link', href: 'admin/public-pages.html' },
+                { id: 'wk', label: 'Workflow Kit', type: 'branch', open: false, children: [
+                    { id: 'wk-readme', label: 'Read.me', type: 'link', href: 'admin/workflow-readme.html' },
+                    { id: 'wk-agents', label: 'Agents & Planning', type: 'link', href: 'admin/workflow-agents.html' }
+                ]}
             ]}
         ];
 

@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agent Playbook — Admin</title>
+    <meta name="robots" content="noindex, nofollow">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../shared/admin.css">
+    <style>
+        .doc-scroll { height: 100%; overflow-y: auto; scroll-behavior: smooth; }
+        .doc-scroll::-webkit-scrollbar { width: 4px; }
+        .doc-scroll::-webkit-scrollbar-track { background: transparent; }
+        .doc-scroll::-webkit-scrollbar-thumb { background: var(--line); border-radius: 4px; }
+
+        .doc { max-width: 740px; margin: 0 auto; padding: 40px 28px 80px; }
+
+        .doc-title { font-size: 1.4rem; font-weight: 600; letter-spacing: -0.03em; color: var(--text); margin-bottom: 4px; }
+        .doc-subtitle { font-size: 13px; color: var(--text-3); margin-bottom: 32px; }
+
+        .doc h2 {
+            font-size: 10px; font-weight: 600; letter-spacing: 0.14em;
+            text-transform: uppercase; color: var(--text-3); margin: 36px 0 16px; padding-top: 20px;
+            border-top: 1px solid var(--line);
+        }
+        .doc h2:first-of-type { border-top: none; padding-top: 0; margin-top: 0; }
+        .doc p { font-size: 13px; line-height: 1.7; color: var(--text-2); font-weight: 300; margin-bottom: 12px; }
+
+        /* ── Pipeline ── */
+        .pipeline-wrap { overflow-x: auto; padding: 8px 0 16px; margin: 0 -8px; }
+        .pipeline { display: flex; align-items: stretch; gap: 0; min-width: 640px; padding: 0 8px; }
+
+        .stage {
+            flex: 1; min-width: 0; border: 1px solid var(--line); border-radius: 6px;
+            padding: 14px 10px 12px; text-align: center; position: relative;
+            transition: background 200ms ease, border-color 200ms ease;
+        }
+        .stage:hover { background: rgba(0,0,0,0.015); border-color: #ddd; }
+        .stage-name { font-size: 11px; font-weight: 500; color: var(--text); letter-spacing: -0.01em; }
+        .stage-agent { font-size: 10px; color: var(--text-3); margin-top: 4px; font-weight: 300; }
+        .stage-num {
+            position: absolute; top: -8px; left: 50%; transform: translateX(-50%);
+            width: 16px; height: 16px; border-radius: 50%; background: #fff; border: 1px solid var(--line);
+            font-size: 9px; font-weight: 600; color: var(--text-3);
+            display: flex; align-items: center; justify-content: center;
+        }
+
+        .arrow-seg {
+            flex-shrink: 0; width: 24px; display: flex; align-items: center; justify-content: center;
+            position: relative;
+        }
+        .arrow-line {
+            width: 100%; height: 1px; background: var(--line); position: relative;
+        }
+        .arrow-line::after {
+            content: ''; position: absolute; right: -1px; top: -3px;
+            width: 0; height: 0;
+            border-top: 3px solid transparent; border-bottom: 3px solid transparent;
+            border-left: 5px solid var(--line);
+        }
+
+        @keyframes sweep {
+            0% { opacity: 0; }
+            10% { opacity: 1; }
+            30% { opacity: 0; }
+            100% { opacity: 0; }
+        }
+        .stage::after {
+            content: ''; position: absolute; inset: 0; border-radius: 5px;
+            background: rgba(0,0,0,0.02); opacity: 0; pointer-events: none;
+        }
+        .stage:nth-child(1)::after  { animation: sweep 8s ease-in-out 0s infinite; }
+        .stage:nth-child(3)::after  { animation: sweep 8s ease-in-out 1.2s infinite; }
+        .stage:nth-child(5)::after  { animation: sweep 8s ease-in-out 2.4s infinite; }
+        .stage:nth-child(7)::after  { animation: sweep 8s ease-in-out 3.6s infinite; }
+        .stage:nth-child(9)::after  { animation: sweep 8s ease-in-out 4.8s infinite; }
+        .stage:nth-child(11)::after { animation: sweep 8s ease-in-out 6s infinite; }
+
+        /* ── Agent Cards ── */
+        .agent-card {
+            border: 1px solid var(--line); border-radius: 6px; margin-bottom: 8px;
+            overflow: hidden; transition: border-color 120ms ease;
+        }
+        .agent-card:hover { border-color: #ddd; }
+
+        .agent-header {
+            display: flex; align-items: center; gap: 12px; padding: 14px 16px;
+            cursor: pointer; user-select: none; transition: background 120ms ease;
+        }
+        .agent-header:hover { background: var(--hover); }
+
+        .agent-icon {
+            width: 32px; height: 32px; border-radius: 6px; border: 1px solid var(--line);
+            display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+            font-size: 14px; background: #fafafa;
+        }
+
+        .agent-name { font-size: 13px; font-weight: 500; color: var(--text); }
+        .agent-role { font-size: 12px; color: var(--text-3); font-weight: 300; margin-top: 1px; }
+
+        .agent-chevron {
+            margin-left: auto; color: var(--text-3); flex-shrink: 0;
+            transition: transform 150ms ease;
+        }
+        .agent-chevron--open { transform: rotate(90deg); }
+
+        .agent-body {
+            max-height: 0; overflow: hidden; transition: max-height 250ms ease;
+        }
+        .agent-body--open { max-height: 600px; }
+
+        .agent-details { padding: 0 16px 16px; border-top: 1px solid var(--line); }
+
+        .detail-section { margin-top: 14px; }
+        .detail-label {
+            font-size: 10px; font-weight: 600; letter-spacing: 0.06em;
+            text-transform: uppercase; color: var(--text-3); margin-bottom: 6px;
+        }
+        .detail-list { list-style: none; padding: 0; margin: 0; }
+        .detail-list li {
+            font-size: 12px; line-height: 1.6; color: var(--text-2); font-weight: 300;
+            padding-left: 14px; position: relative; margin-bottom: 2px;
+        }
+        .detail-list li::before {
+            content: ''; position: absolute; left: 0; top: 8px;
+            width: 4px; height: 4px; border-radius: 50%; background: var(--line);
+        }
+
+        /* ── Lifecycle ── */
+        .lifecycle { display: flex; flex-direction: column; gap: 0; margin: 12px 0 16px; }
+
+        .lc-row {
+            display: flex; align-items: flex-start; gap: 16px; padding: 14px 0;
+            border-bottom: 1px solid var(--line);
+        }
+        .lc-row:last-child { border-bottom: none; }
+
+        .lc-badge {
+            flex-shrink: 0; width: 100px; padding: 4px 10px; border-radius: 5px;
+            border: 1px solid var(--line); font-size: 11px; font-weight: 500;
+            color: var(--text); text-align: center; background: #fafafa;
+        }
+        .lc-content { flex: 1; min-width: 0; }
+        .lc-gate { font-size: 12px; font-weight: 500; color: var(--text); margin-bottom: 4px; }
+        .lc-desc { font-size: 12px; color: var(--text-3); line-height: 1.5; font-weight: 300; }
+
+        /* ── Artifact chain ── */
+        .artifact-chain { margin: 12px 0 16px; }
+        .ac-row {
+            display: flex; align-items: center; gap: 12px; padding: 10px 0;
+            border-bottom: 1px solid var(--line);
+        }
+        .ac-row:last-child { border-bottom: none; }
+        .ac-stage { font-size: 11px; font-weight: 500; color: var(--text); min-width: 90px; flex-shrink: 0; }
+        .ac-arrow { color: var(--text-3); flex-shrink: 0; font-size: 10px; }
+        .ac-artifact { font-size: 12px; color: var(--text-2); font-weight: 300; }
+
+        /* ── Prompt reference ── */
+        .prompt-ref {
+            display: flex; align-items: center; gap: 8px; padding: 10px 14px;
+            border: 1px solid var(--line); border-radius: 6px; margin-bottom: 6px;
+            font-size: 12px; transition: background 120ms ease;
+        }
+        .prompt-ref:hover { background: var(--hover); }
+        .prompt-ref-path {
+            font-family: 'SF Mono', 'Fira Code', monospace; font-size: 11px;
+            color: var(--text-3); flex: 1;
+        }
+        .prompt-ref-name { font-weight: 500; color: var(--text); min-width: 110px; flex-shrink: 0; }
+
+        @media (max-width: 600px) {
+            .doc { padding: 24px 16px 60px; }
+            .pipeline { min-width: 520px; }
+            .lc-row { flex-direction: column; gap: 6px; }
+            .ac-row { flex-wrap: wrap; }
+        }
+    </style>
+</head>
+<body style="margin:0; background:#fff; font-family:'Outfit',system-ui,sans-serif;">
+
+    <div class="admin-mobile-topbar" id="admin-mobile-topbar" style="display:none;">
+        <span class="admin-mobile-brand">admin <a href="../index.html">&larr; site</a></span>
+        <button class="admin-hamburger" id="admin-hamburger" aria-label="Open navigation">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/></svg>
+        </button>
+    </div>
+    <div class="admin-sidebar-backdrop" id="admin-backdrop"></div>
+
+    <div class="admin-shell" id="admin-shell" style="display:none;">
+
+        <aside class="admin-sidebar" id="admin-sidebar">
+            <div class="admin-sidebar-brand">
+                admin
+                <a href="../index.html" style="margin-left:auto;">&larr; site</a>
+            </div>
+            <nav class="admin-tree">
+                <a href="index.html" class="admin-tree-btn">Dashboard</a>
+                <div style="height:1px; background:var(--line); margin:8px 4px;"></div>
+                <a href="public-pages.html" class="admin-tree-btn">Public Pages</a>
+                <a href="resume.html" class="admin-tree-btn">Resume Hub</a>
+                <div style="height:1px; background:var(--line); margin:8px 4px;"></div>
+                <a href="workflow-readme.html" class="admin-tree-btn">Workflow Kit</a>
+                <a href="workflow-agents.html" class="admin-tree-btn admin-tree-btn--active">Agent Playbook</a>
+            </nav>
+            <div class="admin-sidebar-footer">
+                <div class="site-nav__inner"></div>
+            </div>
+        </aside>
+
+        <div class="admin-content">
+            <div class="admin-topbar">
+                <span class="admin-topbar-title">Agent Playbook</span>
+            </div>
+
+            <div class="doc-scroll">
+                <div class="doc">
+
+                    <div class="doc-title">Agent Playbook</div>
+                    <div class="doc-subtitle">Pipeline stages, agent roles, and the story-to-shipped lifecycle.</div>
+
+                    <h2>Pipeline Overview</h2>
+                    <p>Every story flows left to right through six stages. Each stage has a gate that must be satisfied before the story advances. The animated highlight shows the intended flow direction.</p>
+
+                    <div class="pipeline-wrap">
+                        <div class="pipeline">
+                            <div class="stage">
+                                <span class="stage-num">1</span>
+                                <div class="stage-name">Backlog</div>
+                                <div class="stage-agent">Orchestrator</div>
+                            </div>
+                            <div class="arrow-seg"><div class="arrow-line"></div></div>
+                            <div class="stage">
+                                <span class="stage-num">2</span>
+                                <div class="stage-name">Ready</div>
+                                <div class="stage-agent">Spec Agent</div>
+                            </div>
+                            <div class="arrow-seg"><div class="arrow-line"></div></div>
+                            <div class="stage">
+                                <span class="stage-num">3</span>
+                                <div class="stage-name">In Progress</div>
+                                <div class="stage-agent">Build Agent</div>
+                            </div>
+                            <div class="arrow-seg"><div class="arrow-line"></div></div>
+                            <div class="stage">
+                                <span class="stage-num">4</span>
+                                <div class="stage-name">In Review</div>
+                                <div class="stage-agent">QA Agent</div>
+                            </div>
+                            <div class="arrow-seg"><div class="arrow-line"></div></div>
+                            <div class="stage">
+                                <span class="stage-num">5</span>
+                                <div class="stage-name">Ready to Ship</div>
+                                <div class="stage-agent">Release Agent</div>
+                            </div>
+                            <div class="arrow-seg"><div class="arrow-line"></div></div>
+                            <div class="stage">
+                                <span class="stage-num">6</span>
+                                <div class="stage-name">Shipped</div>
+                                <div class="stage-agent">Complete</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h2>Agent Roster</h2>
+                    <p>Five agents own different stages of the delivery pipeline. Click each to expand details.</p>
+
+                    <div id="agent-cards">
+
+                        <div class="agent-card">
+                            <div class="agent-header" onclick="toggleAgent(this)">
+                                <div class="agent-icon">O</div>
+                                <div>
+                                    <div class="agent-name">Orchestrator Agent</div>
+                                    <div class="agent-role">Intake, decomposition, sequencing, and assignment</div>
+                                </div>
+                                <svg class="agent-chevron" width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M6 3l5 5-5 5z"/></svg>
+                            </div>
+                            <div class="agent-body">
+                                <div class="agent-details">
+                                    <div class="detail-section">
+                                        <div class="detail-label">When Triggered</div>
+                                        <ul class="detail-list">
+                                            <li>New vision/brain dump submitted</li>
+                                            <li>New epic needs story decomposition</li>
+                                        </ul>
+                                    </div>
+                                    <div class="detail-section">
+                                        <div class="detail-label">Inputs</div>
+                                        <ul class="detail-list">
+                                            <li>Raw vision notes or high-level idea</li>
+                                            <li>Constraints (timeline, design, tech, dependencies)</li>
+                                        </ul>
+                                    </div>
+                                    <div class="detail-section">
+                                        <div class="detail-label">Outputs</div>
+                                        <ul class="detail-list">
+                                            <li>Proposed epic name and goal statement</li>
+                                            <li>Sequenced story list with dependencies and sizing</li>
+                                            <li>Open questions requiring human decisions</li>
+                                            <li>Parallelization opportunities identified</li>
+                                        </ul>
+                                    </div>
+                                    <div class="detail-section">
+                                        <div class="detail-label">Failure Modes</div>
+                                        <ul class="detail-list">
+                                            <li>Stories too large or ambiguous &mdash; re-decompose</li>
+                                            <li>Missing constraints &mdash; surface open questions before proceeding</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="agent-card">
+                            <div class="agent-header" onclick="toggleAgent(this)">
+                                <div class="agent-icon">S</div>
+                                <div>
+                                    <div class="agent-name">Spec Agent</div>
+                                    <div class="agent-role">Converts story intent into testable acceptance criteria</div>
+                                </div>
+                                <svg class="agent-chevron" width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M6 3l5 5-5 5z"/></svg>
+                            </div>
+                            <div class="agent-body">
+                                <div class="agent-details">
+                                    <div class="detail-section">
+                                        <div class="detail-label">When Triggered</div>
+                                        <ul class="detail-list">
+                                            <li>Story moves to Ready status in Linear</li>
+                                        </ul>
+                                    </div>
+                                    <div class="detail-section">
+                                        <div class="detail-label">Inputs</div>
+                                        <ul class="detail-list">
+                                            <li>Linear story with filled DoR template</li>
+                                        </ul>
+                                    </div>
+                                    <div class="detail-section">
+                                        <div class="detail-label">Outputs</div>
+                                        <ul class="detail-list">
+                                            <li>Clarified scope (in/out)</li>
+                                            <li>Binary pass/fail acceptance criteria</li>
+                                            <li>Edge cases and boundary conditions</li>
+                                            <li>Telemetry plan (event names, properties, verification)</li>
+                                            <li>Implementation steps (smallest safe sequence)</li>
+                                        </ul>
+                                    </div>
+                                    <div class="detail-section">
+                                        <div class="detail-label">Failure Modes</div>
+                                        <ul class="detail-list">
+                                            <li>Non-testable criteria &mdash; reject and revise</li>
+                                            <li>Scope creep &mdash; flag and defer to Orchestrator</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="agent-card">
+                            <div class="agent-header" onclick="toggleAgent(this)">
+                                <div class="agent-icon">B</div>
+                                <div>
+                                    <div class="agent-name">Build Agent</div>
+                                    <div class="agent-role">Implementation planning and code execution</div>
+                                </div>
+                                <svg class="agent-chevron" width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M6 3l5 5-5 5z"/></svg>
+                            </div>
+                            <div class="agent-body">
+                                <div class="agent-details">
+                                    <div class="detail-section">
+                                        <div class="detail-label">When Triggered</div>
+                                        <ul class="detail-list">
+                                            <li>Story moves to In Progress status in Linear</li>
+                                        </ul>
+                                    </div>
+                                    <div class="detail-section">
+                                        <div class="detail-label">Inputs</div>
+                                        <ul class="detail-list">
+                                            <li>Spec Agent output (acceptance criteria, implementation steps)</li>
+                                            <li>Approved scope from story template</li>
+                                        </ul>
+                                    </div>
+                                    <div class="detail-section">
+                                        <div class="detail-label">Outputs</div>
+                                        <ul class="detail-list">
+                                            <li>File-level change plan before coding</li>
+                                            <li>Code changes completed with rationale</li>
+                                            <li>Tests added or updated</li>
+                                            <li>Manual QA steps (3&ndash;7 deterministic checks)</li>
+                                            <li>Remaining work or blockers surfaced</li>
+                                        </ul>
+                                    </div>
+                                    <div class="detail-section">
+                                        <div class="detail-label">Failure Modes</div>
+                                        <ul class="detail-list">
+                                            <li>Scope expansion &mdash; stop and surface the blocking decision</li>
+                                            <li>Hidden dependency &mdash; flag and pause for human input</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="agent-card">
+                            <div class="agent-header" onclick="toggleAgent(this)">
+                                <div class="agent-icon">Q</div>
+                                <div>
+                                    <div class="agent-name">QA Agent</div>
+                                    <div class="agent-role">Test matrix, acceptance validation, and regression checks</div>
+                                </div>
+                                <svg class="agent-chevron" width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M6 3l5 5-5 5z"/></svg>
+                            </div>
+                            <div class="agent-body">
+                                <div class="agent-details">
+                                    <div class="detail-section">
+                                        <div class="detail-label">When Triggered</div>
+                                        <ul class="detail-list">
+                                            <li>Parallel: drafts test matrix when story enters In Progress</li>
+                                            <li>Full execution: when story enters In Review</li>
+                                        </ul>
+                                    </div>
+                                    <div class="detail-section">
+                                        <div class="detail-label">Inputs</div>
+                                        <ul class="detail-list">
+                                            <li>Acceptance criteria from Spec Agent</li>
+                                            <li>Build report from Build Agent</li>
+                                        </ul>
+                                    </div>
+                                    <div class="detail-section">
+                                        <div class="detail-label">Outputs</div>
+                                        <ul class="detail-list">
+                                            <li>Pass/fail for each acceptance criterion</li>
+                                            <li>Regression check results</li>
+                                            <li>Edge case test outcomes</li>
+                                            <li>Telemetry verification evidence</li>
+                                            <li>Go/no-go recommendation with rationale</li>
+                                        </ul>
+                                    </div>
+                                    <div class="detail-section">
+                                        <div class="detail-label">Failure Modes</div>
+                                        <ul class="detail-list">
+                                            <li>Passing without evidence &mdash; flag unknowns explicitly</li>
+                                            <li>Missing telemetry &mdash; block ship until verified</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="agent-card">
+                            <div class="agent-header" onclick="toggleAgent(this)">
+                                <div class="agent-icon">R</div>
+                                <div>
+                                    <div class="agent-name">Release Agent</div>
+                                    <div class="agent-role">Ship packet, rollback plan, and post-deploy verification</div>
+                                </div>
+                                <svg class="agent-chevron" width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M6 3l5 5-5 5z"/></svg>
+                            </div>
+                            <div class="agent-body">
+                                <div class="agent-details">
+                                    <div class="detail-section">
+                                        <div class="detail-label">When Triggered</div>
+                                        <ul class="detail-list">
+                                            <li>Story moves to Ready to Ship status in Linear</li>
+                                        </ul>
+                                    </div>
+                                    <div class="detail-section">
+                                        <div class="detail-label">Inputs</div>
+                                        <ul class="detail-list">
+                                            <li>QA go/no-go recommendation</li>
+                                            <li>Build report and change log</li>
+                                        </ul>
+                                    </div>
+                                    <div class="detail-section">
+                                        <div class="detail-label">Outputs</div>
+                                        <ul class="detail-list">
+                                            <li>Concise release note (user/business impact)</li>
+                                            <li>Risk summary at ship time</li>
+                                            <li>Explicit rollback steps</li>
+                                            <li>Post-ship verification checklist</li>
+                                            <li>Follow-up ticket recommendations</li>
+                                        </ul>
+                                    </div>
+                                    <div class="detail-section">
+                                        <div class="detail-label">Failure Modes</div>
+                                        <ul class="detail-list">
+                                            <li>Missing QA verification &mdash; do not ship</li>
+                                            <li>No rollback plan &mdash; block until provided</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <h2>Story Lifecycle &amp; Gates</h2>
+                    <p>Each status change has a gate. Stories cannot skip statuses or advance without meeting the gate requirements.</p>
+
+                    <div class="lifecycle">
+                        <div class="lc-row">
+                            <div class="lc-badge">Backlog</div>
+                            <div class="lc-content">
+                                <div class="lc-gate">Entry gate: None</div>
+                                <div class="lc-desc">Raw story ideas after Orchestrator decomposition. Not yet scoped or scheduled.</div>
+                            </div>
+                        </div>
+                        <div class="lc-row">
+                            <div class="lc-badge">Ready</div>
+                            <div class="lc-content">
+                                <div class="lc-gate">Gate: Definition of Ready</div>
+                                <div class="lc-desc">Scope is clear. Acceptance criteria are testable. Dependencies identified. Tracking plan defined. Spec Agent output posted as comment.</div>
+                            </div>
+                        </div>
+                        <div class="lc-row">
+                            <div class="lc-badge">In Progress</div>
+                            <div class="lc-content">
+                                <div class="lc-gate">Gate: Spec approved</div>
+                                <div class="lc-desc">Build Agent implements code. QA Agent drafts test matrix in parallel. Build report posted when complete.</div>
+                            </div>
+                        </div>
+                        <div class="lc-row">
+                            <div class="lc-badge">In Review</div>
+                            <div class="lc-content">
+                                <div class="lc-gate">Gate: Build complete</div>
+                                <div class="lc-desc">QA Agent executes full validation. Pass/fail each criterion. Verify telemetry events. Post go/no-go recommendation.</div>
+                            </div>
+                        </div>
+                        <div class="lc-row">
+                            <div class="lc-badge">Ready to Ship</div>
+                            <div class="lc-content">
+                                <div class="lc-gate">Gate: Definition of Done</div>
+                                <div class="lc-desc">All criteria pass. Tests complete. Telemetry verified. Release Agent produces ship packet with release note, risk summary, and rollback plan.</div>
+                            </div>
+                        </div>
+                        <div class="lc-row">
+                            <div class="lc-badge">Shipped</div>
+                            <div class="lc-content">
+                                <div class="lc-gate">Gate: Post-ship checks pass</div>
+                                <div class="lc-desc">Deployed and verified in production. Full artifact chain complete. Follow-up tickets created if needed.</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h2>Artifact Chain</h2>
+                    <p>Each stage produces a specific artifact. A complete chain is the success criteria for the workflow.</p>
+
+                    <div class="artifact-chain">
+                        <div class="ac-row">
+                            <span class="ac-stage">Ready</span>
+                            <span class="ac-arrow">&rarr;</span>
+                            <span class="ac-artifact">Spec brief (scope, ACs, edge cases, telemetry plan)</span>
+                        </div>
+                        <div class="ac-row">
+                            <span class="ac-stage">In Progress</span>
+                            <span class="ac-arrow">&rarr;</span>
+                            <span class="ac-artifact">Build report (files touched, tests, manual QA steps)</span>
+                        </div>
+                        <div class="ac-row">
+                            <span class="ac-stage">In Review</span>
+                            <span class="ac-arrow">&rarr;</span>
+                            <span class="ac-artifact">QA report (criterion-by-criterion pass/fail, telemetry verification)</span>
+                        </div>
+                        <div class="ac-row">
+                            <span class="ac-stage">Ready to Ship</span>
+                            <span class="ac-arrow">&rarr;</span>
+                            <span class="ac-artifact">Release packet (release note, risk summary, rollback plan)</span>
+                        </div>
+                        <div class="ac-row">
+                            <span class="ac-stage">Shipped</span>
+                            <span class="ac-arrow">&rarr;</span>
+                            <span class="ac-artifact">Post-ship verification + follow-up tickets</span>
+                        </div>
+                    </div>
+
+                    <h2>Prompt Templates</h2>
+                    <p>Each agent has a reusable prompt template stored in the workflow kit.</p>
+
+                    <div id="prompt-refs">
+                        <div class="prompt-ref">
+                            <span class="prompt-ref-name">Orchestrator</span>
+                            <span class="prompt-ref-path">templates/agent-prompts/orchestrator-agent.md</span>
+                        </div>
+                        <div class="prompt-ref">
+                            <span class="prompt-ref-name">Spec Agent</span>
+                            <span class="prompt-ref-path">templates/agent-prompts/spec-agent.md</span>
+                        </div>
+                        <div class="prompt-ref">
+                            <span class="prompt-ref-name">Build Agent</span>
+                            <span class="prompt-ref-path">templates/agent-prompts/build-agent.md</span>
+                        </div>
+                        <div class="prompt-ref">
+                            <span class="prompt-ref-name">QA Agent</span>
+                            <span class="prompt-ref-path">templates/agent-prompts/qa-agent.md</span>
+                        </div>
+                        <div class="prompt-ref">
+                            <span class="prompt-ref-name">Release Agent</span>
+                            <span class="prompt-ref-path">templates/agent-prompts/release-agent.md</span>
+                        </div>
+                    </div>
+
+                    <h2>Parallelization</h2>
+                    <p>Most stages are serial, but one safe parallelization is built in: when a story enters In Progress, the Build Agent starts implementation while the QA Agent drafts its test matrix from the acceptance criteria. QA execution happens only after the build is complete.</p>
+                    <p>Additional parallelization across stories is safe when they have no shared dependencies. The Orchestrator identifies these opportunities during decomposition.</p>
+
+                    <h2>Metrics</h2>
+                    <p>Track these weekly to measure whether the workflow is improving delivery.</p>
+                    <div class="lifecycle">
+                        <div class="lc-row">
+                            <div class="lc-badge">Cycle time</div>
+                            <div class="lc-content">
+                                <div class="lc-desc">Days from story entering Ready to reaching Shipped. Target: decreasing trend.</div>
+                            </div>
+                        </div>
+                        <div class="lc-row">
+                            <div class="lc-badge">Rework rate</div>
+                            <div class="lc-content">
+                                <div class="lc-desc">Percentage of stories reopened after reaching In Review or later. Target: below 15%.</div>
+                            </div>
+                        </div>
+                        <div class="lc-row">
+                            <div class="lc-badge">Escaped defects</div>
+                            <div class="lc-content">
+                                <div class="lc-desc">Bugs found after Shipped status. Target: zero for pilot, below 10% long-term.</div>
+                            </div>
+                        </div>
+                        <div class="lc-row">
+                            <div class="lc-badge">Chain complete</div>
+                            <div class="lc-content">
+                                <div class="lc-desc">Percentage of shipped stories with all five artifacts present. Target: 100%.</div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    <script src="../shared/supabase.js"></script>
+    <script src="../shared/auth.js"></script>
+    <script>
+    requireAuth(function() {
+        document.getElementById('admin-shell').style.display = 'flex';
+        var mq = window.matchMedia('(max-width: 768px)');
+        if (mq.matches) document.getElementById('admin-mobile-topbar').style.display = 'flex';
+        mq.addEventListener('change', function(e) {
+            document.getElementById('admin-mobile-topbar').style.display = e.matches ? 'flex' : 'none';
+        });
+    });
+    </script>
+    <script>
+    if (window.self !== window.top) {
+        var _sidebar = document.querySelector('.admin-sidebar');
+        if (_sidebar) _sidebar.style.display = 'none';
+        var _mtb = document.getElementById('admin-mobile-topbar');
+        if (_mtb) _mtb.style.display = 'none';
+    }
+    </script>
+    <script>
+    (function() {
+        var sidebar = document.getElementById('admin-sidebar');
+        var backdrop = document.getElementById('admin-backdrop');
+        var btn = document.getElementById('admin-hamburger');
+        if (!sidebar || !backdrop || !btn) return;
+        btn.addEventListener('click', function() {
+            var open = sidebar.classList.toggle('open');
+            backdrop.classList.toggle('visible', open);
+        });
+        backdrop.addEventListener('click', function() {
+            sidebar.classList.remove('open');
+            backdrop.classList.remove('visible');
+        });
+    })();
+    </script>
+    <script>
+    function toggleAgent(header) {
+        var card = header.parentElement;
+        var body = card.querySelector('.agent-body');
+        var chevron = header.querySelector('.agent-chevron');
+        var isOpen = body.classList.contains('agent-body--open');
+        body.classList.toggle('agent-body--open', !isOpen);
+        chevron.classList.toggle('agent-chevron--open', !isOpen);
+    }
+    </script>
+</body>
+</html>

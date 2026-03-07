@@ -89,6 +89,17 @@ See [CUSTOMIZATION.md](CUSTOMIZATION.md) for a detailed guide on what gets custo
 
 See [style-guide.md](style-guide.md) for design tokens, layout patterns, components, and shell architecture rules for all pages on haydns.ai.
 
+## Agentic Workflow Starter (Linear + Agents)
+
+Use these docs to run a lightweight multi-agent delivery workflow:
+
+- `playbooks/brain-dump-to-linear-v1.md` — turns a high-level vision into sequenced Linear stories
+- `playbooks/landing-page-workflow-v1.md` — week-1 pilot flow for landing page delivery
+- `templates/linear-epic-template.md` and `templates/linear-story-template.md`
+- `templates/agent-prompts/` — prompt packs for Orchestrator, Spec, Build, QA, and Release agents
+- `templates/linear-status-comment-template.md` — status and blocker tracking comment
+- `metrics/week1-landing-page-pilot.md` — pilot measurement template
+
 ## License
 
 AGPL-3.0 — see [LICENSE](LICENSE). If you modify and distribute this, you must share your changes under the same license.
