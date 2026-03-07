@@ -1037,15 +1037,14 @@
             { id: 'projects', label: 'Projects', type: 'branch', open: false, children: [
                 { id: 'prtfolio', label: 'Prtfolio.ai', type: 'page' }
             ]},
-            { id: 'public-pages', label: 'Public Pages', type: 'branch', open: false, children: [] },
+            { id: 'public-pages', label: 'Public Pages', type: 'branch', open: false, children: [
+                { id: 'wk-readme', label: 'Workflow Kit > Read.me', type: 'link', href: 'admin/workflow-readme.html' },
+                { id: 'wk-agents', label: 'Workflow Kit > Agents & Planning', type: 'link', href: 'admin/workflow-agents.html' }
+            ] },
             { id: 'private-pages', label: 'Private Pages', type: 'branch', open: false, locked: true, children: [
                 { id: 'admin-dash', label: 'Dashboard', type: 'link', href: 'admin/index.html' },
                 { id: 'admin-resume', label: 'Resume Hub', type: 'link', href: 'admin/resume.html' },
-                { id: 'admin-pages', label: 'Page Manager', type: 'link', href: 'admin/public-pages.html' },
-                { id: 'wk', label: 'Workflow Kit', type: 'branch', open: false, children: [
-                    { id: 'wk-readme', label: 'Read.me', type: 'link', href: 'admin/workflow-readme.html' },
-                    { id: 'wk-agents', label: 'Agents & Planning', type: 'link', href: 'admin/workflow-agents.html' }
-                ]}
+                { id: 'admin-pages', label: 'Page Manager', type: 'link', href: 'admin/public-pages.html' }
             ]}
         ];
 

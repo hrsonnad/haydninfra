@@ -642,14 +642,14 @@
     <script src="../shared/supabase.js"></script>
     <script src="../shared/auth.js"></script>
     <script>
-    requireAuth(function() {
+    (function() {
         document.getElementById('admin-shell').style.display = 'flex';
         var mq = window.matchMedia('(max-width: 768px)');
         if (mq.matches) document.getElementById('admin-mobile-topbar').style.display = 'flex';
         mq.addEventListener('change', function(e) {
             document.getElementById('admin-mobile-topbar').style.display = e.matches ? 'flex' : 'none';
         });
-    });
+    })();
     </script>
     <script>
     if (window.self !== window.top) {
