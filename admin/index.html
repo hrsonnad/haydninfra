@@ -5,73 +5,114 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin — Knowledge Base</title>
     <meta name="robots" content="noindex, nofollow">
-    <link rel="stylesheet" href="../styles/tailwind.out.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../shared/admin.css">
-    <style>
-        body { background: var(--aap-bg, #f8fafc); font-family: system-ui, -apple-system, sans-serif; margin: 0; }
-    </style>
 </head>
-<body>
-    <nav style="background:#fff; border-bottom:1px solid #e5e7eb; padding:0 24px; height:56px; display:flex; align-items:center;">
-        <div class="site-nav__inner" style="display:flex; align-items:center; justify-content:space-between; width:100%; max-width:1200px; margin:0 auto;">
-            <span style="font-weight:600; font-size:15px; color:#0f172a;">🗂 Knowledge Base — Admin</span>
-        </div>
-    </nav>
+<body style="margin:0; background:#fff; font-family:'Outfit',system-ui,sans-serif;">
 
-    <main style="max-width:900px; margin:48px auto; padding:0 24px;">
-        <div id="admin-content" style="display:none;">
-            <h1 style="font-size:1.5rem; font-weight:700; color:#0f172a; margin-bottom:8px;">Dashboard</h1>
-            <p style="color:#64748b; margin-bottom:32px;">Welcome to your knowledge base admin.</p>
+    <div class="admin-shell" id="admin-shell" style="display:none;">
 
-            <div style="display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:16px;">
-                <a href="documents.html" style="display:block; background:#fff; border:1px solid #e5e7eb; border-radius:10px; padding:20px; text-decoration:none; color:#0f172a;">
-                    <div style="font-size:24px; margin-bottom:8px;">📄</div>
-                    <div style="font-weight:600;">Documents</div>
-                    <div style="font-size:13px; color:#64748b; margin-top:4px;">Files, notes, links</div>
-                </a>
-                <a href="projects.html" style="display:block; background:#fff; border:1px solid #e5e7eb; border-radius:10px; padding:20px; text-decoration:none; color:#0f172a;">
-                    <div style="font-size:24px; margin-bottom:8px;">🗂</div>
-                    <div style="font-weight:600;">Projects</div>
-                    <div style="font-size:13px; color:#64748b; margin-top:4px;">Active work</div>
-                </a>
-                <a href="notes.html" style="display:block; background:#fff; border:1px solid #e5e7eb; border-radius:10px; padding:20px; text-decoration:none; color:#0f172a;">
-                    <div style="font-size:24px; margin-bottom:8px;">📝</div>
-                    <div style="font-weight:600;">Notes</div>
-                    <div style="font-size:13px; color:#64748b; margin-top:4px;">Quick captures</div>
-                </a>
-                <a href="tags.html" style="display:block; background:#fff; border:1px solid #e5e7eb; border-radius:10px; padding:20px; text-decoration:none; color:#0f172a;">
-                    <div style="font-size:24px; margin-bottom:8px;">🏷</div>
-                    <div style="font-weight:600;">Tags</div>
-                    <div style="font-size:13px; color:#64748b; margin-top:4px;">Organize everything</div>
-                </a>
-                <a href="resume.html" style="display:block; background:#fff; border:1px solid #e5e7eb; border-radius:10px; padding:20px; text-decoration:none; color:#0f172a;">
-                    <div style="font-size:24px; margin-bottom:8px;">📄</div>
-                    <div style="font-weight:600;">Resume Hub</div>
-                    <div style="font-size:13px; color:#64748b; margin-top:4px;">Modules, résumés, cover letters</div>
-                </a>
-                <a href="public-pages.html" style="display:block; background:#fff; border:1px solid #e5e7eb; border-radius:10px; padding:20px; text-decoration:none; color:#0f172a;">
-                    <div style="font-size:24px; margin-bottom:8px;">🌐</div>
-                    <div style="font-weight:600;">Public Pages</div>
-                    <div style="font-size:13px; color:#64748b; margin-top:4px;">Archive or delete public pages</div>
-                </a>
+        <!-- Sidebar -->
+        <aside class="admin-sidebar">
+            <div class="admin-sidebar-brand">
+                admin
+                <a href="../index.html" style="margin-left:auto;">← site</a>
+            </div>
+
+            <nav class="admin-tree" id="sidebar-tree">
+                <a href="index.html" class="admin-tree-btn admin-tree-btn--active">Dashboard</a>
+                <div style="height:1px; background:var(--line); margin:8px 4px;"></div>
+                <a href="documents.html" class="admin-tree-btn admin-tree-btn--muted">Documents</a>
+                <a href="projects.html" class="admin-tree-btn admin-tree-btn--muted">Projects</a>
+                <a href="notes.html" class="admin-tree-btn admin-tree-btn--muted">Notes</a>
+                <a href="tags.html" class="admin-tree-btn admin-tree-btn--muted">Tags</a>
+                <div style="height:1px; background:var(--line); margin:8px 4px;"></div>
+                <a href="public-pages.html" class="admin-tree-btn">Public Pages</a>
+            </nav>
+
+            <div class="admin-sidebar-footer">
+                <div class="site-nav__inner"></div>
+            </div>
+        </aside>
+
+        <!-- Content -->
+        <div class="admin-content">
+            <div class="admin-topbar">
+                <span class="admin-topbar-title">Dashboard</span>
+                <div class="admin-topbar-actions"></div>
+            </div>
+
+            <div class="admin-main">
+                <div class="admin-page-header">
+                    <h1>Knowledge Base</h1>
+                    <p>Personal admin backend</p>
+                </div>
+
+                <table class="admin-table" style="max-width:560px;">
+                    <thead>
+                        <tr>
+                            <th>Section</th>
+                            <th>Description</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td style="color:var(--text); font-weight:500;">
+                                <a href="documents.html" style="color:inherit; text-decoration:none;">Documents</a>
+                            </td>
+                            <td>Files, notes, links, references</td>
+                            <td><span class="status-dot status-dot--archived">coming soon</span></td>
+                        </tr>
+                        <tr>
+                            <td style="color:var(--text); font-weight:500;">
+                                <a href="projects.html" style="color:inherit; text-decoration:none;">Projects</a>
+                            </td>
+                            <td>Active work</td>
+                            <td><span class="status-dot status-dot--archived">coming soon</span></td>
+                        </tr>
+                        <tr>
+                            <td style="color:var(--text); font-weight:500;">
+                                <a href="notes.html" style="color:inherit; text-decoration:none;">Notes</a>
+                            </td>
+                            <td>Quick captures</td>
+                            <td><span class="status-dot status-dot--archived">coming soon</span></td>
+                        </tr>
+                        <tr>
+                            <td style="color:var(--text); font-weight:500;">
+                                <a href="tags.html" style="color:inherit; text-decoration:none;">Tags</a>
+                            </td>
+                            <td>Organize everything</td>
+                            <td><span class="status-dot status-dot--archived">coming soon</span></td>
+                        </tr>
+                        <tr>
+                            <td style="color:var(--text); font-weight:500;">
+                                <a href="public-pages.html" style="color:inherit; text-decoration:none;">Public Pages</a>
+                            </td>
+                            <td>Archive or delete public pages</td>
+                            <td><span class="status-dot status-dot--active">active</span></td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
         </div>
-    </main>
 
-    <!-- Scripts at end of body -->
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     <script src="../shared/supabase.js"></script>
     <script src="../shared/auth.js"></script>
     <script>
-        requireAuth(function(user, supabase) {
-            document.getElementById('admin-content').style.display = 'block';
+        requireAuth(function() {
+            document.getElementById('admin-shell').style.display = 'flex';
         });
     </script>
     <script>
-        /* Shell embed: hide nav when loaded inside the main shell iframe */
         if (window.self !== window.top) {
-            var _nav = document.querySelector('nav');
-            if (_nav) _nav.style.display = 'none';
+            var _sidebar = document.querySelector('.admin-sidebar');
+            if (_sidebar) _sidebar.style.display = 'none';
         }
     </script>
 </body>

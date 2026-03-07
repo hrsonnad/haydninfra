@@ -5,150 +5,82 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Public Pages — Admin</title>
     <meta name="robots" content="noindex, nofollow">
-    <link rel="stylesheet" href="../styles/tailwind.out.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../shared/admin.css">
-    <style>
-        body { background: var(--aap-bg, #f8fafc); font-family: system-ui, -apple-system, sans-serif; margin: 0; }
-
-        .toolbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; gap: 12px; flex-wrap: wrap; }
-
-        .filter-tabs { display: flex; gap: 4px; }
-        .filter-tab {
-            padding: 6px 14px; border-radius: 6px; border: 1px solid var(--aap-border, #e5e7eb);
-            background: none; font-family: inherit; font-size: 13px; color: #64748b;
-            cursor: pointer; transition: all 0.15s;
-        }
-        .filter-tab.active { background: #0f172a; color: #fff; border-color: #0f172a; }
-        .filter-tab:hover:not(.active) { border-color: #94a3b8; }
-
-        .btn-primary {
-            display: flex; align-items: center; gap: 6px;
-            background: #2563eb; color: #fff; border: none; border-radius: 8px;
-            padding: 8px 16px; font-family: inherit; font-size: 13px; font-weight: 500;
-            cursor: pointer; transition: background 0.15s; text-decoration: none;
-        }
-        .btn-primary:hover { background: #1d4ed8; }
-
-        .pages-table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 10px; overflow: hidden; border: 1px solid #e5e7eb; }
-        .pages-table th {
-            text-align: left; padding: 10px 16px; font-size: 11px; font-weight: 600;
-            letter-spacing: 0.05em; text-transform: uppercase; color: #94a3b8;
-            background: #f8fafc; border-bottom: 1px solid #e5e7eb;
-        }
-        .pages-table td { padding: 14px 16px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
-        .pages-table tr:last-child td { border-bottom: none; }
-        .pages-table tr:hover td { background: #f8fafc; }
-
-        .page-title { font-weight: 600; font-size: 14px; color: #0f172a; }
-        .page-path { font-size: 12px; color: #94a3b8; margin-top: 2px; font-family: monospace; }
-        .page-desc { font-size: 13px; color: #64748b; }
-
-        .status-badge {
-            display: inline-flex; align-items: center; gap: 5px;
-            padding: 3px 10px; border-radius: 100px; font-size: 11px; font-weight: 600;
-        }
-        .status-active { background: #dcfce7; color: #16a34a; }
-        .status-archived { background: #f1f5f9; color: #64748b; }
-
-        .action-btn {
-            padding: 5px 12px; border-radius: 6px; border: 1px solid #e5e7eb;
-            background: #fff; font-family: inherit; font-size: 12px; font-weight: 500;
-            cursor: pointer; transition: all 0.15s; white-space: nowrap;
-        }
-        .action-btn:hover { background: #f8fafc; border-color: #94a3b8; }
-        .action-btn.danger:hover { background: #fef2f2; color: #dc2626; border-color: #fca5a5; }
-        .action-btn.success:hover { background: #f0fdf4; color: #16a34a; border-color: #86efac; }
-
-        .actions { display: flex; gap: 6px; justify-content: flex-end; }
-
-        /* Add modal */
-        .modal-overlay {
-            display: none; position: fixed; inset: 0;
-            background: rgba(0,0,0,0.4); z-index: 200;
-            align-items: center; justify-content: center;
-        }
-        .modal-overlay.open { display: flex; }
-        .modal {
-            background: #fff; border-radius: 12px; padding: 28px 32px;
-            width: 100%; max-width: 480px; box-shadow: 0 20px 60px rgba(0,0,0,0.15);
-        }
-        .modal h2 { font-size: 16px; font-weight: 700; color: #0f172a; margin-bottom: 20px; }
-        .form-group { margin-bottom: 16px; }
-        .form-label { display: block; font-size: 12px; font-weight: 600; color: #374151; margin-bottom: 5px; }
-        .form-input {
-            width: 100%; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 6px;
-            font-family: inherit; font-size: 14px; box-sizing: border-box;
-            transition: border-color 0.15s;
-        }
-        .form-input:focus { outline: none; border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
-        .form-row { display: grid; grid-template-columns: 80px 1fr; gap: 10px; }
-        .modal-footer { display: flex; justify-content: flex-end; gap: 8px; margin-top: 24px; }
-        .btn-cancel {
-            padding: 8px 16px; border-radius: 8px; border: 1px solid #e5e7eb;
-            background: #fff; font-family: inherit; font-size: 13px; cursor: pointer;
-        }
-        .btn-cancel:hover { background: #f8fafc; }
-
-        .empty-state { text-align: center; padding: 60px 20px; color: #94a3b8; font-size: 14px; }
-
-        /* Toast */
-        #toast {
-            position: fixed; bottom: 24px; right: 24px; z-index: 999;
-            background: #1e293b; color: #fff; padding: 12px 20px; border-radius: 8px;
-            font-size: 13px; transform: translateY(80px); opacity: 0;
-            transition: all 0.25s; pointer-events: none;
-        }
-        #toast.show { transform: translateY(0); opacity: 1; }
-        #toast.success { background: #15803d; }
-        #toast.error { background: #dc2626; }
-
-        .skeleton-row td { padding: 14px 16px; }
-        .skel { height: 14px; border-radius: 4px; background: linear-gradient(90deg,#f1f5f9 25%,#e2e8f0 50%,#f1f5f9 75%); background-size:200% 100%; animation:shimmer 1.4s infinite; }
-        @keyframes shimmer { to { background-position: -200% 0; } }
-    </style>
 </head>
-<body>
-    <nav style="background:#fff; border-bottom:1px solid #e5e7eb; padding:0 24px; height:56px; display:flex; align-items:center;">
-        <div class="site-nav__inner" style="display:flex; align-items:center; justify-content:space-between; width:100%; max-width:900px; margin:0 auto;">
-            <div style="display:flex; align-items:center; gap:12px;">
-                <a href="index.html" style="color:#64748b; text-decoration:none; font-size:13px;">← Admin</a>
-                <span style="color:#e5e7eb;">/</span>
-                <span style="font-weight:600; font-size:15px; color:#0f172a;">Public Pages</span>
+<body style="margin:0; background:#fff; font-family:'Outfit',system-ui,sans-serif;">
+
+    <div class="admin-shell" id="admin-shell" style="display:none;">
+
+        <!-- Sidebar -->
+        <aside class="admin-sidebar">
+            <div class="admin-sidebar-brand">
+                admin
+                <a href="../index.html" style="margin-left:auto;">← site</a>
+            </div>
+
+            <nav class="admin-tree">
+                <a href="index.html" class="admin-tree-btn">Dashboard</a>
+                <div style="height:1px; background:var(--line); margin:8px 4px;"></div>
+                <a href="documents.html" class="admin-tree-btn admin-tree-btn--muted">Documents</a>
+                <a href="projects.html" class="admin-tree-btn admin-tree-btn--muted">Projects</a>
+                <a href="notes.html" class="admin-tree-btn admin-tree-btn--muted">Notes</a>
+                <a href="tags.html" class="admin-tree-btn admin-tree-btn--muted">Tags</a>
+                <div style="height:1px; background:var(--line); margin:8px 4px;"></div>
+                <a href="public-pages.html" class="admin-tree-btn admin-tree-btn--active">Public Pages</a>
+            </nav>
+
+            <div class="admin-sidebar-footer">
+                <div class="site-nav__inner"></div>
+            </div>
+        </aside>
+
+        <!-- Content -->
+        <div class="admin-content">
+            <div class="admin-topbar">
+                <span class="admin-topbar-title">Public Pages</span>
+                <div class="admin-topbar-actions">
+                    <button class="btn-primary" onclick="openModal()">+ Add Page</button>
+                </div>
+            </div>
+
+            <div class="admin-main" id="main-content">
+                <div class="admin-toolbar">
+                    <div class="admin-filter-tabs">
+                        <button class="admin-filter-tab active" onclick="setFilter('active', this)">Active</button>
+                        <button class="admin-filter-tab" onclick="setFilter('archived', this)">Archived</button>
+                        <button class="admin-filter-tab" onclick="setFilter('all', this)">All</button>
+                    </div>
+                </div>
+
+                <div class="admin-table-wrap">
+                    <table class="admin-table" id="pages-table">
+                        <thead>
+                            <tr>
+                                <th>Page</th>
+                                <th>Path</th>
+                                <th>Description</th>
+                                <th>Status</th>
+                                <th style="text-align:right;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="pages-tbody">
+                            <tr>
+                                <td><div class="skel" style="width:120px"></div></td>
+                                <td><div class="skel" style="width:160px"></div></td>
+                                <td><div class="skel" style="width:200px"></div></td>
+                                <td><div class="skel" style="width:60px"></div></td>
+                                <td></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
-    </nav>
 
-    <main style="max-width:900px; margin:40px auto; padding:0 24px;" id="main-content" style="display:none;">
-        <div class="toolbar">
-            <div class="filter-tabs">
-                <button class="filter-tab active" onclick="setFilter('active', this)">Active</button>
-                <button class="filter-tab" onclick="setFilter('archived', this)">Archived</button>
-                <button class="filter-tab" onclick="setFilter('all', this)">All</button>
-            </div>
-            <button class="btn-primary" onclick="openModal()">
-                <span>+</span> Add Page
-            </button>
-        </div>
-
-        <table class="pages-table" id="pages-table">
-            <thead>
-                <tr>
-                    <th>Page</th>
-                    <th>Description</th>
-                    <th>Status</th>
-                    <th style="text-align:right;">Actions</th>
-                </tr>
-            </thead>
-            <tbody id="pages-tbody">
-                <tr class="skeleton-row">
-                    <td><div class="skel" style="width:60%"></div></td>
-                    <td><div class="skel" style="width:80%"></div></td>
-                    <td><div class="skel" style="width:60px"></div></td>
-                    <td></td>
-                </tr>
-            </tbody>
-        </table>
-    </main>
+    </div>
 
     <!-- Add Page Modal -->
     <div class="modal-overlay" id="modal">
@@ -165,11 +97,11 @@
                 </div>
             </div>
             <div class="form-group">
-                <label class="form-label">Path <span style="color:#94a3b8;font-weight:400;">(relative to site root)</span></label>
+                <label class="form-label">Path <span style="color:var(--text-3);text-transform:none;letter-spacing:0;font-weight:400;">(relative to site root)</span></label>
                 <input class="form-input" id="f-path" type="text" placeholder="public/my-page.html">
             </div>
             <div class="form-group">
-                <label class="form-label">Description <span style="color:#94a3b8;font-weight:400;">(optional)</span></label>
+                <label class="form-label">Description <span style="color:var(--text-3);text-transform:none;letter-spacing:0;font-weight:400;">(optional)</span></label>
                 <input class="form-input" id="f-desc" type="text" placeholder="Short description">
             </div>
             <div class="modal-footer">
@@ -189,7 +121,7 @@
         let currentFilter = 'active';
 
         requireAuth(async function() {
-            document.getElementById('main-content').style.display = 'block';
+            document.getElementById('admin-shell').style.display = 'flex';
             await fetchPages();
         });
 
@@ -206,7 +138,7 @@
 
         function setFilter(filter, btn) {
             currentFilter = filter;
-            document.querySelectorAll('.filter-tab').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.admin-filter-tab').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             renderTable();
         }
@@ -218,20 +150,18 @@
             if (currentFilter === 'archived') pages = allPages.filter(p => p.is_archived);
 
             if (pages.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="4"><div class="empty-state">No pages found.</div></td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="5"><div class="admin-empty">No pages found.</div></td></tr>`;
                 return;
             }
 
             tbody.innerHTML = pages.map(p => `
                 <tr>
+                    <td style="color:var(--text); font-weight:500;">${p.icon || ''} ${p.title}</td>
+                    <td><span class="mono">${p.path}</span></td>
+                    <td>${p.description || '—'}</td>
                     <td>
-                        <div class="page-title">${p.icon || '📄'} ${p.title}</div>
-                        <div class="page-path">${p.path}</div>
-                    </td>
-                    <td class="page-desc">${p.description || '—'}</td>
-                    <td>
-                        <span class="status-badge ${p.is_archived ? 'status-archived' : 'status-active'}">
-                            ${p.is_archived ? '● Archived' : '● Active'}
+                        <span class="status-dot ${p.is_archived ? '' : 'status-dot--active'}">
+                            ${p.is_archived ? 'archived' : 'active'}
                         </span>
                     </td>
                     <td>
@@ -292,7 +222,7 @@
             if (error) { toast('Failed to add page', 'error'); return; }
             allPages.unshift(data);
             currentFilter = 'active';
-            document.querySelectorAll('.filter-tab').forEach((b, i) => b.classList.toggle('active', i === 0));
+            document.querySelectorAll('.admin-filter-tab').forEach((b, i) => b.classList.toggle('active', i === 0));
             renderTable();
             closeModal();
             toast('Page added', 'success');
@@ -311,12 +241,10 @@
             document.getElementById('modal').classList.remove('open');
         }
 
-        // Close modal on overlay click
         document.getElementById('modal').addEventListener('click', function(e) {
             if (e.target === this) closeModal();
         });
 
-        // Toast helper
         let toastTimer;
         function toast(msg, type = '') {
             const el = document.getElementById('toast');
@@ -327,10 +255,9 @@
         }
     </script>
     <script>
-        /* Shell embed: hide nav when loaded inside the main shell iframe */
         if (window.self !== window.top) {
-            var _nav = document.querySelector('nav');
-            if (_nav) _nav.style.display = 'none';
+            var _sidebar = document.querySelector('.admin-sidebar');
+            if (_sidebar) _sidebar.style.display = 'none';
         }
     </script>
 </body>
