@@ -1,9 +1,9 @@
 {
-  "version": "v260307.09 7:43pm",
-  "release": 9,
-  "sha": "d8f193a",
-  "fullSha": "d8f193a8d7be12c61eeadbac5bf2856ac639f9c8",
+  "version": "v260307.10 7:45pm",
+  "release": 10,
+  "sha": "491eb1c",
+  "fullSha": "491eb1cf160f75f314d610813f9f060ab1177826",
   "actor": "hrsonnad",
-  "pushedAt": "2026-03-07T01:43:48Z",
-  "commits": [{"sha": "d8f193a", "message": "Move workflow pages to Public Pages navigation", "author": "Haydn"}]
+  "pushedAt": "2026-03-07T01:45:30Z",
+  "commits": [{"sha": "491eb1c", "message": "Preserve static links in Public Pages tree", "author": "Haydn"}]
 }
