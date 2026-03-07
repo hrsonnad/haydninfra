@@ -85,34 +85,9 @@ See [CUSTOMIZATION.md](CUSTOMIZATION.md) for a detailed guide on what gets custo
 - **[Getting Started](https://alpacaplayhouse.com/docs/getting-started.html)** — Visual step-by-step walkthrough
 - **[Full Infrastructure Guide](https://alpacaplayhouse.com/docs/alpacappsinfra.html)** — Detailed service-by-service setup reference
 
-## Shell Architecture (haydns.ai)
+## Style Guide
 
-The main `index.html` is a **single-page shell** with a left sidebar tree navigator. All content — public pages, admin pages, and internal pages — renders **inside** the shell's iframe panel (`#content-frame`), not as standalone URLs.
-
-### Rules for every page in this repo
-
-1. **Detect when embedded** — every page must include this snippet before `</body>`:
-   ```html
-   <script>
-   if (window.self !== window.top) {
-       var _nav = document.querySelector('nav, .site-header');
-       if (_nav) _nav.style.display = 'none';
-   }
-   </script>
-   ```
-   Use `.site-header` for public pages (e.g. `public/ufc.html`) and `nav` for admin pages.
-
-2. **Link in, not out** — when adding a new page to the tree navigator in `index.html`, use `type: 'link'` with the relative `href`. The shell will load it in the iframe automatically via `loadFrame()`.
-
-3. **No top-level navigation** — pages should not include a back button or app-level nav when embedded. The sidebar handles all navigation.
-
-4. **Auth in the shell** — the shell (`index.html`) owns the auth session. Embedded admin pages still call `requireAuth()` as a safety guard, but the shell's tree only reveals Private Pages links after the user is signed in.
-
-### Adding a new page to the shell
-
-1. Create your HTML page (e.g. `public/my-page.html`)
-2. Add the embedded detection snippet above
-3. In `index.html`, add a `{ id: '...', label: '...', type: 'link', href: 'public/my-page.html' }` entry to the relevant branch in `TREE`
+See [style-guide.md](style-guide.md) for design tokens, layout patterns, components, and shell architecture rules for all pages on haydns.ai.
 
 ## License
 
