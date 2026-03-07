@@ -1,9 +1,9 @@
 {
-  "version": "v260307.23 10:18pm",
-  "release": 23,
-  "sha": "0fa398e",
-  "fullSha": "0fa398e74faf45beb1a5c21d2ad16cb2cb61cd80",
+  "version": "v260307.24 10:26pm",
+  "release": 24,
+  "sha": "3ef7956",
+  "fullSha": "3ef79560a8b89dc9aca213d53170ea5d0a86c925",
   "actor": "hrsonnad",
-  "pushedAt": "2026-03-07T04:18:37Z",
-  "commits": [{"sha": "0fa398e", "message": "Fix dark mode selector: html.dark :root \u2192 html.dark", "author": "Haydn"}]
+  "pushedAt": "2026-03-07T04:26:50Z",
+  "commits": [{"sha": "3ef7956", "message": "Refactor dark mode to be fully self-contained in theme.js", "author": "Haydn"}]
 }
