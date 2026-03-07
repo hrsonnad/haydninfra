@@ -1,9 +1,9 @@
 {
-  "version": "v260307.21 10:00pm",
-  "release": 21,
-  "sha": "1a5af79",
-  "fullSha": "1a5af7950dc52fca34810a9bc2358af00e075325",
+  "version": "v260307.22 10:15pm",
+  "release": 22,
+  "sha": "eb9197e",
+  "fullSha": "eb9197ee61f2be5a369927d356fa8ebd56e38822",
   "actor": "hrsonnad",
-  "pushedAt": "2026-03-07T04:00:34Z",
-  "commits": [{"sha": "1a5af79", "message": "Add dark mode with system preference detection and manual toggle", "author": "Haydn"}]
+  "pushedAt": "2026-03-07T04:15:26Z",
+  "commits": [{"sha": "eb9197e", "message": "Add dark mode to haydns.ai \u2014 all pages", "author": "Haydn"}]
 }
