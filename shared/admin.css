@@ -198,7 +198,7 @@
 
 .admin-sidebar-brand {
     padding: 20px 20px 16px;
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 600;
     letter-spacing: -0.03em;
     color: var(--text);
@@ -315,9 +315,9 @@
     padding: 32px 28px;
 }
 
-.admin-main::-webkit-scrollbar { width: 4px; }
-.admin-main::-webkit-scrollbar-track { background: transparent; }
-.admin-main::-webkit-scrollbar-thumb { background: var(--line); border-radius: 4px; }
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--line); border-radius: 4px; }
 
 /* ======================================== Page Header ======================================== */
 .admin-page-header { margin-bottom: 28px; }
@@ -413,20 +413,42 @@
 
 /* ======================================== Modal ======================================== */
 .modal-overlay {
-    display: none; position: fixed; inset: 0;
-    background: rgba(0,0,0,0.25); z-index: 200;
-    align-items: center; justify-content: center;
+    position: fixed; inset: 0; z-index: 200;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(0,0,0,0.25);
     backdrop-filter: blur(2px); -webkit-backdrop-filter: blur(2px);
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.2s ease;
 }
-.modal-overlay.open { display: flex; }
+.modal-overlay.open { opacity: 1; pointer-events: auto; }
 .modal {
+    position: relative;
     background: var(--bg); border: 1px solid var(--line); border-radius: 10px;
     padding: 24px 28px; width: 100%; max-width: 460px;
     box-shadow: var(--aap-shadow-xl);
+    transform: translateY(16px);
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
+.modal-overlay.open .modal { transform: translateY(0); }
 .modal h2 {
     font-size: 14px; font-weight: 600; color: var(--text);
     margin-bottom: 20px; letter-spacing: -0.02em;
+}
+.modal-close {
+    position: absolute; top: 14px; right: 14px;
+    width: 28px; height: 28px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    background: none; border: none; cursor: pointer;
+    font-size: 18px; line-height: 1; color: var(--text-3);
+    transition: color var(--aap-transition), background var(--aap-transition);
+}
+.modal-close:hover { color: var(--text); background: var(--hover); }
+
+/* Confirm modal (delete confirmation) */
+.confirm-body { font-size: 13px; color: var(--text-2); line-height: 1.55; }
+.confirm-body strong { color: var(--text); font-weight: 500; }
+.confirm-body .confirm-note {
+    margin-top: 8px; font-size: 12px; color: var(--text-3);
 }
 .form-group { margin-bottom: 14px; }
 .form-label {
@@ -441,6 +463,7 @@
     transition: border-color 0.12s; outline: none;
 }
 .form-input:focus { border-color: var(--text-3); }
+.form-input::placeholder { color: var(--text-3); }
 .form-row { display: grid; grid-template-columns: 72px 1fr; gap: 8px; }
 .modal-footer { display: flex; justify-content: flex-end; gap: 6px; margin-top: 20px; }
 

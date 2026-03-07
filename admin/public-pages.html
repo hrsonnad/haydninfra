@@ -85,6 +85,7 @@
     <!-- Add Page Modal -->
     <div class="modal-overlay" id="modal">
         <div class="modal">
+            <button class="modal-close" onclick="closeModal()" aria-label="Close">&times;</button>
             <h2>Add Public Page</h2>
             <div class="form-row">
                 <div class="form-group">
@@ -107,6 +108,22 @@
             <div class="modal-footer">
                 <button class="btn-cancel" onclick="closeModal()">Cancel</button>
                 <button class="btn-primary" onclick="addPage()">Add Page</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirm Modal -->
+    <div class="modal-overlay" id="confirm-modal">
+        <div class="modal" style="max-width:380px;">
+            <button class="modal-close" onclick="closeConfirm()" aria-label="Close">&times;</button>
+            <h2>Delete Page</h2>
+            <div class="confirm-body">
+                Remove <strong id="confirm-title"></strong> from the registry?
+                <div class="confirm-note">The HTML file on disk is not deleted — only the navigation entry is removed.</div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-cancel" onclick="closeConfirm()">Cancel</button>
+                <button class="action-btn danger" id="confirm-delete-btn" style="padding:7px 14px; font-size:12px;">Delete</button>
             </div>
         </div>
     </div>
@@ -191,19 +208,38 @@
             toast(archived ? 'Page archived' : 'Page restored', 'success');
         }
 
-        async function deletePage(id, title) {
-            if (!confirm(`Permanently remove "${title}" from the registry?\n\nThe HTML file on disk is not deleted — only the navigation entry is removed.`)) return;
+        let pendingDeleteId = null;
+
+        function deletePage(id, title) {
+            pendingDeleteId = id;
+            document.getElementById('confirm-title').textContent = title;
+            document.getElementById('confirm-modal').classList.add('open');
+        }
+
+        function closeConfirm() {
+            document.getElementById('confirm-modal').classList.remove('open');
+            pendingDeleteId = null;
+        }
+
+        document.getElementById('confirm-modal').addEventListener('click', function(e) {
+            if (e.target === this) closeConfirm();
+        });
+
+        document.getElementById('confirm-delete-btn').addEventListener('click', async function() {
+            if (!pendingDeleteId) return;
+            const id = pendingDeleteId;
 
             const { error } = await adminSupabase
                 .from('public_pages')
                 .delete()
                 .eq('id', id);
 
-            if (error) { toast('Delete failed', 'error'); return; }
+            if (error) { toast('Delete failed', 'error'); closeConfirm(); return; }
             allPages = allPages.filter(p => p.id !== id);
             renderTable();
+            closeConfirm();
             toast('Page removed', 'success');
-        }
+        });
 
         async function addPage() {
             const title = document.getElementById('f-title').value.trim();
