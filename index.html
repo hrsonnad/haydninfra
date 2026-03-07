@@ -987,7 +987,7 @@
             return wrap;
         }
 
-        function loadFrame(itemId, href) {
+        function loadFrame(itemId, href, skipHash) {
             activePage = 'frame';
             activeFrameItemId = itemId;
             var pages = document.querySelectorAll('.page');
@@ -998,9 +998,10 @@
             for (var j = 0; j < btns.length; j++) {
                 btns[j].classList.toggle('tree-btn--active', btns[j].dataset.id === itemId);
             }
+            if (!skipHash) location.hash = itemId;
         }
 
-        function showPage(id) {
+        function showPage(id, skipHash) {
             activePage = id;
             activeFrameItemId = null;
             var pages = document.querySelectorAll('.page');
@@ -1011,8 +1012,31 @@
             for (var j = 0; j < btns.length; j++) {
                 btns[j].classList.toggle('tree-btn--active', btns[j].dataset.id === id);
             }
-            // Resize welcome canvas when switching pages
             if (id === 'welcome') resizeWelcome();
+            if (!skipHash) location.hash = id;
+        }
+
+        // ─── Hash routing helpers ───
+        function findTreeItem(id, nodes) {
+            for (var i = 0; i < nodes.length; i++) {
+                if (nodes[i].id === id) return nodes[i];
+                if (nodes[i].children) {
+                    var found = findTreeItem(id, nodes[i].children);
+                    if (found) return found;
+                }
+            }
+            return null;
+        }
+
+        function navigateToHash(hash) {
+            var id = hash.replace(/^#/, '') || 'welcome';
+            var item = findTreeItem(id, TREE);
+            if (!item) return;
+            if (item.type === 'page') {
+                showPage(id, true);
+            } else if (item.type === 'link') {
+                loadFrame(id, item.href, true);
+            }
         }
 
         // ─── Floating icons (welcome page screensaver) ───
@@ -1420,6 +1444,11 @@
             resizeWelcome();
             updateContentRect();
 
+            // Navigate to hash on load, or default to welcome
+            if (location.hash && location.hash.length > 1) {
+                navigateToHash(location.hash);
+            }
+
             if (window.adminSupabase) {
                 adminSupabase.auth.getSession().then(function(r) {
                     setAuth(r.data && r.data.session);
@@ -1430,6 +1459,10 @@
 
             loop();
         }
+
+        window.addEventListener('hashchange', function() {
+            navigateToHash(location.hash);
+        });
 
         window.addEventListener('resize', function() {
             resizeWelcome();
