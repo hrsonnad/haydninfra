@@ -1,9 +1,9 @@
 {
-  "version": "v260307.13 7:54pm",
-  "release": 13,
-  "sha": "21b9d13",
-  "fullSha": "21b9d13853c51e25cf1a9bbf85dcbd109e563a3d",
+  "version": "v260307.14 7:55pm",
+  "release": 14,
+  "sha": "5b4b4b6",
+  "fullSha": "5b4b4b66de566572947c65f285d1125f9db40596",
   "actor": "hrsonnad",
-  "pushedAt": "2026-03-07T01:54:02Z",
-  "commits": [{"sha": "21b9d13", "message": "Add 7 new floating icons to welcome page screensaver", "author": "Haydn"}]
+  "pushedAt": "2026-03-07T01:55:43Z",
+  "commits": [{"sha": "5b4b4b6", "message": "Add cursor attraction to welcome page floating icons", "author": "Haydn"}]
 }
