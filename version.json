@@ -1,9 +1,9 @@
 {
-  "version": "v260307.16 8:06pm",
-  "release": 16,
-  "sha": "ea19cf9",
-  "fullSha": "ea19cf9d99e182f2bc6e81a8bc176cc365bfeda6",
+  "version": "v260307.17 8:10pm",
+  "release": 17,
+  "sha": "1ab58a4",
+  "fullSha": "1ab58a4a4c88c0b92ddc48f30035c44f17564aec",
   "actor": "hrsonnad",
-  "pushedAt": "2026-03-07T02:06:26Z",
-  "commits": [{"sha": "ea19cf9", "message": "Use fixed welcome line icons for agent roster", "author": "Haydn"}]
+  "pushedAt": "2026-03-07T02:10:12Z",
+  "commits": [{"sha": "1ab58a4", "message": "Enlarge roster line icons and remove icon tile box", "author": "Haydn"}]
 }
