@@ -1,9 +1,9 @@
 {
-  "version": "v260307.08 7:39pm",
-  "release": 8,
-  "sha": "bbe284e",
-  "fullSha": "bbe284eac4cc1de35b8d7c93a62038059b33b5c1",
+  "version": "v260307.09 7:43pm",
+  "release": 9,
+  "sha": "d8f193a",
+  "fullSha": "d8f193a8d7be12c61eeadbac5bf2856ac639f9c8",
   "actor": "hrsonnad",
-  "pushedAt": "2026-03-07T01:39:49Z",
-  "commits": [{"sha": "bbe284e", "message": "Add Workflow Kit pages, playbooks, and agent prompt system", "author": "Haydn"}]
+  "pushedAt": "2026-03-07T01:43:48Z",
+  "commits": [{"sha": "d8f193a", "message": "Move workflow pages to Public Pages navigation", "author": "Haydn"}]
 }
