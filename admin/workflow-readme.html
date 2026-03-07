@@ -299,16 +299,11 @@
     </script>
     <script>
     var REPO = 'hrsonnad/workflow-kit';
-    var API = 'https://api.github.com';
+    var PROXY = 'https://ixxnhvqyxkuwyshzdnlc.supabase.co/functions/v1/github-proxy';
 
     function ghFetch(path) {
-        return fetch(API + path, {
-            headers: {
-                'Accept': 'application/vnd.github+json'
-            }
-        }).then(function(r) {
-            return r.ok ? r.json() : null;
-        });
+        return fetch(PROXY + '?path=' + encodeURIComponent(path))
+            .then(function(r) { return r.ok ? r.json() : null; });
     }
 
     function fetchRepoData() {
