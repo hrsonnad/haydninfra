@@ -1581,10 +1581,24 @@
         function updateFloaters() {
             var w = wCanvas.width, h = wCanvas.height;
             var n = floaters.length;
+            var attractSpeed = 2.0;
+
             for (var i = 0; i < n; i++) {
                 var f = floaters[i];
-                f.x += f.vx;
-                f.y += f.vy;
+
+                if (cursorActive) {
+                    var dx = cursorLocalX - f.x;
+                    var dy = cursorLocalY - f.y;
+                    var dist = Math.sqrt(dx * dx + dy * dy);
+                    if (dist > attractSpeed) {
+                        f.x += (dx / dist) * attractSpeed;
+                        f.y += (dy / dist) * attractSpeed;
+                    }
+                } else {
+                    f.x += f.vx;
+                    f.y += f.vy;
+                }
+
                 f.rotation += f.spin;
                 if (f.flash > 0) f.flash = Math.max(0, f.flash - 0.035);
                 var margin = f.size * 0.5;
@@ -1593,31 +1607,30 @@
                 if (f.y < margin) { f.y = margin; f.vy = Math.abs(f.vy); }
                 if (f.y > h - margin) { f.y = h - margin; f.vy = -Math.abs(f.vy); }
             }
-            // Elastic collisions between floaters
-            for (var ai = 0; ai < n; ai++) {
-                for (var bi = ai + 1; bi < n; bi++) {
-                    var a = floaters[ai], b = floaters[bi];
-                    var dx = b.x - a.x, dy = b.y - a.y;
-                    var dist = Math.sqrt(dx * dx + dy * dy);
-                    var minDist = (a.size + b.size) * 0.52;
-                    if (dist < minDist && dist > 0.1) {
-                        var nx = dx / dist, ny = dy / dist;
-                        var dot = (b.vx - a.vx) * nx + (b.vy - a.vy) * ny;
-                        if (dot < 0) {
-                            a.vx += dot * nx; a.vy += dot * ny;
-                            b.vx -= dot * nx; b.vy -= dot * ny;
-                            // Cap speed after collision
-                            var sa = Math.sqrt(a.vx*a.vx + a.vy*a.vy);
-                            var sb2 = Math.sqrt(b.vx*b.vx + b.vy*b.vy);
-                            var cap = 0.9;
-                            if (sa > cap) { a.vx = a.vx/sa*cap; a.vy = a.vy/sa*cap; }
-                            if (sb2 > cap) { b.vx = b.vx/sb2*cap; b.vy = b.vy/sb2*cap; }
-                            a.flash = 1.0; b.flash = 1.0;
+            if (!cursorActive) {
+                for (var ai = 0; ai < n; ai++) {
+                    for (var bi = ai + 1; bi < n; bi++) {
+                        var a = floaters[ai], b = floaters[bi];
+                        var dx = b.x - a.x, dy = b.y - a.y;
+                        var dist = Math.sqrt(dx * dx + dy * dy);
+                        var minDist = (a.size + b.size) * 0.52;
+                        if (dist < minDist && dist > 0.1) {
+                            var nx = dx / dist, ny = dy / dist;
+                            var dot = (b.vx - a.vx) * nx + (b.vy - a.vy) * ny;
+                            if (dot < 0) {
+                                a.vx += dot * nx; a.vy += dot * ny;
+                                b.vx -= dot * nx; b.vy -= dot * ny;
+                                var sa = Math.sqrt(a.vx*a.vx + a.vy*a.vy);
+                                var sb2 = Math.sqrt(b.vx*b.vx + b.vy*b.vy);
+                                var cap = 0.9;
+                                if (sa > cap) { a.vx = a.vx/sa*cap; a.vy = a.vy/sa*cap; }
+                                if (sb2 > cap) { b.vx = b.vx/sb2*cap; b.vy = b.vy/sb2*cap; }
+                                a.flash = 1.0; b.flash = 1.0;
+                            }
+                            var overlap = (minDist - dist) * 0.5 + 0.5;
+                            a.x -= nx * overlap; a.y -= ny * overlap;
+                            b.x += nx * overlap; b.y += ny * overlap;
                         }
-                        // Separate overlapping floaters
-                        var overlap = (minDist - dist) * 0.5 + 0.5;
-                        a.x -= nx * overlap; a.y -= ny * overlap;
-                        b.x += nx * overlap; b.y += ny * overlap;
                     }
                 }
             }
@@ -1656,6 +1669,9 @@
         var pCtx = pCanvas.getContext('2d');
         var particles = [];
         var contentRect = { left: 0, top: 0, right: 0, bottom: 0 };
+        var cursorActive = false;
+        var cursorLocalX = 0;
+        var cursorLocalY = 0;
 
         function updateContentRect() {
             var el = document.querySelector('.content');
@@ -1666,13 +1682,19 @@
         }
 
         document.addEventListener('mousemove', function(e) {
-            // Only spawn particles inside the content area and on the welcome page
-            if (activePage !== 'welcome') return;
-            if (e.clientX < contentRect.left || e.clientX > contentRect.right) return;
-            if (e.clientY < contentRect.top || e.clientY > contentRect.bottom) return;
+            if (activePage !== 'welcome' ||
+                e.clientX < contentRect.left || e.clientX > contentRect.right ||
+                e.clientY < contentRect.top || e.clientY > contentRect.bottom) {
+                cursorActive = false;
+                return;
+            }
 
             var localX = e.clientX - contentRect.left;
             var localY = e.clientY - contentRect.top;
+
+            cursorActive = true;
+            cursorLocalX = localX;
+            cursorLocalY = localY;
 
             for (var i = 0; i < 2; i++) {
                 if (particles.length < 40) {
@@ -1688,6 +1710,8 @@
                 }
             }
         });
+
+        document.addEventListener('mouseleave', function() { cursorActive = false; });
 
         function updateParticles() {
             for (var i = particles.length - 1; i >= 0; i--) {
