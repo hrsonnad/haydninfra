@@ -32,18 +32,18 @@ export default function SignInPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50 px-6">
+    <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 px-6">
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold text-slate-900">Sign In</h1>
-          <p className="text-sm text-slate-500 mt-2">
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Sign In</h1>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-2">
             Sign in to access the intranet
           </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-4 py-3">
+            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 text-sm rounded-lg px-4 py-3">
               {error}
             </div>
           )}
@@ -51,7 +51,7 @@ export default function SignInPage() {
           <div>
             <label
               htmlFor="email"
-              className="block text-sm font-medium text-slate-700 mb-1"
+              className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1"
             >
               Email
             </label>
@@ -61,7 +61,7 @@ export default function SignInPage() {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full rounded-lg border border-slate-300 px-4 py-2 text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500"
+              className="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-4 py-2 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-500 dark:focus:ring-amber-400"
               placeholder="you@example.com"
             />
           </div>
@@ -69,7 +69,7 @@ export default function SignInPage() {
           <div>
             <label
               htmlFor="password"
-              className="block text-sm font-medium text-slate-700 mb-1"
+              className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1"
             >
               Password
             </label>
@@ -79,7 +79,7 @@ export default function SignInPage() {
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-lg border border-slate-300 px-4 py-2 text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500"
+              className="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-4 py-2 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-500 dark:focus:ring-amber-400"
             />
           </div>
 
@@ -95,7 +95,7 @@ export default function SignInPage() {
         <div className="mt-6 text-center">
           <Link
             href={`/${lang}`}
-            className="text-sm text-slate-500 hover:text-amber-600 transition-colors"
+            className="text-sm text-slate-500 dark:text-slate-400 hover:text-amber-600 dark:hover:text-amber-400 transition-colors"
           >
             Back to site
           </Link>

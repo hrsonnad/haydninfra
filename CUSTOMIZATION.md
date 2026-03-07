@@ -97,6 +97,24 @@ Some organizations need a separate static HTML site (e.g., a donation page, land
 3. Update `index.html` to redirect to the appropriate page
 4. The static files are served directly by GitHub Pages alongside the Next.js export
 
+## Dark Mode
+
+Dark mode is built in using Tailwind v4's class-based strategy.
+
+- **Detection**: defaults to `prefers-color-scheme` (system preference)
+- **Toggle**: sun/moon icon button in the navbar — desktop (right of auth button) and mobile (top-right of hamburger row)
+- **Persistence**: stored in `localStorage` as `"light"`, `"dark"`, or `"system"`
+- **Anti-flash**: inline `<script>` in `<head>` sets the `dark` class before paint
+- **Context**: `src/contexts/theme-context.tsx` — `useTheme()` hook exposes `resolvedTheme`, `setTheme()`, `toggleTheme()`
+- **Toggle component**: `src/components/dark-mode-toggle.tsx`
+- **CSS variant**: defined in `src/app/globals.css` via `@custom-variant dark (&:where(.dark, .dark *))`
+
+When adding new UI, use `dark:` Tailwind variants:
+- `bg-white dark:bg-slate-900`
+- `text-slate-700 dark:text-slate-300`
+- `border-slate-200 dark:border-slate-700`
+- `text-slate-600 dark:text-slate-400`
+
 ## Checklist for New Organizations
 
 - [ ] Clone the repo and run `/setup-alpacapps-infra`

@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import type { Dictionary } from "@/i18n/types";
 import { type Locale, INTRANET_LOCALES } from "@/i18n/config";
 import { LanguageSwitcher } from "./language-switcher";
+import { DarkModeToggle } from "./dark-mode-toggle";
 import { useAuth } from "@/contexts/auth-context";
 import { useState } from "react";
 
@@ -29,7 +30,7 @@ export function Navbar({ dict, lang }: { dict: Dictionary; lang: Locale }) {
   ];
 
   return (
-    <nav className="sticky top-0 z-50 border-b border-slate-200 bg-white/80 backdrop-blur-md">
+    <nav className="sticky top-0 z-50 border-b border-slate-200 dark:border-slate-700 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md">
       <div className="max-w-6xl mx-auto px-6 flex items-center justify-between h-16">
         <Link href={`/${lang}`} className="text-xl font-bold">
           {dict.metadata.title}
@@ -41,8 +42,10 @@ export function Navbar({ dict, lang }: { dict: Dictionary; lang: Locale }) {
             <Link
               key={link.href}
               href={link.href}
-              className={`text-sm font-medium transition-colors hover:text-amber-600 ${
-                pathname === link.href ? "text-amber-600" : "text-slate-700"
+              className={`text-sm font-medium transition-colors hover:text-amber-600 dark:hover:text-amber-400 ${
+                pathname === link.href
+                  ? "text-amber-600 dark:text-amber-400"
+                  : "text-slate-700 dark:text-slate-300"
               }`}
             >
               {link.label}
@@ -66,34 +69,40 @@ export function Navbar({ dict, lang }: { dict: Dictionary; lang: Locale }) {
               </Link>
             )
           )}
+          <DarkModeToggle />
         </div>
 
         {/* Mobile toggle */}
-        <button
-          onClick={() => setMenuOpen(!menuOpen)}
-          className="sm:hidden p-2 text-slate-700"
-          aria-label="Toggle menu"
-        >
-          <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            {menuOpen ? (
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            ) : (
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-            )}
-          </svg>
-        </button>
+        <div className="sm:hidden flex items-center gap-2">
+          <DarkModeToggle />
+          <button
+            onClick={() => setMenuOpen(!menuOpen)}
+            className="p-2 text-slate-700 dark:text-slate-300"
+            aria-label="Toggle menu"
+          >
+            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              {menuOpen ? (
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              ) : (
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              )}
+            </svg>
+          </button>
+        </div>
       </div>
 
       {/* Mobile menu */}
       {menuOpen && (
-        <div className="sm:hidden border-t border-slate-200 bg-white px-6 py-4 space-y-3">
+        <div className="sm:hidden border-t border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-6 py-4 space-y-3">
           {links.map((link) => (
             <Link
               key={link.href}
               href={link.href}
               onClick={() => setMenuOpen(false)}
               className={`block text-sm font-medium ${
-                pathname === link.href ? "text-amber-600" : "text-slate-700"
+                pathname === link.href
+                  ? "text-amber-600 dark:text-amber-400"
+                  : "text-slate-700 dark:text-slate-300"
               }`}
             >
               {link.label}
@@ -108,7 +117,7 @@ export function Navbar({ dict, lang }: { dict: Dictionary; lang: Locale }) {
                 <Link
                   href={`/${intranetLang}/intranet`}
                   onClick={() => setMenuOpen(false)}
-                  className="block text-sm font-medium text-amber-600"
+                  className="block text-sm font-medium text-amber-600 dark:text-amber-400"
                 >
                   {dict.nav.intranet}
                 </Link>
@@ -116,7 +125,7 @@ export function Navbar({ dict, lang }: { dict: Dictionary; lang: Locale }) {
                 <Link
                   href={`/${intranetLang}/signin`}
                   onClick={() => setMenuOpen(false)}
-                  className="block text-sm font-medium text-amber-600"
+                  className="block text-sm font-medium text-amber-600 dark:text-amber-400"
                 >
                   {dict.nav.signIn}
                 </Link>

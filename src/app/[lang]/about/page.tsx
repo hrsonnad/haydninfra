@@ -14,13 +14,13 @@ export default async function AboutPage({
     <div className="py-20 px-6">
       <div className="max-w-3xl mx-auto">
         <h1 className="text-4xl font-bold mb-4">{dict.about.title}</h1>
-        <p className="text-lg text-slate-600 mb-12">{dict.about.description}</p>
+        <p className="text-lg text-slate-600 dark:text-slate-400 mb-12">{dict.about.description}</p>
 
         <section>
           <h2 className="text-2xl font-semibold mb-4">
             {dict.about.history.title}
           </h2>
-          <p className="text-slate-600 leading-relaxed">
+          <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
             {dict.about.history.content}
           </p>
         </section>

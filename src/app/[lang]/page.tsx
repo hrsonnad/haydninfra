@@ -33,7 +33,7 @@ export default async function HomePage({
       <section className="py-20 px-6">
         <div className="max-w-3xl mx-auto text-center">
           <h2 className="text-3xl font-bold mb-6">{dict.home.mission.title}</h2>
-          <p className="text-lg text-slate-600 leading-relaxed">
+          <p className="text-lg text-slate-600 dark:text-slate-400 leading-relaxed">
             {dict.home.mission.description}
           </p>
         </div>
