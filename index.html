@@ -1051,10 +1051,10 @@
                     { id: 'just-for-fun-ufc', label: 'UFC', type: 'link', href: 'public/ufc.html' }
                 ]}
             ] },
-            { id: 'private-pages', label: 'Private', type: 'branch', open: true, locked: true, children: [
-                { id: 'admin-dash', label: 'Dashboard', type: 'link', href: 'admin/index.html' },
-                { id: 'admin-resume', label: 'Resume Hub', type: 'link', href: 'admin/resume.html' },
-                { id: 'admin-pages', label: 'Page Manager', type: 'link', href: 'admin/public-pages.html' }
+            { id: 'private-pages', label: 'Private', type: 'branch', open: false, locked: true, children: [
+                { id: 'admin-dash', label: 'Dashboard', type: 'link', href: 'admin/index.html', requiresAuth: true },
+                { id: 'admin-resume', label: 'Resume Hub', type: 'link', href: 'admin/resume.html', requiresAuth: true },
+                { id: 'admin-pages', label: 'Page Manager', type: 'link', href: 'admin/public-pages.html', requiresAuth: true }
             ]}
         ];
 
@@ -1109,9 +1109,12 @@
             } else if (item.type === 'page') {
                 btn.addEventListener('click', function() { showPage(item.id); });
             } else if (item.type === 'link') {
-                (function(id, href) {
-                    btn.addEventListener('click', function() { loadFrame(id, href); });
-                })(item.id, item.href);
+                (function(id, href, requiresAuth) {
+                    btn.addEventListener('click', function() {
+                        if (requiresAuth && !isAuthed) return;
+                        loadFrame(id, href);
+                    });
+                })(item.id, item.href, !!item.requiresAuth);
             }
 
             return wrap;
