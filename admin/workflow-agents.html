@@ -92,13 +92,16 @@
         .agent-header:hover { background: var(--hover); }
 
         .agent-icon {
-            width: 32px; height: 32px; border-radius: 6px; border: 1px solid var(--line);
-            display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-            font-size: 14px; background: #fafafa;
+            width: 34px;
+            height: 34px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
         }
         .agent-icon canvas {
-            width: 24px;
-            height: 24px;
+            width: 34px;
+            height: 34px;
             display: block;
         }
 
@@ -275,7 +278,7 @@
 
                         <div class="agent-card">
                             <div class="agent-header" onclick="toggleAgent(this)">
-                                <div class="agent-icon"><canvas width="24" height="24" data-icon="robot"></canvas></div>
+                                <div class="agent-icon"><canvas width="34" height="34" data-icon="robot"></canvas></div>
                                 <div>
                                     <div class="agent-name">Orchestrator Agent</div>
                                     <div class="agent-role">Intake, decomposition, sequencing, and assignment</div>
@@ -320,7 +323,7 @@
 
                         <div class="agent-card">
                             <div class="agent-header" onclick="toggleAgent(this)">
-                                <div class="agent-icon"><canvas width="24" height="24" data-icon="laptop"></canvas></div>
+                                <div class="agent-icon"><canvas width="34" height="34" data-icon="laptop"></canvas></div>
                                 <div>
                                     <div class="agent-name">Spec Agent</div>
                                     <div class="agent-role">Converts story intent into testable acceptance criteria</div>
@@ -364,7 +367,7 @@
 
                         <div class="agent-card">
                             <div class="agent-header" onclick="toggleAgent(this)">
-                                <div class="agent-icon"><canvas width="24" height="24" data-icon="car"></canvas></div>
+                                <div class="agent-icon"><canvas width="34" height="34" data-icon="car"></canvas></div>
                                 <div>
                                     <div class="agent-name">Build Agent</div>
                                     <div class="agent-role">Implementation planning and code execution</div>
@@ -409,7 +412,7 @@
 
                         <div class="agent-card">
                             <div class="agent-header" onclick="toggleAgent(this)">
-                                <div class="agent-icon"><canvas width="24" height="24" data-icon="horse"></canvas></div>
+                                <div class="agent-icon"><canvas width="34" height="34" data-icon="horse"></canvas></div>
                                 <div>
                                     <div class="agent-name">QA Agent</div>
                                     <div class="agent-role">Test matrix, acceptance validation, and regression checks</div>
@@ -455,7 +458,7 @@
 
                         <div class="agent-card">
                             <div class="agent-header" onclick="toggleAgent(this)">
-                                <div class="agent-icon"><canvas width="24" height="24" data-icon="coffee"></canvas></div>
+                                <div class="agent-icon"><canvas width="34" height="34" data-icon="coffee"></canvas></div>
                                 <div>
                                     <div class="agent-name">Release Agent</div>
                                     <div class="agent-role">Ship packet, rollback plan, and post-deploy verification</div>
@@ -775,7 +778,7 @@
             ctx.lineWidth = 1.5;
             ctx.lineCap = 'round';
             ctx.lineJoin = 'round';
-            draw(ctx, 16);
+            draw(ctx, 30);
             ctx.restore();
         }
     }
