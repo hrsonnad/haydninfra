@@ -1542,6 +1542,7 @@
                 if (TREE[i].id === 'public-pages') { node = TREE[i]; break; }
             }
             if (!node) return;
+            var staticChildren = Array.isArray(node.children) ? node.children.slice() : [];
             try {
                 var res = await adminSupabase
                     .from('public_pages')
@@ -1549,11 +1550,10 @@
                     .eq('is_archived', false)
                     .order('created_at', { ascending: true });
                 if (res.error) throw res.error;
-                if (res.data && res.data.length > 0) {
-                    node.children = res.data.map(function(p) {
-                        return { id: 'pub-' + p.title.toLowerCase().replace(/[^a-z0-9]/g, '-'), label: p.title, type: 'link', href: p.path };
-                    });
-                }
+                var dynamicChildren = (res.data || []).map(function(p) {
+                    return { id: 'pub-' + p.title.toLowerCase().replace(/[^a-z0-9]/g, '-'), label: p.title, type: 'link', href: p.path };
+                });
+                node.children = staticChildren.concat(dynamicChildren);
             } catch (e) { /* silent */ }
             renderTree();
         }
