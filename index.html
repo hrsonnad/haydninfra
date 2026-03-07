@@ -1094,18 +1094,21 @@
             wrap.appendChild(btn);
 
             if (item.type === 'branch' && item.children) {
-                var kids = document.createElement('div');
-                kids.className = 'tree-children' + (item.open ? ' tree-children--open' : '');
-                item.children.forEach(function(child) { kids.appendChild(makeNode(child)); });
-                wrap.appendChild(kids);
+                if (!item.locked || isAuthed) {
+                    var kids = document.createElement('div');
+                    kids.className = 'tree-children' + (item.open ? ' tree-children--open' : '');
+                    item.children.forEach(function(child) { kids.appendChild(makeNode(child)); });
+                    wrap.appendChild(kids);
 
-                btn.addEventListener('click', function() {
-                    if (item.locked && !isAuthed) return;
-                    item.open = !item.open;
-                    kids.classList.toggle('tree-children--open', item.open);
-                    var c = btn.querySelector('.tree-chevron');
-                    if (c) c.classList.toggle('tree-chevron--open', item.open);
-                });
+                    btn.addEventListener('click', function() {
+                        item.open = !item.open;
+                        kids.classList.toggle('tree-children--open', item.open);
+                        var c = btn.querySelector('.tree-chevron');
+                        if (c) c.classList.toggle('tree-chevron--open', item.open);
+                    });
+                } else {
+                    btn.addEventListener('click', function() { /* locked */ });
+                }
             } else if (item.type === 'page') {
                 btn.addEventListener('click', function() { showPage(item.id); });
             } else if (item.type === 'link') {
