@@ -1187,6 +1187,13 @@
             '#F97316', // Coffee — orange
             '#EC4899', // Guitar — pink
             '#6366F1', // Mountain — indigo
+            '#84CC16', // Golf club — lime
+            '#14B8A6', // Golf cart — teal
+            '#FACC15', // Tennis racquet — yellow
+            '#E11D48', // Ramen — rose
+            '#D97706', // Burrito — warm amber
+            '#A855F7', // Dachshund — purple
+            '#0EA5E9', // Supercharger — sky
         ];
 
         // Icon drawing functions — each draws centered at (0,0) at given scale
@@ -1359,11 +1366,188 @@
                 ctx.lineTo(s*.44, s*.3);
                 ctx.closePath();
                 ctx.stroke();
-                // Snow cap
                 ctx.beginPath();
                 ctx.moveTo(-s*.18, -s*.14);
                 ctx.lineTo(-s*.08, -s*.32);
                 ctx.lineTo(s*.02, -s*.14);
+                ctx.stroke();
+            },
+            // 10: Golf club
+            function(ctx, s) {
+                ctx.beginPath();
+                ctx.moveTo(s*.08, -s*.44);
+                ctx.lineTo(-s*.04, s*.18);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(-s*.04, s*.18);
+                ctx.lineTo(-s*.22, s*.32);
+                ctx.lineTo(-s*.16, s*.38);
+                ctx.lineTo(-s*.01, s*.24);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(s*.06, -s*.36); ctx.lineTo(s*.1, -s*.36);
+                ctx.moveTo(s*.06, -s*.40); ctx.lineTo(s*.1, -s*.40);
+                ctx.stroke();
+            },
+            // 11: Golf cart
+            function(ctx, s) {
+                ctx.beginPath();
+                ctx.moveTo(-s*.3, s*.0);
+                ctx.lineTo(s*.3, s*.0);
+                ctx.lineTo(s*.32, s*.14);
+                ctx.lineTo(-s*.32, s*.14);
+                ctx.closePath();
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(-s*.2, s*.0);
+                ctx.lineTo(-s*.16, -s*.3);
+                ctx.lineTo(s*.2, -s*.3);
+                ctx.lineTo(s*.16, s*.0);
+                ctx.stroke();
+                ctx.beginPath(); ctx.arc(-s*.18, s*.22, s*.07, 0, Math.PI*2); ctx.stroke();
+                ctx.beginPath(); ctx.arc(s*.18, s*.22, s*.07, 0, Math.PI*2); ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(-s*.32, s*.14); ctx.lineTo(-s*.18, s*.16);
+                ctx.moveTo(s*.18, s*.16); ctx.lineTo(s*.32, s*.14);
+                ctx.stroke();
+            },
+            // 12: Tennis racquet
+            function(ctx, s) {
+                ctx.beginPath();
+                ctx.ellipse(0, -s*.12, s*.18, s*.24, 0, 0, Math.PI*2);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(-s*.04, s*.12);
+                ctx.lineTo(-s*.05, s*.42);
+                ctx.lineTo(s*.05, s*.42);
+                ctx.lineTo(s*.04, s*.12);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(-s*.14, -s*.22); ctx.lineTo(s*.14, -s*.22);
+                ctx.moveTo(-s*.16, -s*.08); ctx.lineTo(s*.16, -s*.08);
+                ctx.moveTo(-s*.14, s*.04); ctx.lineTo(s*.14, s*.04);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(-s*.08, -s*.34); ctx.lineTo(-s*.08, s*.1);
+                ctx.moveTo(s*.08, -s*.34); ctx.lineTo(s*.08, s*.1);
+                ctx.stroke();
+            },
+            // 13: Bowl of ramen
+            function(ctx, s) {
+                ctx.beginPath();
+                ctx.moveTo(-s*.32, -s*.06);
+                ctx.quadraticCurveTo(-s*.28, s*.3, 0, s*.32);
+                ctx.quadraticCurveTo(s*.28, s*.3, s*.32, -s*.06);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(-s*.36, -s*.06);
+                ctx.lineTo(s*.36, -s*.06);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(-s*.2, -s*.06);
+                ctx.quadraticCurveTo(-s*.1, -s*.16, 0, -s*.06);
+                ctx.quadraticCurveTo(s*.1, s*.04, s*.2, -s*.06);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(-s*.1, -s*.14);
+                ctx.quadraticCurveTo(-s*.14, -s*.28, -s*.08, -s*.36);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(s*.1, -s*.16);
+                ctx.quadraticCurveTo(s*.14, -s*.3, s*.08, -s*.4);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(s*.08, -s*.1); ctx.lineTo(s*.3, -s*.36);
+                ctx.moveTo(s*.14, -s*.1); ctx.lineTo(s*.36, -s*.32);
+                ctx.stroke();
+            },
+            // 14: Burrito
+            function(ctx, s) {
+                ctx.beginPath();
+                ctx.moveTo(-s*.36, -s*.1);
+                ctx.lineTo(s*.2, -s*.14);
+                ctx.quadraticCurveTo(s*.4, 0, s*.2, s*.14);
+                ctx.lineTo(-s*.36, s*.1);
+                ctx.quadraticCurveTo(-s*.44, 0, -s*.36, -s*.1);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(-s*.1, -s*.13);
+                ctx.quadraticCurveTo(-s*.06, 0, -s*.1, s*.13);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(s*.08, -s*.14);
+                ctx.quadraticCurveTo(s*.12, 0, s*.08, s*.14);
+                ctx.stroke();
+            },
+            // 15: Dachshund
+            function(ctx, s) {
+                ctx.beginPath();
+                ctx.moveTo(-s*.16, -s*.06);
+                ctx.lineTo(s*.2, -s*.06);
+                ctx.quadraticCurveTo(s*.3, -s*.06, s*.3, s*.02);
+                ctx.lineTo(s*.3, s*.04);
+                ctx.lineTo(-s*.16, s*.04);
+                ctx.quadraticCurveTo(-s*.26, s*.04, -s*.26, -s*.02);
+                ctx.closePath();
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(s*.3, -s*.04);
+                ctx.lineTo(s*.38, -s*.12);
+                ctx.lineTo(s*.44, -s*.06);
+                ctx.lineTo(s*.44, s*.0);
+                ctx.lineTo(s*.3, s*.02);
+                ctx.stroke();
+                ctx.beginPath(); ctx.arc(s*.38, -s*.04, s*.015, 0, Math.PI*2); ctx.fill();
+                ctx.beginPath();
+                ctx.moveTo(s*.34, -s*.1);
+                ctx.quadraticCurveTo(s*.38, -s*.18, s*.42, -s*.12);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(s*.22, s*.04); ctx.lineTo(s*.22, s*.18);
+                ctx.moveTo(s*.16, s*.04); ctx.lineTo(s*.16, s*.18);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(-s*.16, s*.04); ctx.lineTo(-s*.16, s*.18);
+                ctx.moveTo(-s*.22, s*.04); ctx.lineTo(-s*.22, s*.18);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(-s*.26, -s*.02);
+                ctx.quadraticCurveTo(-s*.34, -s*.12, -s*.3, -s*.2);
+                ctx.stroke();
+            },
+            // 16: Supercharger
+            function(ctx, s) {
+                ctx.beginPath();
+                ctx.moveTo(-s*.06, s*.4);
+                ctx.lineTo(-s*.06, -s*.12);
+                ctx.lineTo(s*.06, -s*.12);
+                ctx.lineTo(s*.06, s*.4);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(-s*.16, s*.4);
+                ctx.lineTo(s*.16, s*.4);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(-s*.14, -s*.12);
+                ctx.lineTo(-s*.14, -s*.34);
+                ctx.lineTo(s*.14, -s*.34);
+                ctx.lineTo(s*.14, -s*.12);
+                ctx.closePath();
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(s*.02, -s*.32);
+                ctx.lineTo(-s*.04, -s*.22);
+                ctx.lineTo(s*.02, -s*.22);
+                ctx.lineTo(-s*.04, -s*.14);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(s*.14, -s*.2);
+                ctx.quadraticCurveTo(s*.3, -s*.16, s*.28, -s*.02);
+                ctx.quadraticCurveTo(s*.26, s*.08, s*.2, s*.1);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(s*.2, s*.06);
+                ctx.lineTo(s*.2, s*.14);
                 ctx.stroke();
             }
         ];
@@ -1371,7 +1555,7 @@
         function initFloaters() {
             floaters = [];
             var w = wCanvas.width, h = wCanvas.height;
-            var cols = 4, rows = 3;
+            var cols = 5, rows = 4;
             var cellW = w / cols, cellH = h / rows;
             for (var i = 0; i < iconDrawers.length; i++) {
                 var col = i % cols;
