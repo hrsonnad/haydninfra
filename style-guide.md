@@ -501,9 +501,101 @@ Title format: `Page Name — haydns.ai` or `Page Name — Admin`
 
 ---
 
-## Responsive
+## Responsive / Mobile
 
-Sidebar collapses to 160px at `max-width: 640px`. Admin main padding reduces to `20px 16px`. The toolbar stacks vertically. No mobile-first reflow — the shell is desktop-primary.
+**Primary breakpoint:** `768px`. Below this, sidebars convert to slide-in drawers and layouts become single-column.
+
+### Mobile Navigation Pattern
+
+Both the main shell and admin pages use a **hamburger-triggered slide-in drawer**:
+
+- A **mobile topbar** (48px) appears at the top with brand + hamburger button
+- The sidebar becomes `position: fixed; left: -280px; width: 260px` and slides in via `left: 0` + backdrop
+- Backdrop: `rgba(0,0,0,0.25)`, tapping it closes the drawer
+- Drawer closes automatically on page/link selection
+- Transition: `0.25s cubic-bezier(0.4, 0, 0.2, 1)`
+
+```
+Mobile (< 768px):
+┌──────────────────────────┐
+│  [brand]      [☰]  48px │  ← mobile topbar
+├──────────────────────────┤
+│                          │
+│  Full-width content      │
+│                          │
+└──────────────────────────┘
+
+Drawer open:
+┌────────────┬─────────────┐
+│ Sidebar    │  Backdrop   │
+│ (260px)    │  (dimmed)   │
+│ fixed      │             │
+│ z:100      │  z:99       │
+└────────────┴─────────────┘
+```
+
+### Hamburger Button
+
+```css
+width: 36px;
+height: 36px;
+border: 1px solid var(--line);
+border-radius: 8px;
+color: var(--text-2);
+```
+Contains an 18x18 SVG (three horizontal lines). Hover: `background: var(--hover); color: var(--text)`.
+
+### Mobile Topbar
+
+```css
+height: 48px;
+padding: 0 16px;
+border-bottom: 1px solid var(--line);
+display: flex;
+align-items: center;
+justify-content: space-between;
+```
+Brand text uses the same style as `.sidebar-brand` (14px, weight 600, letter-spacing -0.03em).
+
+### Layout Adjustments at 768px
+
+| Element | Mobile behavior |
+|---------|----------------|
+| `.layout` / `.admin-shell` | `flex-direction: column` |
+| Sidebar | Fixed drawer (260px), hidden by default |
+| Content area | Full width |
+| `.admin-main` | `padding: 20px 16px` |
+| `.admin-topbar` | `padding: 0 16px; height: 44px` |
+| `.admin-toolbar` | Stacks vertically (`flex-direction: column`) |
+| Filter tabs | Full width, tabs share space equally |
+| `.admin-page-header h1` | `1.2rem` |
+| Modals | `margin: 16px; padding: 20px; max-width: none` |
+| `.form-row` | Single column (`grid-template-columns: 1fr`) |
+| `.actions` | Wraps (`flex-wrap: wrap`) |
+
+### Iframe Embedding on Mobile
+
+When admin pages are embedded in the shell iframe, both the admin sidebar and mobile topbar are hidden (the shell provides navigation). The detection logic:
+
+```js
+if (window.self !== window.top) {
+    // hide sidebar and mobile topbar
+}
+```
+
+### Public Pages (e.g. UFC)
+
+Public pages use their own responsive breakpoint at `600px`:
+
+- Content padding reduces to `16px 14px`
+- Fighter cards use tighter spacing and smaller fonts
+- Analyze button goes full-width
+- Profile cards stack single-column below `540px`
+- Event banner stacks vertically
+
+### Touch Targets
+
+Minimum touch target: 36px. The hamburger button, tree nav items, filter tabs, and action buttons all meet this. Tree item padding increases to accommodate fingers (vs. the tighter desktop tree items).
 
 ---
 

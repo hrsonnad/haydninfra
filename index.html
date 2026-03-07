@@ -689,12 +689,126 @@
         /* iframe frame */
         #page-frame { overflow: hidden; }
         #content-frame { width: 100%; height: 100%; border: none; display: block; }
+
+        /* ── Mobile ── */
+        .mobile-topbar {
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+            height: 48px;
+            padding: 0 16px;
+            background: var(--bg);
+            border-bottom: 1px solid var(--line);
+            flex-shrink: 0;
+            z-index: 9;
+        }
+
+        .mobile-brand {
+            font-size: 14px;
+            font-weight: 600;
+            letter-spacing: -0.03em;
+            color: var(--text);
+        }
+
+        .hamburger {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
+            background: none;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            cursor: pointer;
+            color: var(--text-2);
+            font-size: 0;
+            transition: background 120ms ease, color 120ms ease;
+        }
+
+        .hamburger:hover {
+            background: var(--hover);
+            color: var(--text);
+        }
+
+        .hamburger svg {
+            width: 18px;
+            height: 18px;
+        }
+
+        .sidebar-backdrop {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.25);
+            z-index: 99;
+            opacity: 0;
+            transition: opacity 0.25s ease;
+            pointer-events: none;
+        }
+
+        .sidebar-backdrop.visible {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        @media (max-width: 768px) {
+            .layout {
+                flex-direction: column;
+                height: 100vh;
+            }
+
+            .mobile-topbar {
+                display: flex;
+            }
+
+            .sidebar {
+                position: fixed;
+                top: 0;
+                left: -280px;
+                width: 260px;
+                height: 100vh;
+                z-index: 100;
+                transition: left 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+                border-right: 1px solid var(--line);
+                background: var(--bg);
+            }
+
+            .sidebar.open {
+                left: 0;
+            }
+
+            .sidebar-backdrop {
+                display: block;
+            }
+
+            .content {
+                flex: 1;
+                width: 100%;
+                min-height: 0;
+            }
+
+            .welcome-tagline,
+            .welcome-bottom {
+                font-size: 10px;
+            }
+
+            .welcome-tagline { top: 16px; }
+            .welcome-bottom { bottom: 16px; }
+        }
     </style>
 </head>
 <body>
 
+    <div class="mobile-topbar">
+        <span class="mobile-brand">haydns.ai</span>
+        <button class="hamburger" id="hamburger-btn" aria-label="Open navigation">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/></svg>
+        </button>
+    </div>
+    <div class="sidebar-backdrop" id="sidebar-backdrop"></div>
+
     <div class="layout">
-        <aside class="sidebar">
+        <aside class="sidebar" id="sidebar">
             <div class="sidebar-brand">haydns.ai</div>
             <nav class="tree" id="tree"></nav>
             <div class="sidebar-footer">
@@ -1436,6 +1550,40 @@
             } catch (e) { /* silent */ }
             renderTree();
         }
+
+        // ─── Mobile sidebar ───
+        var sidebar = document.getElementById('sidebar');
+        var backdrop = document.getElementById('sidebar-backdrop');
+        var hamburger = document.getElementById('hamburger-btn');
+
+        function openSidebar() {
+            sidebar.classList.add('open');
+            backdrop.classList.add('visible');
+        }
+
+        function closeSidebar() {
+            sidebar.classList.remove('open');
+            backdrop.classList.remove('visible');
+        }
+
+        hamburger.addEventListener('click', function() {
+            sidebar.classList.contains('open') ? closeSidebar() : openSidebar();
+        });
+
+        backdrop.addEventListener('click', closeSidebar);
+
+        // Close drawer when a page/link is selected on mobile
+        var origShowPage = showPage;
+        showPage = function(id, skipHash) {
+            closeSidebar();
+            origShowPage(id, skipHash);
+        };
+
+        var origLoadFrame = loadFrame;
+        loadFrame = function(itemId, href, skipHash) {
+            closeSidebar();
+            origLoadFrame(itemId, href, skipHash);
+        };
 
         // ─── Init ───
         function init() {

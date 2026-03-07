@@ -12,10 +12,18 @@
 </head>
 <body style="margin:0; background:#fff; font-family:'Outfit',system-ui,sans-serif;">
 
+    <div class="admin-mobile-topbar" id="admin-mobile-topbar" style="display:none;">
+        <span class="admin-mobile-brand">admin <a href="../index.html">← site</a></span>
+        <button class="admin-hamburger" id="admin-hamburger" aria-label="Open navigation">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/></svg>
+        </button>
+    </div>
+    <div class="admin-sidebar-backdrop" id="admin-backdrop"></div>
+
     <div class="admin-shell" id="admin-shell" style="display:none;">
 
         <!-- Sidebar -->
-        <aside class="admin-sidebar">
+        <aside class="admin-sidebar" id="admin-sidebar">
             <div class="admin-sidebar-brand">
                 admin
                 <a href="../index.html" style="margin-left:auto;">← site</a>
@@ -139,6 +147,11 @@
 
         requireAuth(async function() {
             document.getElementById('admin-shell').style.display = 'flex';
+            var mq = window.matchMedia('(max-width: 768px)');
+            if (mq.matches) document.getElementById('admin-mobile-topbar').style.display = 'flex';
+            mq.addEventListener('change', function(e) {
+                document.getElementById('admin-mobile-topbar').style.display = e.matches ? 'flex' : 'none';
+            });
             await fetchPages();
         });
 
@@ -294,7 +307,25 @@
         if (window.self !== window.top) {
             var _sidebar = document.querySelector('.admin-sidebar');
             if (_sidebar) _sidebar.style.display = 'none';
+            var _mtb = document.getElementById('admin-mobile-topbar');
+            if (_mtb) _mtb.style.display = 'none';
         }
+    </script>
+    <script>
+        (function() {
+            var sidebar = document.getElementById('admin-sidebar');
+            var backdrop = document.getElementById('admin-backdrop');
+            var btn = document.getElementById('admin-hamburger');
+            if (!sidebar || !backdrop || !btn) return;
+            btn.addEventListener('click', function() {
+                var open = sidebar.classList.toggle('open');
+                backdrop.classList.toggle('visible', open);
+            });
+            backdrop.addEventListener('click', function() {
+                sidebar.classList.remove('open');
+                backdrop.classList.remove('visible');
+            });
+        })();
     </script>
 </body>
 </html>
