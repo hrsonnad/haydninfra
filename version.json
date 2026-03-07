@@ -1,9 +1,9 @@
 {
-  "version": "v260307.26 10:41pm",
-  "release": 26,
-  "sha": "ef299ab",
-  "fullSha": "ef299ab2ca44086da12ef147c8daa64cd7a7580b",
+  "version": "v260307.27 10:47pm",
+  "release": 27,
+  "sha": "8105c11",
+  "fullSha": "8105c11277be79728b25966a5402cf7e02b22c38",
   "actor": "hrsonnad",
-  "pushedAt": "2026-03-07T04:41:16Z",
-  "commits": [{"sha": "ef299ab", "message": "Fix dark mode legibility on workflow-readme and agent-playbook pages", "author": "Haydn"}]
+  "pushedAt": "2026-03-07T04:47:15Z",
+  "commits": [{"sha": "8105c11", "message": "Remove AlpacApps template traces and rewrite documentation", "author": "Haydn"}]
 }
