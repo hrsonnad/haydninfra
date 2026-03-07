@@ -1,9 +1,9 @@
 {
-  "version": "v260307.02 6:12pm",
-  "release": 2,
-  "sha": "fe7c015",
-  "fullSha": "fe7c015a53bc7ef5ae9a74491043e1e28e70f10d",
+  "version": "v260307.03 6:31pm",
+  "release": 3,
+  "sha": "1c2cc96",
+  "fullSha": "1c2cc9637b90693f910b051bad5445b65280141f",
   "actor": "hrsonnad",
-  "pushedAt": "2026-03-07T00:12:53Z",
-  "commits": [{"sha": "fe7c015", "message": "Redesign admin pages with monochrome theme; remove resume builder", "author": "Haydn"}]
+  "pushedAt": "2026-03-07T00:31:49Z",
+  "commits": [{"sha": "1c2cc96", "message": "Add style-guide.md; move shell architecture from README", "author": "Haydn"}]
 }
