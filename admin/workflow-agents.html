@@ -221,7 +221,7 @@
                     <div class="doc-subtitle">Pipeline stages, agent roles, and the story-to-shipped lifecycle.</div>
 
                     <h2>Pipeline Overview</h2>
-                    <p>Every story flows left to right through six stages. Each stage has a gate that must be satisfied before the story advances. The animated highlight shows the intended flow direction.</p>
+                    <p>Every story flows left to right through six stages. Each stage has a gate that must be satisfied before the story advances.</p>
 
                     <div class="pipeline-wrap">
                         <div class="pipeline">
@@ -270,7 +270,7 @@
 
                         <div class="agent-card">
                             <div class="agent-header" onclick="toggleAgent(this)">
-                                <div class="agent-icon">O</div>
+                                <div class="agent-icon">🤖</div>
                                 <div>
                                     <div class="agent-name">Orchestrator Agent</div>
                                     <div class="agent-role">Intake, decomposition, sequencing, and assignment</div>
@@ -315,7 +315,7 @@
 
                         <div class="agent-card">
                             <div class="agent-header" onclick="toggleAgent(this)">
-                                <div class="agent-icon">S</div>
+                                <div class="agent-icon">💻</div>
                                 <div>
                                     <div class="agent-name">Spec Agent</div>
                                     <div class="agent-role">Converts story intent into testable acceptance criteria</div>
@@ -359,7 +359,7 @@
 
                         <div class="agent-card">
                             <div class="agent-header" onclick="toggleAgent(this)">
-                                <div class="agent-icon">B</div>
+                                <div class="agent-icon">🏎️</div>
                                 <div>
                                     <div class="agent-name">Build Agent</div>
                                     <div class="agent-role">Implementation planning and code execution</div>
@@ -404,7 +404,7 @@
 
                         <div class="agent-card">
                             <div class="agent-header" onclick="toggleAgent(this)">
-                                <div class="agent-icon">Q</div>
+                                <div class="agent-icon">🏇</div>
                                 <div>
                                     <div class="agent-name">QA Agent</div>
                                     <div class="agent-role">Test matrix, acceptance validation, and regression checks</div>
@@ -450,7 +450,7 @@
 
                         <div class="agent-card">
                             <div class="agent-header" onclick="toggleAgent(this)">
-                                <div class="agent-icon">R</div>
+                                <div class="agent-icon">☕</div>
                                 <div>
                                     <div class="agent-name">Release Agent</div>
                                     <div class="agent-role">Ship packet, rollback plan, and post-deploy verification</div>
@@ -603,35 +603,6 @@
                     <h2>Parallelization</h2>
                     <p>Most stages are serial, but one safe parallelization is built in: when a story enters In Progress, the Build Agent starts implementation while the QA Agent drafts its test matrix from the acceptance criteria. QA execution happens only after the build is complete.</p>
                     <p>Additional parallelization across stories is safe when they have no shared dependencies. The Orchestrator identifies these opportunities during decomposition.</p>
-
-                    <h2>Metrics</h2>
-                    <p>Track these weekly to measure whether the workflow is improving delivery.</p>
-                    <div class="lifecycle">
-                        <div class="lc-row">
-                            <div class="lc-badge">Cycle time</div>
-                            <div class="lc-content">
-                                <div class="lc-desc">Days from story entering Ready to reaching Shipped. Target: decreasing trend.</div>
-                            </div>
-                        </div>
-                        <div class="lc-row">
-                            <div class="lc-badge">Rework rate</div>
-                            <div class="lc-content">
-                                <div class="lc-desc">Percentage of stories reopened after reaching In Review or later. Target: below 15%.</div>
-                            </div>
-                        </div>
-                        <div class="lc-row">
-                            <div class="lc-badge">Escaped defects</div>
-                            <div class="lc-content">
-                                <div class="lc-desc">Bugs found after Shipped status. Target: zero for pilot, below 10% long-term.</div>
-                            </div>
-                        </div>
-                        <div class="lc-row">
-                            <div class="lc-badge">Chain complete</div>
-                            <div class="lc-content">
-                                <div class="lc-desc">Percentage of shipped stories with all five artifacts present. Target: 100%.</div>
-                            </div>
-                        </div>
-                    </div>
 
                 </div>
             </div>

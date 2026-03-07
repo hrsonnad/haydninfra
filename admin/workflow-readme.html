@@ -301,12 +301,34 @@
     var REPO = 'hrsonnad/workflow-kit';
     var API = 'https://api.github.com';
 
+    function ghFetch(path) {
+        return fetch(API + path, {
+            headers: {
+                'Accept': 'application/vnd.github+json'
+            }
+        }).then(function(r) {
+            return r.ok ? r.json() : null;
+        });
+    }
+
     function fetchRepoData() {
-        Promise.all([
-            fetch(API + '/repos/' + REPO).then(function(r) { return r.ok ? r.json() : null; }),
-            fetch(API + '/repos/' + REPO + '/commits?per_page=5').then(function(r) { return r.ok ? r.json() : null; }),
-            fetch(API + '/repos/' + REPO + '/git/trees/main?recursive=1').then(function(r) { return r.ok ? r.json() : null; })
-        ]).then(function(results) {
+        ghFetch('/repos/' + REPO).then(function(repo) {
+            var branch = (repo && repo.default_branch) ? repo.default_branch : 'main';
+            return Promise.all([
+                Promise.resolve(repo),
+                ghFetch('/repos/' + REPO + '/commits?per_page=5'),
+                ghFetch('/repos/' + REPO + '/git/trees/' + branch + '?recursive=1')
+                    .then(function(tree) {
+                        if (tree) return tree;
+                        if (branch !== 'main') return ghFetch('/repos/' + REPO + '/git/trees/main?recursive=1');
+                        return null;
+                    })
+                    .then(function(tree) {
+                        if (tree) return tree;
+                        return ghFetch('/repos/' + REPO + '/git/trees/master?recursive=1');
+                    })
+            ]);
+        }).then(function(results) {
             renderRepoStatus(results[0], results[1]);
             renderFileTree(results[2]);
             renderCommits(results[1]);

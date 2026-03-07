@@ -1034,25 +1034,24 @@
 
         var TREE = [
             { id: 'welcome', label: 'Welcome', type: 'page' },
-            { id: 'about', label: 'About.me', type: 'branch', open: false, children: [
-                { id: 'resume', label: 'Resume', type: 'page' },
-                { id: 'other', label: 'Other', type: 'page' }
+            { id: 'about', label: 'About.me', type: 'branch', open: true, children: [
+                { id: 'resume', label: 'Resume', type: 'page' }
             ]},
-            { id: 'projects', label: 'Projects', type: 'branch', open: false, children: [
+            { id: 'projects', label: 'Projects', type: 'branch', open: true, children: [
                 { id: 'prtfolio', label: 'Prtfolio.ai', type: 'page' }
             ]},
-            { id: 'public-pages', label: 'Public', type: 'branch', open: false, children: [
-                { id: 'orchestration', label: 'Orchestration', type: 'branch', open: false, children: [
+            { id: 'public-pages', label: 'Public', type: 'branch', open: true, children: [
+                { id: 'orchestration', label: 'Orchestration', type: 'branch', open: true, children: [
                     { id: 'wk-readme', label: 'Read.me', type: 'link', href: 'admin/workflow-readme.html' },
-                    { id: 'wk-agents', label: 'Agents', type: 'branch', open: false, children: [
+                    { id: 'wk-agents', label: 'Agents', type: 'branch', open: true, children: [
                         { id: 'wk-planning', label: 'Planning', type: 'link', href: 'admin/workflow-agents.html' }
                     ]}
                 ]},
-                { id: 'just-for-fun', label: 'Just for Fun', type: 'branch', open: false, children: [
+                { id: 'just-for-fun', label: 'Just for Fun', type: 'branch', open: true, children: [
                     { id: 'just-for-fun-ufc', label: 'UFC', type: 'link', href: 'public/ufc.html' }
                 ]}
             ] },
-            { id: 'private-pages', label: 'Private', type: 'branch', open: false, locked: true, children: [
+            { id: 'private-pages', label: 'Private', type: 'branch', open: true, locked: true, children: [
                 { id: 'admin-dash', label: 'Dashboard', type: 'link', href: 'admin/index.html' },
                 { id: 'admin-resume', label: 'Resume Hub', type: 'link', href: 'admin/resume.html' },
                 { id: 'admin-pages', label: 'Page Manager', type: 'link', href: 'admin/public-pages.html' }
@@ -1581,7 +1580,7 @@
         function updateFloaters() {
             var w = wCanvas.width, h = wCanvas.height;
             var n = floaters.length;
-            var attractSpeed = 2.0;
+            var attractSpeed = 1.0;
 
             for (var i = 0; i < n; i++) {
                 var f = floaters[i];
@@ -1771,6 +1770,31 @@
                 if (res.error) throw res.error;
                 var dynamicChildren = (res.data || []).map(function(p) {
                     return { id: 'pub-' + p.title.toLowerCase().replace(/[^a-z0-9]/g, '-'), label: p.title, type: 'link', href: p.path };
+                });
+                // Avoid duplicate nav links when a static page already exists (e.g., UFC).
+                var existingByHref = {};
+                var existingByLabel = {};
+                function norm(s) { return (s || '').toLowerCase().trim(); }
+                staticChildren.forEach(function(c) {
+                    if (c && c.type === 'link') {
+                        existingByHref[norm(c.href)] = true;
+                        existingByLabel[norm(c.label)] = true;
+                    }
+                    if (c && c.children) {
+                        c.children.forEach(function(gc) {
+                            if (gc && gc.type === 'link') {
+                                existingByHref[norm(gc.href)] = true;
+                                existingByLabel[norm(gc.label)] = true;
+                            }
+                        });
+                    }
+                });
+                dynamicChildren = dynamicChildren.filter(function(c) {
+                    var href = norm(c.href);
+                    var label = norm(c.label);
+                    if (existingByHref[href] || existingByLabel[label]) return false;
+                    if (href === 'public/ufc.html' || label === 'ufc fight cards') return false;
+                    return true;
                 });
                 node.children = staticChildren.concat(dynamicChildren);
             } catch (e) { /* silent */ }
