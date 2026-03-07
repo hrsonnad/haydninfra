@@ -130,7 +130,7 @@
         }
 
         .tree-children--open {
-            max-height: 300px;
+            max-height: 520px;
         }
 
         .tree-children .tree-btn {
@@ -149,6 +149,10 @@
 
         .tree-children .tree-children .tree-btn {
             padding-left: 54px;
+        }
+
+        .tree-children .tree-children .tree-children .tree-btn {
+            padding-left: 68px;
         }
 
         .sidebar-footer {
@@ -1037,9 +1041,13 @@
             { id: 'projects', label: 'Projects', type: 'branch', open: false, children: [
                 { id: 'prtfolio', label: 'Prtfolio.ai', type: 'page' }
             ]},
-            { id: 'public-pages', label: 'Public Pages', type: 'branch', open: false, children: [
-                { id: 'wk-readme', label: 'Workflow Kit > Read.me', type: 'link', href: 'admin/workflow-readme.html' },
-                { id: 'wk-agents', label: 'Workflow Kit > Agents & Planning', type: 'link', href: 'admin/workflow-agents.html' }
+            { id: 'public-pages', label: 'Public', type: 'branch', open: false, children: [
+                { id: 'orchestration', label: 'Orchestration', type: 'branch', open: false, children: [
+                    { id: 'wk-readme', label: 'Read.me', type: 'link', href: 'admin/workflow-readme.html' },
+                    { id: 'wk-agents', label: 'Agents', type: 'branch', open: false, children: [
+                        { id: 'wk-planning', label: 'Planning', type: 'link', href: 'admin/workflow-agents.html' }
+                    ]}
+                ]}
             ] },
             { id: 'private-pages', label: 'Private Pages', type: 'branch', open: false, locked: true, children: [
                 { id: 'admin-dash', label: 'Dashboard', type: 'link', href: 'admin/index.html' },
