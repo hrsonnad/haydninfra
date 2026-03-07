@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>UFC Fight Cards</title>
   <meta name="description" content="Upcoming UFC fight cards with Kalshi market odds, fighter profiles, and AI-powered analysis.">
+  <script>(function(){try{var t=localStorage.getItem('theme');if(t==='dark'||(t!=='light'&&window.matchMedia('(prefers-color-scheme:dark)').matches))document.documentElement.classList.add('dark')}catch(e){}})();</script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -31,6 +32,23 @@
       --green-dim:  rgba(22,163,74,0.07);
       --gold:       #9a7b1a;
       --gold-dim:   rgba(154,123,26,0.07);
+    }
+
+    html.dark :root {
+      --text:       #e8e8e8;
+      --text-2:     #999999;
+      --text-3:     #555555;
+      --bg:         #111111;
+      --surface2:   #161616;
+      --surface3:   #1c1c1c;
+      --line:       #242424;
+      --hover:      rgba(255,255,255,0.05);
+      --active:     rgba(255,255,255,0.09);
+      --shadow-sm:  0 1px 3px rgba(0,0,0,0.4);
+      --shadow-md:  0 4px 12px rgba(0,0,0,0.5);
+      --red-dim:    rgba(220,38,38,0.12);
+      --green-dim:  rgba(22,163,74,0.1);
+      --gold-dim:   rgba(154,123,26,0.1);
     }
 
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -628,9 +646,15 @@
     <div class="header-logo">
       <span class="logo-badge">UFC</span> Fight Cards
     </div>
-    <div class="live-pill">
-      <div class="live-dot"></div>
-      <span>Kalshi Odds</span>
+    <div style="display:flex;align-items:center;gap:12px;">
+      <div class="live-pill">
+        <div class="live-dot"></div>
+        <span>Kalshi Odds</span>
+      </div>
+      <button onclick="toggleTheme()" aria-label="Toggle dark mode" style="display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:8px;background:none;border:1px solid var(--line);cursor:pointer;color:var(--text-2);transition:background 120ms,color 120ms,border-color 120ms;" onmouseover="this.style.background='var(--hover)'" onmouseout="this.style.background='none'">
+        <svg class="theme-sun" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+        <svg class="theme-moon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      </button>
     </div>
   </div>
 </header>
@@ -1129,5 +1153,6 @@ if (window.self !== window.top) {
     if (_hdr) _hdr.style.display = 'none';
 }
 </script>
+<script src="../shared/theme.js"></script>
 </body>
 </html>

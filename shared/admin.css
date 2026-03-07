@@ -600,3 +600,66 @@
 
     .actions { flex-wrap: wrap; justify-content: flex-start; gap: 6px; }
 }
+
+/* ======================================== Dark Mode Toggle Button ======================================== */
+.theme-toggle {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 30px; height: 30px; border-radius: 8px;
+    background: none; border: 1px solid var(--line);
+    cursor: pointer; color: var(--text-2);
+    transition: background 120ms ease, color 120ms ease, border-color 120ms ease;
+    flex-shrink: 0;
+}
+.theme-toggle:hover { background: var(--hover); border-color: var(--text-3); color: var(--text); }
+.theme-toggle svg { width: 14px; height: 14px; }
+
+/* Sidebar footer layout — auth + toggle side-by-side */
+.admin-sidebar-footer {
+    display: flex !important;
+    align-items: center;
+    gap: 8px;
+}
+
+/* ======================================== Dark Mode Variables ======================================== */
+html.dark :root {
+    --text: #e8e8e8;
+    --text-2: #999999;
+    --text-3: #555555;
+    --bg: #111111;
+    --hover: rgba(255,255,255,0.05);
+    --active: rgba(255,255,255,0.09);
+    --line: #242424;
+
+    /* aap vars */
+    --aap-accent: #e8e8e8;
+    --aap-accent-deep: #ffffff;
+    --aap-accent-light: #999999;
+    --aap-bg: #111111;
+    --aap-bg-warm: #161616;
+    --aap-surface: #111111;
+    --aap-surface-warm: #161616;
+    --aap-text: #e8e8e8;
+    --aap-text-soft: #999999;
+    --aap-text-dim: #555555;
+    --aap-text-muted: #383838;
+    --aap-border: #242424;
+    --aap-border-light: #1c1c1c;
+    --aap-shadow-sm: 0 1px 3px rgba(0,0,0,0.4);
+    --aap-shadow-md: 0 4px 12px rgba(0,0,0,0.5);
+    --aap-shadow-lg: 0 8px 24px rgba(0,0,0,0.6);
+    --aap-shadow-xl: 0 16px 48px rgba(0,0,0,0.7);
+}
+
+/* Dark mode component overrides — hardcoded colors that need inverting */
+html.dark .btn-primary { color: #111111; }
+html.dark .btn-primary:hover { background: #ffffff; }
+html.dark .auth-avatar--initials { color: #111111; }
+html.dark .auth-avatar--initials:hover { background: #eeeeee; }
+html.dark .auth-modal__submit { color: #111111 !important; }
+html.dark .auth-modal__submit:hover { background: #ffffff !important; }
+html.dark .action-btn.danger:hover { background: rgba(220,38,38,0.12); color: #f87171; border-color: rgba(220,38,38,0.25); }
+html.dark .action-btn.success:hover { background: rgba(22,163,74,0.12); color: #4ade80; border-color: rgba(22,163,74,0.25); }
+html.dark .skel { background: linear-gradient(90deg, var(--line) 25%, #2a2a2a 50%, var(--line) 75%); }
+html.dark #toast { background: var(--text); color: #111111; }
+html.dark .auth-modal__backdrop { background: rgba(0,0,0,0.5) !important; }
+html.dark .auth-modal__field input { border-color: var(--line) !important; background: #1a1a1a !important; color: var(--text) !important; }
