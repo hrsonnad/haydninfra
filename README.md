@@ -1,105 +1,96 @@
-# AlpacApps Infra
+# haydninfra
 
-A starter template for building full-stack business platforms with Claude Code. Set up messaging, marketing, customer management, and finance — all on free or near-free infrastructure.
+Haydn Sonnad's personal knowledge base and site — [haydns.ai](https://haydns.ai). Stores documents, notes, projects, and tags backed by Supabase. The whole thing is static HTML served from GitHub Pages.
 
-## What you get
+**Live URLs:**
+- Public site: https://hrsonnad.github.io/haydninfra/
+- Admin: https://hrsonnad.github.io/haydninfra/admin/
 
-- **Database + Auth + Storage** — Supabase (free)
-- **Website + Hosting** — GitHub Pages (free)
-- **Login + Admin Dashboard** — Profile button, login modal, admin CRUD pages (included)
-- **Email** — Resend (free, 3,000/month)
-- **SMS** — Telnyx (~$0.004/message)
-- **Payments** — Square (2.9% + 30¢)
-- **E-Signatures** — SignWell (free, 3–25 docs/month)
-- **AI Features** — Google Gemini (free)
-- **Cloud Server** — Any VPS provider: DigitalOcean, Hostinger, AWS EC2, Google Cloud ($4-12/mo)
-- **AI Developer** — Claude Code (builds and manages everything)
-
-## Prerequisites
-
-Before starting, make sure you have:
-
-| Tool | Install |
-|------|---------|
-| **Git** | [git-scm.com/downloads](https://git-scm.com/downloads) (Mac has it built in) |
-| **Claude Code** | [docs.anthropic.com/claude-code](https://docs.anthropic.com/en/docs/claude-code/overview) (installs Node.js automatically) |
-| **GitHub account** | [github.com/signup](https://github.com/signup) (free) |
-
-Quick check — paste into your terminal:
-```bash
-git --version && claude --version
-```
-Both should print version numbers.
-
-## Quick start
-
-**1. Clone this repo** — replace `my-project` with your project name (lowercase, hyphens, no spaces):
-```bash
-git clone https://github.com/rsonnad/alpacapps-infra.git my-project
-cd my-project
-```
-
-**2. Open Claude Code** — you must be inside the project folder:
-```bash
-claude
-```
-
-**3. Run the setup wizard:**
-```
-/setup-alpacapps-infra
-```
-
-That's it. Claude creates your own GitHub repo, disconnects from this template, walks you through setting up each service, and pushes everything live.
-
-> **⚠️ "Skill not found"?** You're not inside the cloned folder. The skill lives at `.claude/skills/` inside the project. Run `pwd` to check, then `cd my-project` if needed.
-
-## What happens during setup
-
-The setup wizard will:
-1. Ask what you're building and which services you need
-2. Create a new GitHub repo under your account
-3. Disconnect from the `alpacapps-infra` template origin
-4. Customize the codebase for your organization (branding, basePath, i18n)
-5. Set up Supabase (create org + project), deploy edge functions, configure webhooks
-6. Scaffold login/auth system and admin CRUD pages for your entities
-7. Build your `CLAUDE.md` with all credentials and connection details
-8. Push everything to your new repo — your site goes live on GitHub Pages
-
-## After setup
-
-Every new Claude Code session automatically reads your `CLAUDE.md` and knows your entire stack — database schema, API keys, deployment flow, everything. Just tell Claude what to build.
-
-## Customization
-
-See [CUSTOMIZATION.md](CUSTOMIZATION.md) for a detailed guide on what gets customized for each new organization and how to modify the template.
+---
 
 ## Tech Stack
 
-- **Frontend:** Next.js 16 (React 19, TypeScript, Tailwind CSS)
-- **Backend:** Supabase (PostgreSQL + Storage + Auth)
-- **Hosting:** GitHub Pages (static export)
-- **i18n:** Dictionary-based multi-language support (English, Spanish, French by default)
+| Layer | What |
+|-------|------|
+| Frontend | Vanilla HTML/JS (static) |
+| Backend | Supabase (PostgreSQL + Storage + Auth) |
+| Hosting | GitHub Pages |
+| Styling | Tailwind CSS v4 (`styles/tailwind.out.css`, committed) |
 
-## Guides
+## Repo Structure
 
-- **[Getting Started](https://alpacaplayhouse.com/docs/getting-started.html)** — Visual step-by-step walkthrough
-- **[Full Infrastructure Guide](https://alpacaplayhouse.com/docs/alpacappsinfra.html)** — Detailed service-by-service setup reference
+```
+haydninfra/
+├── index.html              # Shell — sidebar + iframe host for the whole site
+├── admin/                  # Auth-gated admin CRUD pages
+│   ├── index.html          # Knowledge base dashboard
+│   ├── documents.html      # Documents
+│   ├── projects.html       # Projects
+│   ├── notes.html          # Notes
+│   ├── tags.html           # Tags
+│   ├── public-pages.html   # Public page manager
+│   ├── resume.html         # Resume hub
+│   ├── workflow-readme.html # Workflow Kit docs
+│   └── workflow-agents.html # Agent Playbook
+├── public/                 # Public-facing pages (ufc.html, etc.)
+├── shared/                 # Shared JS/CSS used across all pages
+│   ├── supabase.js         # Supabase client init
+│   ├── auth.js             # Auth module (profile button, login modal, page guard)
+│   ├── admin.css           # Admin page styles
+│   └── theme.js            # Dark mode toggle
+├── styles/                 # Tailwind source + built output
+├── playbooks/              # Multi-agent workflow guides
+├── templates/              # Linear templates + agent prompt packs
+├── metrics/                # Pilot measurement templates
+├── supabase/               # Edge functions + DB migrations
+└── CLAUDE.md               # Agent context (schema, stack, conventions)
+```
 
-## Style Guide
+## Database Schema
 
-See [style-guide.md](style-guide.md) for design tokens, layout patterns, components, and shell architecture rules for all pages on haydns.ai.
+All tables have RLS enabled — users can only access their own rows.
 
-## Agentic Workflow Starter (Linear + Agents)
+| Table | Description |
+|-------|-------------|
+| `projects` | Active projects (name, description, status, color) |
+| `documents` | Files, notes, links, references (title, content, type, project_id) |
+| `document_tags` | Junction: documents ↔ tags |
+| `notes` | Quick capture notes (content, project_id) |
+| `note_tags` | Junction: notes ↔ tags |
+| `tags` | User-defined tags (name, color) |
+| `profile_context` | About-me data (full_name, bio, metadata JSONB) |
+| `public_pages` | Metadata for public-facing pages |
 
-Use these docs to run a lightweight multi-agent delivery workflow:
+## Local Development
 
-- `playbooks/brain-dump-to-linear-v1.md` — turns a high-level vision into sequenced Linear stories
-- `playbooks/landing-page-workflow-v1.md` — week-1 pilot flow for landing page delivery
-- `templates/linear-epic-template.md` and `templates/linear-story-template.md`
-- `templates/agent-prompts/` — prompt packs for Orchestrator, Spec, Build, QA, and Release agents
-- `templates/linear-status-comment-template.md` — status and blocker tracking comment
-- `metrics/week1-landing-page-pilot.md` — pilot measurement template
+No build step. Edit HTML/JS files directly and open in a browser. For CSS:
 
-## License
+```bash
+npm run css:watch   # rebuild tailwind.out.css on save
+```
 
-AGPL-3.0 — see [LICENSE](LICENSE). If you modify and distribute this, you must share your changes under the same license.
+## Deployment
+
+Push to `main` — GitHub Pages serves it live immediately.
+
+```bash
+git add . && git commit -m "your message" && git push
+```
+
+## Shared Assets
+
+All pages load three scripts in order:
+
+```html
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="shared/supabase.js"></script>
+<script src="shared/auth.js"></script>
+```
+
+`auth.js` auto-inserts a profile button into the nav. Admin pages call `requireAuth(callback)` to gate access. The Supabase client is exposed as `window.adminSupabase`.
+
+## References
+
+- [CLAUDE.md](CLAUDE.md) — full agent context (schema, credentials pointer, conventions)
+- [GLOSSARY.md](GLOSSARY.md) — key terms (Shell, Admin pages, Tree nav, Workflow Kit, etc.)
+- [style-guide.md](style-guide.md) — design tokens, layout patterns, component conventions

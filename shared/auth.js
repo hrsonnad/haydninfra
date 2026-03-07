@@ -1,4 +1,4 @@
-// auth.js — AlpacApps shared auth module
+// auth.js — haydns.ai shared auth module
 // Profile button, login modal, and Supabase Auth integration
 // Reads config from shared/supabase.js globals (SUPABASE_URL, SUPABASE_ANON_KEY)
 //

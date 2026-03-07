@@ -10,14 +10,18 @@ This file provides context for Claude (AI assistant) when working on this codeba
 > This is a GitHub Pages site - changes only go live after pushing.
 > Always `git push` as soon as changes are ready.
 
+## What this repo is
+
+**haydninfra** is Haydn Sonnad's personal knowledge base and site (haydns.ai). It stores documents, notes, projects, and tags in Supabase, and exposes them through a static HTML shell on GitHub Pages. The entire frontend is vanilla HTML/JS — no framework, no build pipeline except for Tailwind CSS compilation. There is no Next.js app; the `src/` directory was removed. All real pages live in `admin/` (auth-gated CRUD) and `public/` (public-facing content), loaded into the sidebar shell at `index.html`.
+
 ## Project Overview
 
 A personal knowledge base and Google Drive replacement for storing information about the owner and their active projects. Supports documents, notes, projects, and tags — with MCP context access.
 
 **Tech Stack:**
-- Frontend: GitHub Pages (vanilla HTML/JS) + Next.js 16 (React 19, TypeScript, Tailwind CSS)
+- Frontend: Vanilla HTML/JS (static, GitHub Pages)
 - Backend: Supabase (PostgreSQL + Storage + Auth)
-- Hosting: GitHub Pages (static export)
+- Hosting: GitHub Pages (static)
 - Styling: Tailwind CSS v4 (CSS-first, `styles/tailwind.css` → `styles/tailwind.out.css`)
 
 **Live URLs:**
