@@ -1,9 +1,9 @@
 {
-  "version": "v260307.07 7:15pm",
-  "release": 7,
-  "sha": "bf15365",
-  "fullSha": "bf15365387778a2d830332ae2a6b0519d3467b32",
+  "version": "v260307.08 7:39pm",
+  "release": 8,
+  "sha": "bbe284e",
+  "fullSha": "bbe284eac4cc1de35b8d7c93a62038059b33b5c1",
   "actor": "hrsonnad",
-  "pushedAt": "2026-03-07T01:15:43Z",
-  "commits": [{"sha": "bf15365", "message": "Restyle UFC page to match style-guide.md", "author": "Haydn"}]
+  "pushedAt": "2026-03-07T01:39:49Z",
+  "commits": [{"sha": "bbe284e", "message": "Add Workflow Kit pages, playbooks, and agent prompt system", "author": "Haydn"}]
 }
