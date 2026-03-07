@@ -1,9 +1,9 @@
 {
-  "version": "v260307.19 8:12pm",
-  "release": 19,
-  "sha": "4cf6235",
-  "fullSha": "4cf6235ff5e7e263da0526be18a98caee912a75e",
+  "version": "v260307.20 8:15pm",
+  "release": 20,
+  "sha": "677413d",
+  "fullSha": "677413d9e271cf9954d831b16dd274d21de8ff2c",
   "actor": "hrsonnad",
-  "pushedAt": "2026-03-07T02:12:35Z",
-  "commits": [{"sha": "4cf6235", "message": "Never render private children for unauthed users", "author": "Haydn"}]
+  "pushedAt": "2026-03-07T02:15:59Z",
+  "commits": [{"sha": "677413d", "message": "Add github-proxy edge function, fix repo data fetch with auth token", "author": "Haydn"}]
 }
