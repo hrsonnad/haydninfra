@@ -31,7 +31,7 @@
         .doc p { font-size: 13px; line-height: 1.7; color: var(--text-2); font-weight: 300; margin-bottom: 12px; }
 
         .cmd-block {
-            background: #fafafa; border: 1px solid var(--line); border-radius: 6px;
+            background: var(--aap-bg-warm); border: 1px solid var(--line); border-radius: 6px;
             padding: 14px 16px; margin: 12px 0 16px; position: relative;
             font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px;
             color: var(--text); line-height: 1.6; overflow-x: auto;
@@ -39,7 +39,7 @@
         .cmd-block .cmd-comment { color: var(--text-3); }
         .cmd-copy {
             position: absolute; top: 8px; right: 8px; padding: 3px 8px;
-            border: 1px solid var(--line); border-radius: 4px; background: #fff;
+            border: 1px solid var(--line); border-radius: 4px; background: var(--aap-bg-warm);
             font-family: 'Outfit', sans-serif; font-size: 10px; color: var(--text-3);
             cursor: pointer; transition: all 120ms ease;
         }
@@ -90,7 +90,7 @@
         .step-list li::before {
             counter-increment: steps; content: counter(steps);
             position: absolute; left: -11px; top: 6px; width: 20px; height: 20px;
-            border-radius: 50%; background: #fff; border: 1px solid var(--line);
+            border-radius: 50%; background: var(--bg); border: 1px solid var(--line);
             font-size: 10px; font-weight: 600; color: var(--text-3);
             display: flex; align-items: center; justify-content: center;
         }
@@ -195,7 +195,7 @@
                     </div>
 
                     <h2>What Gets Synced</h2>
-                    <p>Running <code style="font-family:'SF Mono','Fira Code',monospace; font-size:12px; background:#fafafa; padding:1px 5px; border-radius:3px; border:1px solid var(--line);">make sync-workflow</code> copies these into <code style="font-family:'SF Mono','Fira Code',monospace; font-size:12px; background:#fafafa; padding:1px 5px; border-radius:3px; border:1px solid var(--line);">docs/agentic-workflow/</code> in your project repo.</p>
+                    <p>Running <code style="font-family:'SF Mono','Fira Code',monospace; font-size:12px; background:var(--aap-bg-warm); padding:1px 5px; border-radius:3px; border:1px solid var(--line);">make sync-workflow</code> copies these into <code style="font-family:'SF Mono','Fira Code',monospace; font-size:12px; background:var(--aap-bg-warm); padding:1px 5px; border-radius:3px; border:1px solid var(--line);">docs/agentic-workflow/</code> in your project repo.</p>
 
                     <div class="desc-grid">
                         <div class="desc-card">
@@ -234,7 +234,7 @@
                     </div>
 
                     <h2>Updating the Kit</h2>
-                    <p>All changes live in <code style="font-family:'SF Mono','Fira Code',monospace; font-size:12px; background:#fafafa; padding:1px 5px; border-radius:3px; border:1px solid var(--line);">~/workflow-kit</code>. Edit files there, commit, and push. Then re-sync each project repo.</p>
+                    <p>All changes live in <code style="font-family:'SF Mono','Fira Code',monospace; font-size:12px; background:var(--aap-bg-warm); padding:1px 5px; border-radius:3px; border:1px solid var(--line);">~/workflow-kit</code>. Edit files there, commit, and push. Then re-sync each project repo.</p>
 
                     <ol class="step-list">
                         <li>Edit playbooks, templates, or prompts in <code style="font-family:'SF Mono','Fira Code',monospace; font-size:12px;">~/workflow-kit</code></li>

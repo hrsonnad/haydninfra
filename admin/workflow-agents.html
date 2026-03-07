@@ -38,12 +38,12 @@
             padding: 14px 10px 12px; text-align: center; position: relative;
             transition: background 200ms ease, border-color 200ms ease;
         }
-        .stage:hover { background: rgba(0,0,0,0.015); border-color: #ddd; }
+        .stage:hover { background: rgba(0,0,0,0.015); border-color: var(--text-3); }
         .stage-name { font-size: 11px; font-weight: 500; color: var(--text); letter-spacing: -0.01em; }
         .stage-agent { font-size: 10px; color: var(--text-3); margin-top: 4px; font-weight: 300; }
         .stage-num {
             position: absolute; top: -8px; left: 50%; transform: translateX(-50%);
-            width: 16px; height: 16px; border-radius: 50%; background: #fff; border: 1px solid var(--line);
+            width: 16px; height: 16px; border-radius: 50%; background: var(--bg); border: 1px solid var(--line);
             font-size: 9px; font-weight: 600; color: var(--text-3);
             display: flex; align-items: center; justify-content: center;
         }
@@ -84,7 +84,7 @@
             border: 1px solid var(--line); border-radius: 6px; margin-bottom: 8px;
             overflow: hidden; transition: border-color 120ms ease;
         }
-        .agent-card:hover { border-color: #ddd; }
+        .agent-card:hover { border-color: var(--text-3); }
 
         .agent-header {
             display: flex; align-items: center; gap: 12px; padding: 14px 16px;
@@ -149,7 +149,7 @@
         .lc-badge {
             flex-shrink: 0; width: 100px; padding: 4px 10px; border-radius: 5px;
             border: 1px solid var(--line); font-size: 11px; font-weight: 500;
-            color: var(--text); text-align: center; background: #fafafa;
+            color: var(--text); text-align: center; background: var(--aap-bg-warm);
         }
         .lc-content { flex: 1; min-width: 0; }
         .lc-gate { font-size: 12px; font-weight: 500; color: var(--text); margin-bottom: 4px; }

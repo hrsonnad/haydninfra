@@ -663,3 +663,28 @@ html.dark .skel { background: linear-gradient(90deg, var(--line) 25%, #2a2a2a 50
 html.dark #toast { background: var(--text); color: #111111; }
 html.dark .auth-modal__backdrop { background: rgba(0,0,0,0.5) !important; }
 html.dark .auth-modal__field input { border-color: var(--line) !important; background: #1a1a1a !important; color: var(--text) !important; }
+
+/* ── Dark mode: page-level component fixes (workflow-readme, workflow-agents) ── */
+
+/* Code blocks and copy buttons */
+html.dark .cmd-block { background: #1a1a1a; }
+html.dark .cmd-copy { background: #1a1a1a; color: var(--text-3); border-color: var(--line); }
+html.dark .cmd-copy:hover { border-color: var(--text-3); color: var(--text); }
+
+/* Step list numbered circles */
+html.dark .step-list li::before { background: #1a1a1a; }
+
+/* Skeleton shimmer midpoint */
+html.dark .skel { background: linear-gradient(90deg, var(--line) 25%, #2a2a2a 50%, var(--line) 75%); background-size: 200% 100%; }
+
+/* Pipeline stage number badges */
+html.dark .stage-num { background: #1a1a1a; }
+
+/* Pipeline stage hover border */
+html.dark .stage:hover { border-color: var(--text-3); }
+
+/* Agent card hover border */
+html.dark .agent-card:hover { border-color: var(--text-3); }
+
+/* Lifecycle status badges */
+html.dark .lc-badge { background: #1a1a1a; }
