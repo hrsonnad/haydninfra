@@ -1,9 +1,9 @@
 {
-  "version": "v260307.18 8:11pm",
-  "release": 18,
-  "sha": "85d7587",
-  "fullSha": "85d7587b8ffafd3167af041d4a30b77656607144",
+  "version": "v260307.19 8:12pm",
+  "release": 19,
+  "sha": "4cf6235",
+  "fullSha": "4cf6235ff5e7e263da0526be18a98caee912a75e",
   "actor": "hrsonnad",
-  "pushedAt": "2026-03-07T02:11:45Z",
-  "commits": [{"sha": "85d7587", "message": "Fix private section visible/clickable to unauthed users", "author": "Haydn"}]
+  "pushedAt": "2026-03-07T02:12:35Z",
+  "commits": [{"sha": "4cf6235", "message": "Never render private children for unauthed users", "author": "Haydn"}]
 }
