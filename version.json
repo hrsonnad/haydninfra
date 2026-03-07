@@ -1,9 +1,9 @@
 {
-  "version": "v260307.28 10:52pm",
-  "release": 28,
-  "sha": "6718024",
-  "fullSha": "671802484563f7f93e86f0594a823c5bef1e2be8",
+  "version": "v260307.29 11:08pm",
+  "release": 29,
+  "sha": "48dd6d3",
+  "fullSha": "48dd6d3ea3ecaac986f96a0e8281f09c56d5d947",
   "actor": "hrsonnad",
-  "pushedAt": "2026-03-07T04:52:11Z",
-  "commits": [{"sha": "6718024", "message": "Make CLAUDE.md agent-agnostic (Cursor, Codex, Claude, etc.)", "author": "Haydn"}]
+  "pushedAt": "2026-03-07T05:08:26Z",
+  "commits": [{"sha": "48dd6d3", "message": "Add DB-driven nav tree manager", "author": "Haydn"}]
 }
