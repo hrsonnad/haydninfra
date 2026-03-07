@@ -1,9 +1,9 @@
 {
-  "version": "v260307.03 6:31pm",
-  "release": 3,
-  "sha": "1c2cc96",
-  "fullSha": "1c2cc9637b90693f910b051bad5445b65280141f",
+  "version": "v260307.04 6:35pm",
+  "release": 4,
+  "sha": "11c6bbd",
+  "fullSha": "11c6bbd14ca39e060535d070cf2c8fa97128cdc7",
   "actor": "hrsonnad",
-  "pushedAt": "2026-03-07T00:31:49Z",
-  "commits": [{"sha": "1c2cc96", "message": "Add style-guide.md; move shell architecture from README", "author": "Haydn"}]
+  "pushedAt": "2026-03-07T00:35:34Z",
+  "commits": [{"sha": "11c6bbd", "message": "Align admin pages with style guide", "author": "Haydn"}]
 }
