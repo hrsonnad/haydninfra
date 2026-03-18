@@ -1,9 +1,9 @@
 {
-  "version": "v260307.29 11:08pm",
-  "release": 29,
-  "sha": "48dd6d3",
-  "fullSha": "48dd6d3ea3ecaac986f96a0e8281f09c56d5d947",
+  "version": "v260318.01 7:25pm",
+  "release": 1,
+  "sha": "e1a5c6b",
+  "fullSha": "e1a5c6bd8e091934c2b979f113298670378e2adf",
   "actor": "hrsonnad",
-  "pushedAt": "2026-03-07T05:08:26Z",
-  "commits": [{"sha": "48dd6d3", "message": "Add DB-driven nav tree manager", "author": "Haydn"}]
+  "pushedAt": "2026-03-18T00:25:19Z",
+  "commits": [{"sha": "e1a5c6b", "message": "Add per-item color accent to nav tree", "author": "Haydn"}]
 }
