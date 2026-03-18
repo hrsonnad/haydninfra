@@ -471,6 +471,14 @@
                     <input type="checkbox" id="em-open"> Open by default
                 </label>
             </div>
+            <div class="form-group">
+                <label class="form-label">Color accent</label>
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <input type="checkbox" id="em-color-enabled" onchange="document.getElementById('em-color').disabled=!this.checked">
+                    <input type="color" id="em-color" value="#6366f1" style="width:48px;height:28px;border:1px solid var(--line);border-radius:4px;cursor:pointer;padding:2px;">
+                    <span style="font-size:12px;color:var(--text-3);">Background wash on hover/active</span>
+                </div>
+            </div>
             <div class="modal-footer">
                 <button class="btn-cancel" onclick="closeEditModal()">Cancel</button>
                 <button class="btn-primary" onclick="applyEditModal()">Apply</button>
@@ -578,6 +586,13 @@
         badge.textContent = node.type;
         row.appendChild(badge);
 
+        // color dot
+        if (node.color) {
+            const dot = document.createElement('span');
+            dot.style.cssText = 'width:10px;height:10px;border-radius:50%;background:' + node.color + ';flex-shrink:0;display:inline-block;';
+            row.appendChild(dot);
+        }
+
         // icon + label
         const labelEl = document.createElement('span');
         labelEl.className = 'nm-node-label';
@@ -675,6 +690,7 @@
                 label: orig.label || label,
                 type: orig.type || 'link',
                 ...(orig.icon ? { icon: orig.icon } : {}),
+                ...(orig.color ? { color: orig.color } : {}),
                 ...(orig.href ? { href: orig.href } : {}),
                 ...(orig.type === 'branch' ? { open: orig.open !== false, children: children || [] } : {}),
             };
@@ -766,6 +782,10 @@
         document.getElementById('em-type').value = editTarget.type || 'link';
         document.getElementById('em-href').value = editTarget.href || '';
         document.getElementById('em-open').checked = editTarget.open !== false;
+        const hasColor = !!editTarget.color;
+        document.getElementById('em-color-enabled').checked = hasColor;
+        document.getElementById('em-color').value = editTarget.color || '#6366f1';
+        document.getElementById('em-color').disabled = !hasColor;
         onEditTypeChange();
         document.getElementById('edit-modal').classList.add('open');
         setTimeout(() => document.getElementById('em-label').focus(), 50);
@@ -790,6 +810,9 @@
         editTarget.label = label;
         editTarget.type = type;
         if (icon) editTarget.icon = icon; else delete editTarget.icon;
+        const colorEnabled = document.getElementById('em-color-enabled').checked;
+        if (colorEnabled) editTarget.color = document.getElementById('em-color').value;
+        else delete editTarget.color;
         if (type !== 'branch') {
             editTarget.href = href || editTarget.href;
             delete editTarget.open;
