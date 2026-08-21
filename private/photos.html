@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://cdn.jsdelivr.net; connect-src https://ixxnhvqyxkuwyshzdnlc.supabase.co; img-src https://*.r2.cloudflarestorage.com; media-src https://*.r2.cloudflarestorage.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; base-uri 'none'; form-action 'none'; object-src 'none'">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <meta name="referrer" content="no-referrer">
+    <title>Photos — haydns.ai</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../shared/photos/photos.css">
+    <script src="../shared/photos/boot.js"></script>
+</head>
+<body>
+    <div class="ph-app">
+        <div class="ph-top">
+            <div class="ph-search">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.5-4.5"/></svg>
+                <input id="ph-search-input" type="text" placeholder="Search people, things, text, chats, dates…" autocomplete="off" spellcheck="false">
+                <div class="ph-suggest"></div>
+            </div>
+            <div class="ph-tabs">
+                <button class="ph-tab active" data-view="all">Photos</button>
+                <button class="ph-tab" data-view="videos">Videos</button>
+                <button class="ph-tab" data-view="people">People</button>
+                <button class="ph-tab" data-view="chats">Chats</button>
+                <button class="ph-tab" data-view="screens">Screenshots</button>
+                <button class="ph-tab" data-view="clutter">Clutter</button>
+            </div>
+            <div class="ph-count"></div>
+        </div>
+        <div class="ph-chips"></div>
+        <div class="ph-main">
+            <div class="ph-scroll"><div class="ph-canvas"></div></div>
+            <div class="ph-scrub"><div class="bubble"></div></div>
+            <div id="ph-people" class="ph-cards"></div>
+            <div id="ph-chats" class="ph-cards"></div>
+        </div>
+    </div>
+
+    <div class="ph-lb">
+        <div class="stage"></div>
+        <div class="livebadge" style="display:none">LIVE</div>
+        <div class="topbar">
+            <button class="info-btn" title="Info (i)" aria-label="Info">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8v.01"/></svg>
+            </button>
+            <button class="dl-btn" title="Download original" aria-label="Download">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 21h16"/></svg>
+            </button>
+            <button class="close-btn" title="Close (Esc)" aria-label="Close">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg>
+            </button>
+        </div>
+        <button class="nav prev" aria-label="Previous">‹</button>
+        <button class="nav next" aria-label="Next">›</button>
+        <div class="info"></div>
+    </div>
+
+    <div id="toast"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    <script src="../shared/supabase.js"></script>
+    <script src="../shared/auth.js"></script>
+    <script src="../shared/photos/blurhash.js"></script>
+    <script src="../shared/photos/api.js"></script>
+    <script src="../shared/photos/app.js"></script>
+    <script src="../shared/photos/lightbox.js"></script>
+</body>
+</html>

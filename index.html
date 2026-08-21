@@ -1051,6 +1051,7 @@
         // Welcome is always pinned first; Private is always appended last (hardcoded for security)
         var TREE_WELCOME = { id: 'welcome', label: 'Welcome', type: 'page' };
         var TREE_PRIVATE = { id: 'private-pages', label: 'Private', type: 'branch', open: false, locked: true, children: [
+            { id: 'photos', label: 'Photos', type: 'link', href: 'private/photos.html', requiresAuth: true },
             { id: 'admin-dash', label: 'Dashboard', type: 'link', href: 'admin/index.html', requiresAuth: true },
             { id: 'admin-resume', label: 'Resume Hub', type: 'link', href: 'admin/resume.html', requiresAuth: true },
             { id: 'admin-pages', label: 'Page Manager', type: 'link', href: 'admin/public-pages.html', requiresAuth: true },
