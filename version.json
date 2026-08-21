@@ -1,9 +1,9 @@
 {
-  "version": "v260318.01 7:25pm",
+  "version": "v260821.01 10:08am",
   "release": 1,
-  "sha": "e1a5c6b",
-  "fullSha": "e1a5c6bd8e091934c2b979f113298670378e2adf",
+  "sha": "799a2d7",
+  "fullSha": "799a2d7e4932b37c64f1dccd7277992220c32835",
   "actor": "hrsonnad",
-  "pushedAt": "2026-03-18T00:25:19Z",
-  "commits": [{"sha": "e1a5c6b", "message": "Add per-item color accent to nav tree", "author": "Haydn"}]
+  "pushedAt": "2026-08-21T15:08:27Z",
+  "commits": [{"sha": "799a2d7", "message": "Add private photo library (Photos section)", "author": "Haydn"}]
 }
