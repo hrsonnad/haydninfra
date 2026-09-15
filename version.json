@@ -1,9 +1,9 @@
 {
-  "version": "v260915.14 6:35pm",
-  "release": 14,
-  "sha": "0aee004",
-  "fullSha": "0aee0049b758db5c2983367446b906cd41dabe91",
+  "version": "v260915.15 6:57pm",
+  "release": 15,
+  "sha": "c3e1a74",
+  "fullSha": "c3e1a74d13c0253489561741fa2806b28acf666c",
   "actor": "hrsonnad",
-  "pushedAt": "2026-09-15T23:35:27Z",
-  "commits": [{"sha": "8b4f7a6", "message": "Photos: durable person identities, cluster merging, name suggestions", "author": "Haydn"}, {"sha": "0aee004", "message": "Bump asset version (concurrent push collided again)", "author": "Haydn"}]
+  "pushedAt": "2026-09-15T23:57:35Z",
+  "commits": [{"sha": "c3e1a74", "message": "Portfolio: show account structure and where the money actually goes", "author": "Haydn"}]
 }
