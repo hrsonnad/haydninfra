@@ -1,9 +1,9 @@
 {
-  "version": "v260915.01 4:51pm",
-  "release": 1,
-  "sha": "68bd626",
-  "fullSha": "68bd626c2c832641b5f1062cf1e1fe48597ce6f5",
+  "version": "v260915.02 4:55pm",
+  "release": 2,
+  "sha": "041c938",
+  "fullSha": "041c9383fb2694d7360194c2d5a6f959e1613381",
   "actor": "hrsonnad",
-  "pushedAt": "2026-09-15T21:51:53Z",
-  "commits": [{"sha": "68bd626", "message": "Render sign-in button before the session resolves", "author": "Haydn"}]
+  "pushedAt": "2026-09-15T21:55:46Z",
+  "commits": [{"sha": "041c938", "message": "Add private portfolio workspace (3-step rebalancing flow)", "author": "Haydn"}]
 }
