@@ -108,6 +108,11 @@ find . -name "*.html" -not -path "./.git/*" -not -path "./node_modules/*" -not -
   if grep -q 'data-site-version' "$f"; then
     do_sed "s/\(data-site-version[^>]*>\)[^<]*/\1${DISPLAY_VERSION}/" "$f"
   fi
+  # Cache-bust local js/css. GitHub Pages serves these with max-age=14400, so
+  # without a changing URL a shipped fix sits behind a stale copy in a
+  # visitor's browser for four hours. Only rewrites refs already carrying ?v=.
+  do_sed "s/\.js?v=[^\"']*/.js?v=${VERSION}/g" "$f"
+  do_sed "s/\.css?v=[^\"']*/.css?v=${VERSION}/g" "$f"
 done
 
 # ── write version.json ───────────────────────────────────────────────
