@@ -1,9 +1,9 @@
 {
-  "version": "v260915.07 5:33pm",
-  "release": 7,
-  "sha": "39d09bd",
-  "fullSha": "39d09bd87c39cffe306369846b6c2be41d053225",
+  "version": "v260915.08 5:52pm",
+  "release": 8,
+  "sha": "0a032ad",
+  "fullSha": "0a032ad64e2f909f3618e9b4dfaec829a26558b4",
   "actor": "hrsonnad",
-  "pushedAt": "2026-09-15T22:33:49Z",
-  "commits": [{"sha": "39d09bd", "message": "Let the portfolio gate actually hide", "author": "Haydn"}]
+  "pushedAt": "2026-09-15T22:52:04Z",
+  "commits": [{"sha": "0a032ad", "message": "Portfolio: correct the IRA tax classification, add a tax profile, fix header", "author": "Haydn"}]
 }
