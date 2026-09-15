@@ -15,6 +15,7 @@
     list: [],                    // current filtered items
     layout: null, mounted: new Map(), labelsMounted: false,
     peopleLoaded: false,
+    mergeFrom: null,     // null | 'arming' | the person being merged away
   };
 
   var el = {};
@@ -461,14 +462,54 @@
   function renderPeople(people) {
     var root = el.cardsPeople;
     while (root.firstChild) root.removeChild(root.firstChild);
+
+    var head = document.createElement('div');
+    head.className = 'ph-people-head';
     var h = document.createElement('h2');
-    h.textContent = 'People (' + people.length + ' faces found)';
-    root.appendChild(h);
+    h.textContent = 'People (' + people.length + ')';
+    head.appendChild(h);
+
+    // Merge mode: pick the duplicate, then pick who it really is.
+    var mergeBtn = document.createElement('button');
+    mergeBtn.type = 'button';
+    mergeBtn.className = 'ph-merge-btn';
+    mergeBtn.textContent = S.mergeFrom ? 'Cancel merge' : 'Merge duplicates';
+    mergeBtn.addEventListener('click', function () {
+      S.mergeFrom = S.mergeFrom ? null : 'arming';
+      renderPeople(people);
+    });
+    head.appendChild(mergeBtn);
+    root.appendChild(head);
+
+    if (S.mergeFrom) {
+      var hint = document.createElement('p');
+      hint.className = 'ph-merge-hint';
+      hint.textContent = S.mergeFrom === 'arming'
+        ? 'Click the duplicate face — the one you want to get rid of.'
+        : 'Now click the person it should be merged into. Their name is kept.';
+      root.appendChild(hint);
+    }
+
+    // Two circles that resolve to the same name are the duplicates worth
+    // merging. Counting confirmed names alongside suggestions catches the
+    // common case: one cluster already named, its twin still unnamed.
+    var byLabel = {};
+    people.forEach(function (p) {
+      var k = (p.name || p.name_suggestion || '').trim().toLowerCase();
+      if (k) byLabel[k] = (byLabel[k] || 0) + 1;
+    });
+
     var grid = document.createElement('div');
     grid.className = 'ph-people-grid';
     people.forEach(function (p) {
       var card = document.createElement('div');
       card.className = 'ph-person';
+      var label = (p.name || p.name_suggestion || '').trim().toLowerCase();
+      var isDupe = label && byLabel[label] > 1;
+      if (isDupe) card.classList.add('maybe-dupe');
+      if (S.mergeFrom && S.mergeFrom !== 'arming' && S.mergeFrom.id === p.id) {
+        card.classList.add('merge-src');
+      }
       var face = document.createElement('div');
       face.className = 'face';
       if (p.cover_url) {
@@ -485,6 +526,7 @@
       }
       face.style.cursor = 'pointer';
       face.addEventListener('click', function () {
+        if (S.mergeFrom) return pickForMerge(p, people);
         S.view = 'all';
         runSearch('person:' + p.id, { type: 'person', label: p.name || 'Unnamed person' });
       });
@@ -507,13 +549,60 @@
           if (input.value.trim()) saveName(p, input.value, input);
         });
         card.appendChild(input);
+        // A name inferred from the conversation these faces arrived in. One
+        // click confirms it; it is never applied on its own.
+        if (p.name_suggestion) {
+          var sug = document.createElement('button');
+          sug.type = 'button';
+          sug.className = 'ph-suggest';
+          sug.textContent = p.name_suggestion + '?';
+          sug.title = 'Suggested from ' + (p.name_source || 'conversation metadata');
+          sug.addEventListener('click', function (ev) {
+            ev.stopPropagation();
+            saveName(p, p.name_suggestion, sug);
+          });
+          card.appendChild(sug);
+        }
       }
       var ct = document.createElement('div');
-      ct.className = 'ct'; ct.textContent = p.face_count + ' photos';
+      ct.className = 'ct';
+      ct.textContent = p.face_count + ' photos';
+      if (isDupe) {
+        ct.textContent += ' · also elsewhere';
+        ct.title = 'Another face resolves to the same name — "Merge duplicates" joins them.';
+      }
       card.appendChild(ct);
       grid.appendChild(card);
     });
     root.appendChild(grid);
+  }
+
+  // Two-step merge: first click marks the duplicate, second click names the
+  // survivor. Confirmed before it runs, because it is not reversible from here.
+  function pickForMerge(p, people) {
+    if (S.mergeFrom === 'arming') {
+      S.mergeFrom = p;
+      return renderPeople(people);
+    }
+    var src = S.mergeFrom;
+    if (src.id === p.id) { S.mergeFrom = 'arming'; return renderPeople(people); }
+    var srcLabel = src.name || src.face_count + ' photos';
+    var dstLabel = p.name || p.face_count + ' photos';
+    if (!window.confirm(
+        'Merge "' + srcLabel + '" into "' + dstLabel + '"?\n\n' +
+        (src.face_count + p.face_count) + ' photos will end up under ' + dstLabel +
+        '. This cannot be undone from here.')) return;
+    S.mergeFrom = null;
+    PhotoAPI.mergePerson(src.id, p.id).then(function (r) {
+      var n = r.person && r.person.face_count;
+      toast('Merged — ' + (p.name || 'that person') + ' now has ' + n + ' photos.');
+      S.peopleLoaded = false;
+      S.facets.people = S.facets.people.filter(function (f) { return f.id !== src.id; });
+      loadPeople();
+    }).catch(function () {
+      toast('Could not merge those two.', true);
+      loadPeople();
+    });
   }
 
   function editName(card, p, nmEl) {

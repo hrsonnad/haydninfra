@@ -102,6 +102,11 @@
     updatePerson: function (id, patch) {
       return call('people/' + id, { method: 'POST', body: JSON.stringify(patch) });
     },
+    mergePerson: function (id, into) {
+      return call('people/' + id + '/merge', {
+        method: 'POST', body: JSON.stringify({ into: into }),
+      });
+    },
     setTier: function (id, tier) {
       return call('photo/' + id + '/tier', { method: 'POST', body: JSON.stringify({ tier: tier }) });
     },

@@ -228,7 +228,7 @@ function extOf(key: string): string {
 
 async function handlePeople(origin: string | null, signer: Presigner): Promise<Response> {
   const { data, error } = await admin.from("people")
-    .select("id, name, face_count, hidden, cover_bbox, cover_key, cover_photo, photos!people_cover_photo_fkey(r2_thumb)")
+    .select("id, name, name_suggestion, name_source, face_count, hidden, cover_bbox, cover_key, cover_photo, photos!people_cover_photo_fkey(r2_thumb)")
     .eq("hidden", false).order("face_count", { ascending: false });
   if (error) throw error;
   const people = [];
@@ -241,11 +241,33 @@ async function handlePeople(origin: string | null, signer: Presigner): Promise<R
     const key = cropKey ?? thumbKey;
     people.push({
       id: p.id, name: p.name, face_count: p.face_count, cover_bbox: p.cover_bbox,
+      // A name the pipeline inferred from conversation metadata. Never treated
+      // as confirmed — the owner accepts or overwrites it in the People tab.
+      name_suggestion: p.name ? null : p.name_suggestion,
+      name_source: p.name ? null : p.name_source,
       cover_cropped: !!cropKey,
       cover_url: key ? await signer.sign(key, TTL.thumb) : null,
     });
   }
   return json({ people }, 200, origin);
+}
+
+// Fold one person into another: the same face showing up as two circles.
+// Both identities' clusters end up under the survivor, which is what makes the
+// merge outlast the next re-clustering — each cluster carries its own centroid,
+// so both re-form into the merged person rather than splitting apart again.
+async function handlePersonMerge(id: string, req: Request, origin: string | null): Promise<Response> {
+  const body = await req.json().catch(() => ({}));
+  const into = Number(body.into);
+  if (!Number.isInteger(into) || into <= 0) {
+    return json({ error: "merge needs an 'into' person id" }, 400, origin);
+  }
+  const { data, error } = await admin.rpc("api_merge_people", { src: Number(id), dst: into });
+  if (error) throw error;
+  if (data && (data as { error?: string }).error) {
+    return json({ error: (data as { error: string }).error }, 400, origin);
+  }
+  return json({ ok: true, person: data }, 200, origin);
 }
 
 async function handlePersonUpdate(id: string, req: Request, origin: string | null): Promise<Response> {
@@ -303,6 +325,8 @@ Deno.serve(async (req) => {
     if (req.method === "POST" && m) return await handleTier(m[1], req, origin);
     m = path.match(/^photo\/([0-9a-f-]{36})$/);
     if (req.method === "GET" && m) return await handlePhoto(m[1], origin, signer);
+    m = path.match(/^people\/(\d+)\/merge$/);
+    if (req.method === "POST" && m) return await handlePersonMerge(m[1], req, origin);
     m = path.match(/^people\/(\d+)$/);
     if (req.method === "POST" && m) return await handlePersonUpdate(m[1], req, origin);
     return json({ error: "not found" }, 404, origin);

@@ -171,6 +171,26 @@ body {
 .ph-person .face img.zoom { position: absolute; height: auto; object-fit: fill; max-width: none; }
 .ph-person .nm { font-size: 12px; color: var(--text); font-weight: 500; }
 .ph-person .ct { font-size: 11px; color: var(--text-3); margin-top: 2px; }
+
+/* ---- people: name suggestions + merge ---- */
+.ph-people-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.ph-merge-btn {
+  font: inherit; font-size: 12px; padding: 4px 10px; cursor: pointer;
+  border: 1px solid var(--line); border-radius: 6px;
+  background: var(--bg); color: var(--text-2);
+}
+.ph-merge-btn:hover { background: var(--hover); color: var(--text); }
+.ph-merge-hint { font-size: 12.5px; color: var(--text-2); margin: 4px 0 12px; }
+.ph-person.merge-src .face { outline: 2px solid var(--text); outline-offset: 2px; }
+.ph-person.maybe-dupe .face { box-shadow: 0 0 0 2px var(--tile-bg), 0 0 0 3px var(--text-3); }
+.ph-person.maybe-dupe .ct { color: var(--text-2); }
+.ph-suggest {
+  font: inherit; font-size: 11px; margin-top: 4px; padding: 2px 8px; cursor: pointer;
+  border: 1px dashed var(--line); border-radius: 10px;
+  background: none; color: var(--text-2); max-width: 100%;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.ph-suggest:hover { border-style: solid; color: var(--text); background: var(--hover); }
 .ph-person input {
   width: 90%; padding: 4px 6px; border: 1px solid var(--line); border-radius: 5px;
   font-family: inherit; font-size: 11px; text-align: center; background: var(--bg); color: var(--text);
