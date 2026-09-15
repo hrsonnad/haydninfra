@@ -1,9 +1,9 @@
 {
-  "version": "v260915.09 5:53P",
-  "release": 9,
-  "sha": "3c9765e",
-  "fullSha": "3c9765e5233d59691006cee5b118d68fd95c2de2",
-  "actor": "Haydn",
-  "pushedAt": "2026-09-15T22:53:11Z",
-  "commits": []
+  "version": "v260915.10 5:53pm",
+  "release": 10,
+  "sha": "bb8ee2c",
+  "fullSha": "bb8ee2cbbb58f55728a30d2b4de483507fd4c748",
+  "actor": "hrsonnad",
+  "pushedAt": "2026-09-15T22:53:31Z",
+  "commits": [{"sha": "3c9765e", "message": "Photos: real face crops for People covers, and recover from stale tokens", "author": "Haydn"}, {"sha": "bb8ee2c", "message": "Bump asset version to v260915.09", "author": "Haydn"}]
 }
