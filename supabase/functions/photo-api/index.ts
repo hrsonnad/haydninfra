@@ -228,15 +228,21 @@ function extOf(key: string): string {
 
 async function handlePeople(origin: string | null, signer: Presigner): Promise<Response> {
   const { data, error } = await admin.from("people")
-    .select("id, name, face_count, hidden, cover_bbox, cover_photo, photos!people_cover_photo_fkey(r2_thumb)")
+    .select("id, name, face_count, hidden, cover_bbox, cover_key, cover_photo, photos!people_cover_photo_fkey(r2_thumb)")
     .eq("hidden", false).order("face_count", { ascending: false });
   if (error) throw error;
   const people = [];
   for (const p of data ?? []) {
+    // Prefer the pre-cropped square face (faces/<sha1>.webp). Fall back to the
+    // whole thumb + bbox for rows the covers stage has not reached yet — the
+    // client crops those itself from cover_bbox.
+    const cropKey = p.cover_key as string | null;
     const thumbKey = (p.photos as { r2_thumb?: string } | null)?.r2_thumb;
+    const key = cropKey ?? thumbKey;
     people.push({
       id: p.id, name: p.name, face_count: p.face_count, cover_bbox: p.cover_bbox,
-      cover_url: thumbKey ? await signer.sign(thumbKey, TTL.thumb) : null,
+      cover_cropped: !!cropKey,
+      cover_url: key ? await signer.sign(key, TTL.thumb) : null,
     });
   }
   return json({ people }, 200, origin);

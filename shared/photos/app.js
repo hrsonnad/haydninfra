@@ -431,6 +431,33 @@
     }).catch(function () { toast('Could not load people.', true); });
   }
 
+  // Scale + offset a whole photo so the face box fills most of the circular
+  // container. The old code used a fixed scale(1.6); the median cover face is
+  // under 10% of its photo's width, so it needs ~6x — 1.6x just showed the
+  // group shot. Needs natural dimensions, so it runs on load.
+  var FACE_TARGET = 0.62;          // face box should span ~62% of the circle
+  function zoomToFace(img, bb) {
+    function place() {
+      var ar = img.naturalHeight / img.naturalWidth;
+      if (!ar || !bb[2] || !bb[3]) return;
+      // Render the image k times the container width, so the bbox lands at
+      // FACE_TARGET of it. Bound the zoom: past ~12x there are no pixels left.
+      var k = Math.min(FACE_TARGET / bb[2], 12);
+      var left = 50 - k * 100 * (bb[0] + bb[2] / 2);
+      var top = 50 - k * ar * 100 * (bb[1] + bb[3] / 2);
+      // Keep the frame covered — never let the circle show blank corners.
+      left = Math.max(Math.min(left, 0), 100 - k * 100);
+      top = Math.max(Math.min(top, 0), 100 - k * ar * 100);
+      img.style.width = (k * 100) + '%';
+      img.style.height = 'auto';
+      img.style.left = left.toFixed(1) + '%';
+      img.style.top = top.toFixed(1) + '%';
+      img.classList.add('zoom');
+    }
+    if (img.complete && img.naturalWidth) place();
+    else img.addEventListener('load', place, { once: true });
+  }
+
   function renderPeople(people) {
     var root = el.cardsPeople;
     while (root.firstChild) root.removeChild(root.firstChild);
@@ -448,11 +475,11 @@
         var img = document.createElement('img');
         img.alt = '';
         img.src = p.cover_url;
-        if (p.cover_bbox && p.cover_bbox.length === 4) {
-          var cx = (p.cover_bbox[0] + p.cover_bbox[2] / 2) * 100;
-          var cy = (p.cover_bbox[1] + p.cover_bbox[3] / 2) * 100;
-          img.style.objectPosition = cx.toFixed(1) + '% ' + cy.toFixed(1) + '%';
-          img.style.transform = 'scale(1.6)';
+        if (p.cover_cropped) {
+          // Already a square crop of one face — just fill the circle.
+          img.className = 'crop';
+        } else if (p.cover_bbox && p.cover_bbox.length === 4) {
+          zoomToFace(img, p.cover_bbox);
         }
         face.appendChild(img);
       }
