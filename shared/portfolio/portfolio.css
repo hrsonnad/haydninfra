@@ -26,6 +26,12 @@ html,body{background:var(--bg)}
 body{margin:0;color:var(--ink);font:14px/1.5 var(--sans);
   -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
 
+/* The hidden attribute is how this page shows and hides the gate, the app and
+   each tab view, but an author `display` outranks the UA rule behind it — the
+   gate below sets display:flex, so without this it stays painted over a fully
+   loaded app and reads as a hang. */
+[hidden]{display:none!important}
+
 /* ---------- gate ---------- */
 .pf-gate{position:fixed;inset:0;display:flex;align-items:center;
   justify-content:center;background:var(--bg);z-index:100}
