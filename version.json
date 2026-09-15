@@ -1,9 +1,9 @@
 {
-  "version": "v260915.11 6:11pm",
-  "release": 11,
-  "sha": "f2ac93c",
-  "fullSha": "f2ac93c27367208d08ffa276951df597d7b70a56",
+  "version": "v260915.12 6:21pm",
+  "release": 12,
+  "sha": "820cc59",
+  "fullSha": "820cc590cb3cc53f057f13ede741ce32607505e2",
   "actor": "hrsonnad",
-  "pushedAt": "2026-09-15T23:11:11Z",
-  "commits": [{"sha": "f2ac93c", "message": "Portfolio UI: cut the noise, collapse the settings, show what moved", "author": "Haydn"}]
+  "pushedAt": "2026-09-15T23:21:52Z",
+  "commits": [{"sha": "820cc59", "message": "Portfolio: a plan can buy something you do not already own", "author": "Haydn"}]
 }
