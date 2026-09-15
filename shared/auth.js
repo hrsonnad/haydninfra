@@ -248,15 +248,49 @@
     /**
      * Guard an admin page. If not authenticated, redirects to ../index.html.
      * @param {Function} callback - Called with (user, supabaseClient) when authenticated.
+     * @param {Function} [onError] - Called with a message instead of redirecting when
+     *        the session cannot be established. Lets a page show its own failure
+     *        state rather than bouncing the visitor to the home page.
      */
-    window.requireAuth = function(callback) {
+    window.requireAuth = function(callback, onError) {
+        var watchdog = null;
+        var settled = false;
+
+        function succeed(user) {
+            if (settled) return;
+            settled = true;
+            clearTimeout(watchdog);
+            currentUser = user;
+            if (callback) callback(currentUser, sb);
+        }
+
+        function fail(message, isSignedOut) {
+            if (settled) return;
+            settled = true;
+            clearTimeout(watchdog);
+            // A plainly signed-out visitor still goes home. onError is for the
+            // abnormal cases, where redirecting would hide the real problem.
+            if (onError && !isSignedOut) onError(message);
+            else window.location.href = '../index.html';
+        }
+
+        // getSession() waits on a lock shared by every same-origin frame and
+        // retries a failing token refresh, so it can stay pending indefinitely
+        // whenever the backend is unreachable — one stuck frame is enough to
+        // block the rest. Guarding it keeps a guarded page from spinning
+        // forever with no explanation.
+        watchdog = setTimeout(function() {
+            fail('Timed out while checking your session. Reload to try again.');
+        }, 12000);
+
         sb.auth.getSession().then(function(result) {
             if (result.data.session && result.data.session.user) {
-                currentUser = result.data.session.user;
-                if (callback) callback(currentUser, sb);
+                succeed(result.data.session.user);
             } else {
-                window.location.href = '../index.html';
+                fail('You are not signed in.', true);
             }
+        }).catch(function() {
+            fail('Could not verify your session.');
         });
     };
 

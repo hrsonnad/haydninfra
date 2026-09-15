@@ -16,13 +16,19 @@
     // public.is_owner() in RLS, so a non-owner reaches the page and sees
     // nothing. PortfolioApp.boot() surfaces that as an explicit denial rather
     // than an empty screen.
+    function gateErr(text) {
+      var m = document.getElementById('pf-gate-msg');
+      if (m) { m.textContent = text; m.className = 'pf-gate__msg err'; }
+      var s = document.querySelector('.pf-gate__spin');
+      if (s) s.style.display = 'none';
+    }
+
     if (window.requireAuth) {
       window.requireAuth(function (user, sb) {
         window.PortfolioApp.boot(user, sb);
-      });
+      }, gateErr);
     } else {
-      var m = document.getElementById('pf-gate-msg');
-      if (m) { m.textContent = 'Auth module failed to load.'; m.className = 'pf-gate__msg err'; }
+      gateErr('Auth module failed to load.');
     }
   });
 })();

@@ -54,6 +54,11 @@ window.PortfolioApp = (function () {
   function planChanged() { if (current === 'plan') mountPlan(); }
 
   async function boot(user, sb) {
+    // Access is settled by this point; the gate now covers the data load, so
+    // say so — otherwise a stall here reads as an auth problem.
+    var gm = el('pf-gate-msg');
+    if (gm) gm.textContent = 'Loading portfolio…';
+
     window.PFApi.init(sb);
     try {
       snapshot = await window.PFApi.latestSnapshot();
