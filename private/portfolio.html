@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://cdn.jsdelivr.net; connect-src https://ixxnhvqyxkuwyshzdnlc.supabase.co; img-src 'self' data:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; base-uri 'none'; form-action 'none'; object-src 'none'">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <meta name="referrer" content="no-referrer">
+    <title>Portfolio — haydns.ai</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../shared/portfolio/portfolio.css">
+    <script src="../shared/portfolio/boot.js"></script>
+</head>
+<body>
+    <div id="pf-gate" class="pf-gate">
+        <div class="pf-gate__card">
+            <div class="pf-gate__spin"></div>
+            <div class="pf-gate__msg" id="pf-gate-msg">Checking access&hellip;</div>
+        </div>
+    </div>
+
+    <div class="pf-app" id="pf-app" hidden>
+        <header class="pf-head">
+            <div class="pf-head__title">
+                <h1>Portfolio</h1>
+                <span class="pf-asof" id="pf-asof"></span>
+            </div>
+            <nav class="pf-tabs" id="pf-tabs">
+                <button class="pf-tab active" data-tab="overview">
+                    <span class="pf-tab__n">1</span> Overview</button>
+                <button class="pf-tab" data-tab="workspace">
+                    <span class="pf-tab__n">2</span> Rebalance workspace</button>
+                <button class="pf-tab" data-tab="plan">
+                    <span class="pf-tab__n">3</span> Execution plan</button>
+            </nav>
+        </header>
+
+        <main class="pf-main">
+            <section class="pf-view" id="view-overview"></section>
+            <section class="pf-view" id="view-workspace" hidden></section>
+            <section class="pf-view" id="view-plan" hidden></section>
+        </main>
+    </div>
+
+    <div id="pf-toast"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    <script src="../shared/supabase.js"></script>
+    <script src="../shared/auth.js"></script>
+    <script src="../shared/portfolio/charts.js"></script>
+    <script src="../shared/portfolio/api.js"></script>
+    <script src="../shared/portfolio/overview.js"></script>
+    <script src="../shared/portfolio/workspace.js"></script>
+    <script src="../shared/portfolio/plan.js"></script>
+    <script src="../shared/portfolio/app.js"></script>
+</body>
+</html>
