@@ -1,9 +1,9 @@
 {
-  "version": "v260915.13 6:35P",
-  "release": 13,
-  "sha": "8b4f7a6",
-  "fullSha": "8b4f7a69744e2ce4bcb075531d65714552f1e0f3",
-  "actor": "Haydn",
-  "pushedAt": "2026-09-15T23:35:14Z",
-  "commits": []
+  "version": "v260915.14 6:35pm",
+  "release": 14,
+  "sha": "0aee004",
+  "fullSha": "0aee0049b758db5c2983367446b906cd41dabe91",
+  "actor": "hrsonnad",
+  "pushedAt": "2026-09-15T23:35:27Z",
+  "commits": [{"sha": "8b4f7a6", "message": "Photos: durable person identities, cluster merging, name suggestions", "author": "Haydn"}, {"sha": "0aee004", "message": "Bump asset version (concurrent push collided again)", "author": "Haydn"}]
 }
