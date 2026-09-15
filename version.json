@@ -1,9 +1,9 @@
 {
-  "version": "v260915.06 5:24pm",
-  "release": 6,
-  "sha": "b91ab04",
-  "fullSha": "b91ab04fbbb4cc3131711e7fe6104324dc2232ab",
+  "version": "v260915.07 5:33pm",
+  "release": 7,
+  "sha": "39d09bd",
+  "fullSha": "39d09bd87c39cffe306369846b6c2be41d053225",
   "actor": "hrsonnad",
-  "pushedAt": "2026-09-15T22:24:33Z",
-  "commits": [{"sha": "b91ab04", "message": "Cache-bust shared js/css on the home page too", "author": "Haydn"}]
+  "pushedAt": "2026-09-15T22:33:49Z",
+  "commits": [{"sha": "39d09bd", "message": "Let the portfolio gate actually hide", "author": "Haydn"}]
 }
