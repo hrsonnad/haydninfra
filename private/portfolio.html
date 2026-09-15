@@ -9,7 +9,7 @@
     <title>Portfolio — haydns.ai</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../shared/portfolio/portfolio.css">
     <script src="../shared/portfolio/boot.js"></script>
 </head>
@@ -23,24 +23,25 @@
 
     <div class="pf-app" id="pf-app" hidden>
         <header class="pf-head">
-            <div class="pf-head__title">
+            <div class="pf-head__top">
                 <h1>Portfolio</h1>
                 <span class="pf-asof" id="pf-asof"></span>
+                <span class="pf-head__right">
+                    <span class="pf-asof" id="pf-quote-note"></span>
+                    <button class="btn outline" id="pf-refresh">Refresh prices</button>
+                </span>
             </div>
             <nav class="pf-tabs" id="pf-tabs">
-                <button class="pf-tab active" data-tab="overview">
-                    <span class="pf-tab__n">1</span> Overview</button>
-                <button class="pf-tab" data-tab="workspace">
-                    <span class="pf-tab__n">2</span> Rebalance workspace</button>
-                <button class="pf-tab" data-tab="plan">
-                    <span class="pf-tab__n">3</span> Execution plan</button>
+                <button class="pf-tab active" data-tab="overview">Overview</button>
+                <button class="pf-tab" data-tab="workspace">Rebalance</button>
+                <button class="pf-tab" data-tab="plan">Execution</button>
             </nav>
         </header>
 
-        <main class="pf-main">
-            <section class="pf-view" id="view-overview"></section>
-            <section class="pf-view" id="view-workspace" hidden></section>
-            <section class="pf-view" id="view-plan" hidden></section>
+        <main>
+            <section id="view-overview"></section>
+            <section id="view-workspace" hidden></section>
+            <section id="view-plan" hidden></section>
         </main>
     </div>
 
@@ -50,7 +51,9 @@
     <script src="../shared/supabase.js"></script>
     <script src="../shared/auth.js"></script>
     <script src="../shared/portfolio/charts.js"></script>
+    <script src="../shared/portfolio/tax.js"></script>
     <script src="../shared/portfolio/api.js"></script>
+    <script src="../shared/portfolio/history.js"></script>
     <script src="../shared/portfolio/overview.js"></script>
     <script src="../shared/portfolio/workspace.js"></script>
     <script src="../shared/portfolio/plan.js"></script>

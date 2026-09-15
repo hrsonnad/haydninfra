@@ -1,105 +1,165 @@
-// api.js — Supabase data layer for the portfolio workspace.
+// api.js — Supabase data layer.
 //
-// Every table here is gated by RLS on public.is_owner(). A signed-in non-owner
-// gets zero rows and a denied write; anon does not even hold the table grant.
-// Nothing in this file is a security boundary — the database is.
+// Every table is gated by RLS on public.is_owner(); a signed-in non-owner gets
+// zero rows and a denied write, and anon holds no grant at all. Nothing here is
+// a security boundary — the database is.
 
 window.PFApi = (function () {
   'use strict';
   var sb = null;
 
   function init(client) { sb = client; }
-
   function fail(ctx, error) {
     console.error('[portfolio] ' + ctx, error);
     throw new Error(ctx + ': ' + (error.message || 'request failed'));
   }
+  async function one(q, ctx) {
+    var r = await q; if (r.error) fail(ctx, r.error); return r.data;
+  }
 
-  // ---- snapshot (read-only) -------------------------------------------
+  // ---- snapshots (read-only) ------------------------------------------
   async function latestSnapshot() {
-    var r = await sb.from('portfolio_snapshots')
+    var d = await one(sb.from('portfolio_snapshots')
       .select('id, as_of, label, data')
-      .order('as_of', { ascending: false })
-      .limit(1);
-    if (r.error) fail('load snapshot', r.error);
-    return r.data && r.data.length ? r.data[0] : null;
+      .order('as_of', { ascending: false }).limit(1), 'load snapshot');
+    return d && d.length ? d[0] : null;
+  }
+  async function snapshotIndex() {
+    return await one(sb.from('portfolio_snapshot_index').select('*'),
+      'load snapshot index');
+  }
+  async function snapshot(id) {
+    return await one(sb.from('portfolio_snapshots')
+      .select('id, as_of, label, data').eq('id', id).single(), 'load snapshot');
   }
 
-  // ---- plan ------------------------------------------------------------
-  async function planFor(snapshotId) {
-    var r = await sb.from('portfolio_plans')
-      .select('*').eq('snapshot_id', snapshotId)
-      .order('id', { ascending: true }).limit(1);
-    if (r.error) fail('load plan', r.error);
-    if (r.data && r.data.length) return r.data[0];
-
-    var c = await sb.from('portfolio_plans')
-      .insert({ snapshot_id: snapshotId, name: 'Working plan', status: 'draft' })
-      .select().single();
-    if (c.error) fail('create plan', c.error);
-    return c.data;
+  // ---- scenarios -------------------------------------------------------
+  async function plans(snapshotId) {
+    var rows = await one(sb.from('portfolio_plans').select('*')
+      .eq('snapshot_id', snapshotId).eq('archived', false)
+      .order('id', { ascending: true }), 'load scenarios');
+    if (rows.length) return rows;
+    var made = await one(sb.from('portfolio_plans').insert({
+      snapshot_id: snapshotId, name: 'Scenario A', status: 'draft',
+      is_primary: true }).select().single(), 'create scenario');
+    return [made];
   }
-
-  async function updatePlan(planId, patch) {
-    var r = await sb.from('portfolio_plans').update(patch)
-      .eq('id', planId).select().single();
-    if (r.error) fail('update plan', r.error);
-    return r.data;
+  async function createPlan(snapshotId, name) {
+    return await one(sb.from('portfolio_plans').insert({
+      snapshot_id: snapshotId, name: name, status: 'draft' })
+      .select().single(), 'create scenario');
+  }
+  async function updatePlan(id, patch) {
+    return await one(sb.from('portfolio_plans').update(patch).eq('id', id)
+      .select().single(), 'update scenario');
+  }
+  async function archivePlan(id) {
+    return await one(sb.from('portfolio_plans').update({ archived: true })
+      .eq('id', id).select().single(), 'archive scenario');
   }
 
   // ---- entries ---------------------------------------------------------
   async function entries(planId) {
-    var r = await sb.from('portfolio_plan_entries')
-      .select('*').eq('plan_id', planId)
-      .order('sort_order', { ascending: true })
-      .order('id', { ascending: true });
-    if (r.error) fail('load entries', r.error);
-    return r.data || [];
+    return await one(sb.from('portfolio_plan_entries').select('*')
+      .eq('plan_id', planId).order('sort_order', { ascending: true })
+      .order('id', { ascending: true }), 'load entries');
   }
-
   async function addEntry(planId, row) {
-    var r = await sb.from('portfolio_plan_entries')
-      .insert(Object.assign({ plan_id: planId }, row)).select().single();
-    if (r.error) fail('add entry', r.error);
-    return r.data;
+    return await one(sb.from('portfolio_plan_entries')
+      .insert(Object.assign({ plan_id: planId }, row)).select().single(),
+      'add entry');
   }
-
   async function updateEntry(id, patch) {
-    var r = await sb.from('portfolio_plan_entries').update(patch)
-      .eq('id', id).select().single();
-    if (r.error) fail('update entry', r.error);
-    return r.data;
+    return await one(sb.from('portfolio_plan_entries').update(patch)
+      .eq('id', id).select().single(), 'update entry');
+  }
+  async function deleteEntry(id) {
+    await one(sb.from('portfolio_plan_entries').delete().eq('id', id),
+      'delete entry');
   }
 
-  async function deleteEntry(id) {
-    var r = await sb.from('portfolio_plan_entries').delete().eq('id', id);
-    if (r.error) fail('delete entry', r.error);
+  // ---- targets ---------------------------------------------------------
+  async function targets(planId) {
+    return await one(sb.from('portfolio_targets').select('*')
+      .eq('plan_id', planId).order('sort_order', { ascending: true })
+      .order('id', { ascending: true }), 'load targets');
+  }
+  async function upsertTarget(planId, row) {
+    return await one(sb.from('portfolio_targets')
+      .upsert(Object.assign({ plan_id: planId }, row),
+              { onConflict: 'plan_id,kind,key' }).select().single(),
+      'save target');
+  }
+  async function updateTarget(id, patch) {
+    return await one(sb.from('portfolio_targets').update(patch).eq('id', id)
+      .select().single(), 'update target');
+  }
+  async function deleteTarget(id) {
+    await one(sb.from('portfolio_targets').delete().eq('id', id), 'delete target');
+  }
+
+  // ---- constraints -----------------------------------------------------
+  async function constraints(planId) {
+    return await one(sb.from('portfolio_constraints').select('*')
+      .eq('plan_id', planId).order('sort_order', { ascending: true })
+      .order('id', { ascending: true }), 'load constraints');
+  }
+  async function addConstraint(planId, row) {
+    return await one(sb.from('portfolio_constraints')
+      .insert(Object.assign({ plan_id: planId }, row)).select().single(),
+      'add constraint');
+  }
+  async function updateConstraint(id, patch) {
+    return await one(sb.from('portfolio_constraints').update(patch).eq('id', id)
+      .select().single(), 'update constraint');
+  }
+  async function deleteConstraint(id) {
+    await one(sb.from('portfolio_constraints').delete().eq('id', id),
+      'delete constraint');
   }
 
   // ---- notes -----------------------------------------------------------
   async function notes(planId) {
-    var r = await sb.from('portfolio_notes')
-      .select('*').eq('plan_id', planId)
-      .order('created_at', { ascending: false });
-    if (r.error) fail('load notes', r.error);
-    return r.data || [];
+    return await one(sb.from('portfolio_notes').select('*')
+      .eq('plan_id', planId).order('created_at', { ascending: false }),
+      'load notes');
   }
-
   async function addNote(planId, body, symbol) {
-    var r = await sb.from('portfolio_notes')
+    return await one(sb.from('portfolio_notes')
       .insert({ plan_id: planId, body: body, symbol: symbol || null })
-      .select().single();
-    if (r.error) fail('add note', r.error);
-    return r.data;
+      .select().single(), 'add note');
   }
-
   async function deleteNote(id) {
-    var r = await sb.from('portfolio_notes').delete().eq('id', id);
-    if (r.error) fail('delete note', r.error);
+    await one(sb.from('portfolio_notes').delete().eq('id', id), 'delete note');
   }
 
-  return { init: init, latestSnapshot: latestSnapshot, planFor: planFor,
-           updatePlan: updatePlan, entries: entries, addEntry: addEntry,
-           updateEntry: updateEntry, deleteEntry: deleteEntry,
-           notes: notes, addNote: addNote, deleteNote: deleteNote };
+  // ---- live quotes -----------------------------------------------------
+  // Proxied through an owner-gated edge function: the page CSP only permits
+  // this origin, and the symbol list itself reveals holdings.
+  async function quotes(symbols) {
+    var s = await sb.auth.getSession();
+    var token = s.data && s.data.session && s.data.session.access_token;
+    if (!token) throw new Error('no session');
+    var r = await fetch(window.SUPABASE_URL + '/functions/v1/portfolio-quotes', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + token,
+                 'Content-Type': 'application/json' },
+      body: JSON.stringify({ symbols: symbols }),
+    });
+    if (!r.ok) throw new Error('quotes unavailable (' + r.status + ')');
+    return await r.json();
+  }
+
+  return { init: init, latestSnapshot: latestSnapshot,
+           snapshotIndex: snapshotIndex, snapshot: snapshot,
+           plans: plans, createPlan: createPlan, updatePlan: updatePlan,
+           archivePlan: archivePlan,
+           entries: entries, addEntry: addEntry, updateEntry: updateEntry,
+           deleteEntry: deleteEntry,
+           targets: targets, upsertTarget: upsertTarget,
+           updateTarget: updateTarget, deleteTarget: deleteTarget,
+           constraints: constraints, addConstraint: addConstraint,
+           updateConstraint: updateConstraint, deleteConstraint: deleteConstraint,
+           notes: notes, addNote: addNote, deleteNote: deleteNote,
+           quotes: quotes };
 })();

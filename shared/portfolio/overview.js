@@ -1,48 +1,47 @@
-// overview.js — Tab 1. A plain statement of what is held, nothing more.
-// Deliberately non-prescriptive: no concentration scoring, no targets, no
-// suggestions. Those belong on tabs 2 and 3.
+// overview.js — Tab 1. What is held, and nothing about what to do with it.
 
 window.PFOverview = (function () {
   'use strict';
-  var C = window.PFCharts;
-  var S = null, root = null;
-  var mode = 'consolidated';          // consolidated | byaccount
-  var expanded = {};                  // symbol -> bool
+  var C = window.PFCharts, T = window.PFTax;
+  var S = null, root = null, quotes = null;
+  var mode = 'consolidated', open = {}, curveFor = null;
   var sortKey = 'market_value', sortDir = -1;
 
-  var money = function (n) {
-    return (n < 0 ? '-$' : '$') +
-      Math.abs(n).toLocaleString('en-US', { maximumFractionDigits: 0 });
-  };
+  var esc = C.esc;
+  var money = C.money;
   var money2 = function (n) {
-    return (n < 0 ? '-$' : '$') +
-      Math.abs(n).toLocaleString('en-US',
-        { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    return (n < 0 ? '-$' : '$') + Math.abs(n)
+      .toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   };
-  var esc = function (s) { return C.esc(s); };
-  var acctShort = function (k) {
-    return S.accounts[k].label.replace('Robinhood ', 'RH ')
-                              .replace('Schwab ', '');
+  var acct = function (k) {
+    return S.accounts[k].label.replace('Robinhood ', 'RH ').replace('Schwab ', '');
+  };
+  // live price when we have one, snapshot price otherwise
+  var px = function (p) {
+    return (quotes && quotes[p.symbol]) ? quotes[p.symbol] : p.price;
+  };
+  var mv = function (p) { return p.qty * px(p); };
+  var total = function () {
+    return S.positions.reduce(function (s, p) { return s + mv(p); }, 0) +
+      (S.options || []).reduce(function (s, o) { return s + o.market_value; }, 0);
   };
 
-  // ---- derived views ---------------------------------------------------
   function consolidated() {
     var by = {};
     S.positions.forEach(function (p) {
       var e = by[p.symbol] || (by[p.symbol] = {
-        symbol: p.symbol, name: p.name, theme: p.theme,
-        asset_class: p.asset_class, qty: 0, price: p.price,
-        market_value: 0, cost_basis: 0, basis_known: true, legs: []
-      });
-      e.qty += p.qty;
-      e.market_value += p.market_value;
+        symbol: p.symbol, name: p.name, theme: p.theme, qty: 0,
+        market_value: 0, cost_basis: 0, basis_known: true, legs: [] });
+      e.qty += p.qty; e.market_value += mv(p);
       if (p.cost_basis === null) e.basis_known = false;
       else e.cost_basis += p.cost_basis;
       e.legs.push(p);
     });
-    return Object.values(by).map(function (e) {
+    var tot = total();
+    return Object.keys(by).map(function (k) {
+      var e = by[k];
       e.gain = e.basis_known ? e.market_value - e.cost_basis : null;
-      e.pct = e.market_value / S.total_value * 100;
+      e.pct = e.market_value / tot * 100;
       e.n = e.legs.length;
       return e;
     });
@@ -50,151 +49,190 @@ window.PFOverview = (function () {
 
   function rollup(key) {
     var d = {};
-    S.positions.forEach(function (p) { d[p[key]] = (d[p[key]] || 0) + p.market_value; });
+    S.positions.forEach(function (p) { d[p[key]] = (d[p[key]] || 0) + mv(p); });
     (S.options || []).forEach(function (o) {
-      var k = key === 'theme' ? o.theme : (key === 'account' ? o.account : 'options');
+      var k = key === 'theme' ? o.theme : o.account;
       d[k] = (d[k] || 0) + o.market_value;
     });
-    return Object.entries(d).map(function (e) { return { label: e[0], value: e[1] }; })
+    return Object.keys(d).map(function (k) { return { label: k, value: d[k] }; })
       .sort(function (a, b) { return b.value - a.value; });
   }
 
-  // ---- render ----------------------------------------------------------
-  function stats() {
-    var cons = consolidated();
+  // ---- sections --------------------------------------------------------
+  function metrics() {
+    var tot = total();
     var known = S.positions.filter(function (p) { return p.cost_basis !== null; });
-    var kmv = known.reduce(function (s, p) { return s + p.market_value; }, 0);
+    var kmv = known.reduce(function (s, p) { return s + mv(p); }, 0);
     var kcb = known.reduce(function (s, p) { return s + p.cost_basis; }, 0);
+    var free = S.positions.filter(function (p) { return !p.trades_taxable; })
+      .reduce(function (s, p) { return s + mv(p); }, 0);
+    var gl = kmv - kcb;
     var cells = [
-      ['Total value', money(S.total_value), S.as_of],
-      ['Accounts', String(Object.keys(S.accounts).length), 'across 2 brokers'],
-      ['Positions', String(S.positions.length +
-        ((S.options || []).length)), 'incl. options'],
-      ['Unique holdings', String(cons.length), 'distinct symbols'],
-      ['Unrealised G/L', (kcb ? (kmv - kcb >= 0 ? '+' : '') + money(kmv - kcb) : '—'),
-        kcb ? 'on ' + money(kmv) + ' with basis' : 'basis unknown'],
+      ['Total value', money(tot), consolidated().length + ' holdings · ' +
+        Object.keys(S.accounts).length + ' accounts', ''],
+      ['Unrealised gain', (gl >= 0 ? '+' : '') + money(gl),
+        'on ' + money(kmv) + ' with known basis', gl >= 0 ? 'g' : 'r'],
+      ['Tax-free', money(free), (free / tot * 100).toFixed(0) +
+        '% in retirement accounts', ''],
+      ['Taxable', money(tot - free), (100 - free / tot * 100).toFixed(0) +
+        '% where sales are taxed', ''],
     ];
-    return '<div class="pf-stats">' + cells.map(function (c) {
-      return '<div><div class="k">' + c[0] + '</div><div class="v">' + c[1] +
-        '</div><div class="n">' + esc(c[2]) + '</div></div>';
+    return '<div class="metrics">' + cells.map(function (c) {
+      return '<div class="metric"><div class="k">' + c[0] + '</div>' +
+        '<div class="v ' + c[3] + '">' + c[1] + '</div>' +
+        '<div class="n">' + esc(c[2]) + '</div></div>';
     }).join('') + '</div>';
   }
 
-  function charts() {
-    var byAcct = rollup('account').map(function (r) {
-      return { label: acctShort(r.label), value: r.value }; });
-    var byClass = rollup('asset_class').map(function (r) {
-      return { label: r.label.replace(/_/g, ' '), value: r.value }; });
+  function allocation() {
+    var tot = total();
+    var byA = rollup('account').map(function (r) {
+      return { label: acct(r.label), value: r.value }; });
+    var byT = rollup('theme');
     var top = consolidated().sort(function (a, b) {
-      return b.market_value - a.market_value; }).slice(0, 10)
-      .map(function (e) {
-        return { label: e.symbol, value: e.market_value,
-                 note: e.pct.toFixed(1) + '%' };
-      });
+      return b.market_value - a.market_value; }).slice(0, 8)
+      .map(function (e) { return { label: e.symbol, value: e.market_value,
+        note: e.pct.toFixed(1) + '%' }; });
 
-    return '<div class="pf-grid3">' +
-      '<div class="pf-panel"><div class="pf-pad"><h2 class="pf-h" ' +
-        'style="margin:0 0 6px">By account</h2></div>' +
-        C.donut(byAcct, { centerTop: money(S.total_value), centerSub: 'total' }) +
-        C.legend(byAcct, S.total_value) + '</div>' +
-      '<div class="pf-panel"><div class="pf-pad"><h2 class="pf-h" ' +
-        'style="margin:0 0 6px">By asset class</h2></div>' +
-        C.donut(byClass, { centerTop: byClass.length + '', centerSub: 'classes' }) +
-        C.legend(byClass, S.total_value) + '</div>' +
-      '<div class="pf-panel"><div class="pf-pad"><h2 class="pf-h" ' +
-        'style="margin:0 0 10px">Ten largest holdings</h2>' +
-        C.hbars(top, { width: 430, mono: false }) + '</div></div>' +
-      '</div>';
+    return '<div class="sec"><div class="sec__h"><h2>Allocation</h2></div>' +
+      '<div class="grid3">' +
+        '<div><div class="faint" style="font-size:12.5px;margin-bottom:10px">' +
+          'By account</div>' + C.donut(byA, { centerTop: money(tot) }) +
+          C.legend(byA, tot) + '</div>' +
+        '<div><div class="faint" style="font-size:12.5px;margin-bottom:10px">' +
+          'By theme, looking through funds</div>' +
+          C.donut(byT.slice(0, 8), { centerTop: byT.length + '' }) +
+          C.legend(byT.slice(0, 8), tot) + '</div>' +
+        '<div><div class="faint" style="font-size:12.5px;margin-bottom:10px">' +
+          'Largest holdings</div>' + C.hbars(top, { width: 400 }) + '</div>' +
+      '</div></div>';
   }
 
-  function tableConsolidated() {
+  function curveRow(p) {
+    var rate = 0.188;
+    var pts = T.curve(p, rate, 24);
+    var marks = [0.25, 0.5, 0.75].map(function (f) {
+      var r = T.sell(p, f, rate);
+      return { x: r.shares, y: Math.max(0, r.tax),
+               label: (f * 100) + '% → tax ' + money(r.tax) }; });
+    var half = T.sell(p, 0.5, rate), all = T.sell(p, 1, rate);
+    return '<tr class="detail"><td colspan="9"><div class="curve">' +
+      '<h4>Tax cost of trimming ' + esc(p.symbol) + ' in ' + esc(acct(p.account)) +
+      '</h4>' +
+      '<div class="grid2" style="gap:24px;align-items:center">' +
+      '<div>' + C.line(pts, {
+        width: 430, height: 170, marks: marks,
+        fmtY: function (v) { return '$' + Math.round(v / 100) / 10 + 'k'; },
+        fmtX: function (v) { return v.toFixed(0) + 'sh'; } }) + '</div>' +
+      '<div style="font-size:13px">' +
+        '<div class="faint" style="margin-bottom:8px">Selling highest-cost-basis ' +
+          'lots first, at 18.8% federal.</div>' +
+        '<table class="t" style="font-size:12.5px"><tbody>' +
+        [0.25, 0.5, 1].map(function (f) {
+          var r = T.sell(p, f, rate);
+          return '<tr><td class="dim">' + (f * 100) + '%</td>' +
+            '<td class="num">' + money(r.proceeds) + '</td>' +
+            '<td class="num ' + (r.gain >= 0 ? '' : 'pos') + '">' +
+              (r.gain >= 0 ? '+' : '') + money(r.gain) + '</td>' +
+            '<td class="num">' + money(r.tax) + '</td></tr>';
+        }).join('') +
+        '</tbody></table>' +
+        '<div class="faint" style="margin-top:8px">' + p.lots.length +
+          ' lots · avg basis $' + p.lots_avg_cps.toFixed(2) + ' · ' +
+          p.lots_coverage_pct.toFixed(1) + '% covered</div>' +
+      '</div></div></div></td></tr>';
+  }
+
+  function holdings() {
+    var head = [['symbol', 'Symbol', 0], ['name', 'Name', 0], ['theme', 'Theme', 0],
+      ['qty', 'Qty', 1], ['market_value', 'Value', 1], ['pct', 'Weight', 1],
+      ['cost_basis', 'Cost basis', 1], ['gain', 'Unrealised', 1],
+      ['n', 'Accts', 1]];
     var rows = consolidated().sort(function (a, b) {
       var x = a[sortKey], y = b[sortKey];
       if (x === null) x = -Infinity; if (y === null) y = -Infinity;
       if (typeof x === 'string') return sortDir * x.localeCompare(y);
       return sortDir * (x - y);
     });
-    var head = [['symbol', 'Symbol', 0], ['name', 'Name', 0], ['theme', 'Theme', 0],
-      ['qty', 'Qty', 1], ['market_value', 'Value', 1], ['pct', 'Weight', 1],
-      ['cost_basis', 'Cost basis', 1], ['gain', 'Unreal. G/L', 1],
-      ['n', 'Accounts', 1]];
 
     var html = '<thead><tr>' + head.map(function (h) {
       return '<th class="s ' + (h[2] ? 'num' : '') + '" data-k="' + h[0] + '">' +
-        h[1] + (sortKey === h[0] ? (sortDir < 0 ? ' ▾' : ' ▴') : '') + '</th>';
+        h[1] + (sortKey === h[0] ? (sortDir < 0 ? ' ↓' : ' ↑') : '') + '</th>';
     }).join('') + '</tr></thead><tbody>';
 
     rows.forEach(function (e) {
-      var open = !!expanded[e.symbol];
-      html += '<tr data-sym="' + e.symbol + '"' +
-        (e.n > 1 ? ' style="cursor:pointer"' : '') + '>' +
-        '<td class="sym">' + (e.n > 1 ? (open ? '▾ ' : '▸ ') : '') + e.symbol + '</td>' +
+      var isOpen = !!open[e.symbol];
+      html += '<tr class="click" data-sym="' + e.symbol + '">' +
+        '<td class="sym">' + e.symbol + '</td>' +
         '<td class="dim">' + esc(e.name) + '</td>' +
-        '<td><span class="tag">' + esc(e.theme) + '</span></td>' +
+        '<td class="tag">' + esc(e.theme) + '</td>' +
         '<td class="num dim">' + e.qty.toLocaleString('en-US',
           { maximumFractionDigits: 4 }) + '</td>' +
         '<td class="num">' + money2(e.market_value) + '</td>' +
         '<td class="num dim">' + e.pct.toFixed(2) + '%</td>' +
-        '<td class="num dim">' + (e.basis_known ? money2(e.cost_basis) :
-          '<span class="faint">—</span>') + '</td>' +
+        '<td class="num dim">' + (e.basis_known ? money2(e.cost_basis) : '—') + '</td>' +
         '<td class="num ' + (e.gain === null ? 'faint' : e.gain >= 0 ? 'pos' : 'neg') +
-          '">' + (e.gain === null ? '—' : (e.gain >= 0 ? '+' : '') + money2(e.gain)) +
-          '</td>' +
+          '">' + (e.gain === null ? '—' :
+            (e.gain >= 0 ? '+' : '') + money2(e.gain)) + '</td>' +
         '<td class="num ' + (e.n > 1 ? '' : 'faint') + '">' + e.n + '</td></tr>';
 
-      if (open) {
-        e.legs.sort(function (a, b) { return b.market_value - a.market_value; })
+      if (isOpen) {
+        e.legs.slice().sort(function (a, b) { return mv(b) - mv(a); })
           .forEach(function (p) {
-            html += '<tr class="pf-sub"><td>' + esc(acctShort(p.account)) + '</td>' +
+            var hasLots = p.tax_model === 'lots' && p.lots;
+            html += '<tr class="sub' + (hasLots ? ' click' : '') + '"' +
+              (hasLots ? ' data-curve="' + p.account + '|' + p.symbol + '"' : '') +
+              '><td>' + esc(acct(p.account)) +
+                (hasLots ? ' <span class="faint">· tax curve</span>' : '') + '</td>' +
               '<td>' + (p.trades_taxable
                 ? '<span class="badge b-tax">taxable</span>'
                 : '<span class="badge b-free">tax-free</span>') + '</td>' +
               '<td></td>' +
               '<td class="num">' + p.qty.toLocaleString('en-US',
                 { maximumFractionDigits: 6 }) + '</td>' +
-              '<td class="num">' + money2(p.market_value) + '</td>' +
-              '<td class="num">' + p.pct_of_total.toFixed(2) + '%</td>' +
-              '<td class="num">' + (p.cost_basis === null ? '—' : money2(p.cost_basis)) + '</td>' +
+              '<td class="num">' + money2(mv(p)) + '</td>' +
+              '<td class="num">' + (mv(p) / total() * 100).toFixed(2) + '%</td>' +
+              '<td class="num">' + (p.cost_basis === null ? '—' :
+                money2(p.cost_basis)) + '</td>' +
               '<td class="num">' + (p.gain === null ? '—' :
                 (p.gain >= 0 ? '+' : '') + money2(p.gain)) + '</td>' +
               '<td></td></tr>';
+            if (curveFor === p.account + '|' + p.symbol && hasLots) {
+              html += curveRow(p);
+            }
           });
       }
     });
-
-    var tv = rows.reduce(function (s, e) { return s + e.market_value; }, 0);
-    html += '</tbody><tfoot><tr><td colspan="4" class="dim">' + rows.length +
-      ' holdings</td><td class="num">' + money(tv) +
-      '</td><td colspan="4"></td></tr></tfoot>';
-    return html;
+    return html + '</tbody>';
   }
 
-  function tableByAccount() {
-    var html = '<thead><tr><th>Symbol</th><th>Name</th><th>Account</th>' +
-      '<th>Tax</th><th class="num">Qty</th><th class="num">Price</th>' +
-      '<th class="num">Value</th><th class="num">Weight</th>' +
-      '<th class="num">Unreal. G/L</th></tr></thead><tbody>';
+  function byAccount() {
+    var html = '<thead><tr><th>Symbol</th><th>Name</th><th>Tax</th>' +
+      '<th class="num">Qty</th><th class="num">Price</th><th class="num">Value</th>' +
+      '<th class="num">Weight</th><th class="num">Unrealised</th>' +
+      '</tr></thead><tbody>';
+    var tot = total();
     Object.keys(S.accounts).forEach(function (a) {
       var rows = S.positions.filter(function (p) { return p.account === a; })
-        .sort(function (x, y) { return y.market_value - x.market_value; });
-      var sub = rows.reduce(function (s, p) { return s + p.market_value; }, 0);
-      html += '<tr class="pf-sub"><td colspan="6"><b>' +
-        esc(S.accounts[a].label) + '</b> ' +
+        .sort(function (x, y) { return mv(y) - mv(x); });
+      var sub = rows.reduce(function (s, p) { return s + mv(p); }, 0);
+      html += '<tr class="sub"><td colspan="5" style="padding-left:12px">' +
+        '<b style="color:var(--ink)">' + esc(S.accounts[a].label) + '</b> ' +
         (S.accounts[a].trades_taxable
           ? '<span class="badge b-tax">taxable</span>'
           : '<span class="badge b-free">tax-free</span>') +
-        '</td><td class="num"><b>' + money(sub) + '</b></td><td colspan="2"></td></tr>';
+        '</td><td class="num"><b>' + money(sub) + '</b></td>' +
+        '<td class="num">' + (sub / tot * 100).toFixed(1) + '%</td><td></td></tr>';
       rows.forEach(function (p) {
         html += '<tr><td class="sym">' + p.symbol + '</td>' +
           '<td class="dim">' + esc(p.name) + '</td>' +
-          '<td class="dim" style="font-size:11px">' + esc(acctShort(p.account)) + '</td>' +
           '<td>' + (p.trades_taxable ? '<span class="badge b-tax">tax</span>'
                                      : '<span class="badge b-free">free</span>') + '</td>' +
           '<td class="num dim">' + p.qty.toLocaleString('en-US',
             { maximumFractionDigits: 4 }) + '</td>' +
-          '<td class="num dim">' + money2(p.price) + '</td>' +
-          '<td class="num">' + money2(p.market_value) + '</td>' +
-          '<td class="num dim">' + p.pct_of_total.toFixed(2) + '%</td>' +
+          '<td class="num dim">' + money2(px(p)) + '</td>' +
+          '<td class="num">' + money2(mv(p)) + '</td>' +
+          '<td class="num dim">' + (mv(p) / tot * 100).toFixed(2) + '%</td>' +
           '<td class="num ' + (p.gain === null ? 'faint' : p.gain >= 0 ? 'pos' : 'neg') +
             '">' + (p.gain === null ? '—' :
               (p.gain >= 0 ? '+' : '') + money2(p.gain)) + '</td></tr>';
@@ -204,45 +242,48 @@ window.PFOverview = (function () {
   }
 
   function render() {
-    root.innerHTML =
-      stats() +
-      '<h2 class="pf-h">Allocation</h2>' + charts() +
-      '<h2 class="pf-h">Holdings</h2>' +
-      '<div class="pf-row" style="margin-bottom:8px">' +
-        '<button class="chip' + (mode === 'consolidated' ? ' on' : '') +
-          '" data-mode="consolidated">Consolidated</button>' +
-        '<button class="chip' + (mode === 'byaccount' ? ' on' : '') +
-          '" data-mode="byaccount">By account</button>' +
-        '<span class="faint" style="font-size:11.5px">' +
-          (mode === 'consolidated'
-            ? 'Positions held in more than one account are summed — click a row to expand.'
-            : 'Every position, grouped by the account that holds it.') +
+    root.innerHTML = metrics() + allocation() +
+      '<div class="sec"><div class="sec__h"><h2>Holdings</h2>' +
+        '<span class="hint">' + (mode === 'consolidated'
+          ? 'Summed across accounts — click a row to see where it sits'
+          : 'Every position, grouped by account') + '</span>' +
+        '<span class="right">' +
+          '<button class="chip' + (mode === 'consolidated' ? ' on' : '') +
+            '" data-mode="consolidated">Consolidated</button>' +
+          '<button class="chip' + (mode === 'byaccount' ? ' on' : '') +
+            '" data-mode="byaccount">By account</button>' +
         '</span></div>' +
-      '<div class="pf-panel pf-scroll"><table class="pf-t" id="pf-hold">' +
-        (mode === 'consolidated' ? tableConsolidated() : tableByAccount()) +
-      '</table></div>';
+      '<div class="scroll"><table class="t" id="hold">' +
+        (mode === 'consolidated' ? holdings() : byAccount()) +
+      '</table></div></div>' +
+      '<div id="pf-history"></div>';
 
     root.querySelectorAll('[data-mode]').forEach(function (b) {
       b.addEventListener('click', function () { mode = b.dataset.mode; render(); });
     });
-    if (mode === 'consolidated') {
-      root.querySelectorAll('#pf-hold th[data-k]').forEach(function (th) {
-        th.addEventListener('click', function () {
-          if (sortKey === th.dataset.k) sortDir = -sortDir;
-          else { sortKey = th.dataset.k; sortDir = -1; }
-          render();
-        });
+    root.querySelectorAll('#hold th[data-k]').forEach(function (th) {
+      th.addEventListener('click', function () {
+        if (sortKey === th.dataset.k) sortDir = -sortDir;
+        else { sortKey = th.dataset.k; sortDir = -1; }
+        render();
       });
-      root.querySelectorAll('#pf-hold tbody tr[data-sym]').forEach(function (tr) {
-        tr.addEventListener('click', function () {
-          var s = tr.dataset.sym;
-          expanded[s] = !expanded[s];
-          render();
-        });
+    });
+    root.querySelectorAll('#hold tr[data-sym]').forEach(function (tr) {
+      tr.addEventListener('click', function () {
+        open[tr.dataset.sym] = !open[tr.dataset.sym]; render();
       });
-    }
+    });
+    root.querySelectorAll('#hold tr[data-curve]').forEach(function (tr) {
+      tr.addEventListener('click', function (e) {
+        e.stopPropagation();
+        curveFor = curveFor === tr.dataset.curve ? null : tr.dataset.curve;
+        render();
+      });
+    });
+    if (window.PFHistory) window.PFHistory.mount(root.querySelector('#pf-history'));
   }
 
+  function setQuotes(q) { quotes = q; if (root) render(); }
   function mount(el, snapshot) { root = el; S = snapshot; render(); }
-  return { mount: mount };
+  return { mount: mount, setQuotes: setQuotes, total: total };
 })();

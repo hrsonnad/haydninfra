@@ -1,309 +1,214 @@
-// plan.js — Tab 3. What the recorded plan does to the portfolio, and how to
-// actually carry it out.
-//
-// The before/after here is arithmetic on the entries recorded in tab 2 — it
-// applies them, it does not invent or optimise them. The execution ordering is
-// operational sequencing (which venue, which order type, what to do first),
-// not a view on what to own.
+// plan.js — Tab 3. What the recorded scenario does, and how to carry it out.
+// Arithmetic on the decisions from tab 2 — it applies them, it does not invent
+// them. Ordering is operational sequencing, not a view on what to own.
 
 window.PFPlan = (function () {
   'use strict';
-  var C = window.PFCharts;
-  var S = null, plan = null, rows = [], resolve = null, root = null;
-  var esc = function (s) { return C.esc(s || ''); };
-  var money = function (n) {
-    return (n < 0 ? '-$' : '$') +
-      Math.abs(n).toLocaleString('en-US', { maximumFractionDigits: 0 });
-  };
-  var acctShort = function (k) {
-    return S.accounts[k].label.replace('Robinhood ', 'RH ').replace('Schwab ', '');
-  };
+  var C = window.PFCharts, T = window.PFTax;
+  var S, plan, rows = [], tgts = [], cons = [], resolve, rate = 0.188,
+      useHarvest = true, quotes = null, root;
 
-  // ---- apply the plan --------------------------------------------------
+  var esc = C.esc, money = C.money;
+  var acct = function (k) {
+    return S.accounts[k].label.replace('Robinhood ', 'RH ').replace('Schwab ', ''); };
+  var px = function (p) { return (quotes && quotes[p.symbol]) || p.price; };
+
   function applied() {
-    var delta = {};           // "account|symbol" -> usd change
-    var sell = 0, buy = 0;
+    var delta = {}, sell = 0, buy = 0, trims = [];
     rows.forEach(function (e) {
       if (e.action === 'hold') return;
       var r = resolve(e);
-      if (r.usd === null) return;
+      if (r.usd === null || !r.pos) return;
       var k = e.account + '|' + e.symbol;
-      var d = e.action === 'sell' ? -r.usd : r.usd;
-      delta[k] = (delta[k] || 0) + d;
-      if (e.action === 'sell') sell += r.usd; else buy += r.usd;
+      delta[k] = (delta[k] || 0) + (e.action === 'sell' ? -r.usd : r.usd);
+      if (e.action === 'sell') { sell += r.usd;
+        trims.push({ position: r.pos, frac: Math.min(1, r.frac) }); }
+      else buy += r.usd;
     });
-
     var after = S.positions.map(function (p) {
       var d = delta[p.account + '|' + p.symbol] || 0;
       return Object.assign({}, p, {
-        market_value: Math.max(0, p.market_value + d), _delta: d });
+        market_value: Math.max(0, p.qty * px(p) + d) });
     });
-    // cash raised but not redeployed sits as cash
-    var net = sell - buy;
-    return { after: after, sell: sell, buy: buy, net: net };
+    var t = T.scenario(S, trims, rate, useHarvest);
+    return { after: after, sell: sell, buy: buy, cash: sell - buy, tax: t };
   }
 
-  function weights(list, extraCash) {
+  function weights(list, cash, key) {
     var by = {};
-    list.forEach(function (p) { by[p.symbol] = (by[p.symbol] || 0) + p.market_value; });
+    list.forEach(function (p) {
+      var k = key ? p[key] : p.symbol;
+      by[k] = (by[k] || 0) + p.market_value; });
     (S.options || []).forEach(function (o) {
-      by[o.underlying] = (by[o.underlying] || 0) + o.market_value; });
-    if (extraCash) by['(cash)'] = (by['(cash)'] || 0) + extraCash;
-    var tot = Object.values(by).reduce(function (a, b) { return a + b; }, 0) || 1;
+      var k = key === 'theme' ? o.theme : o.underlying;
+      by[k] = (by[k] || 0) + o.market_value; });
+    if (cash > 0) by[key ? 'Cash' : '(cash)'] = (by[key ? 'Cash' : '(cash)'] || 0) + cash;
+    var tot = Object.keys(by).reduce(function (s, k) { return s + by[k]; }, 0) || 1;
     return { by: by, total: tot };
   }
 
-  function themeWeights(list, extraCash) {
-    var by = {};
-    list.forEach(function (p) { by[p.theme] = (by[p.theme] || 0) + p.market_value; });
-    (S.options || []).forEach(function (o) {
-      by[o.theme] = (by[o.theme] || 0) + o.market_value; });
-    if (extraCash) by['Cash'] = (by['Cash'] || 0) + extraCash;
-    var tot = Object.values(by).reduce(function (a, b) { return a + b; }, 0) || 1;
-    return { by: by, total: tot };
-  }
-
-  // ---- render ----------------------------------------------------------
   function banner() {
     if (plan.status === 'draft') {
-      return '<div class="pf-panel pf-pad" style="border-left:3px solid var(--warn);' +
-        'margin-bottom:14px"><b class="neg">This plan is still a draft.</b> ' +
-        '<span class="dim">Everything below reflects the entries recorded so far ' +
-        'and will move as they change. Lock the plan on tab 2 when it is settled.' +
-        '</span></div>';
+      return '<div class="row" style="margin-bottom:22px;color:var(--ink-2);' +
+        'font-size:13px"><span class="badge b-draft">draft</span>' +
+        '<span>' + esc(plan.name) + ' — tracking live as you edit tab 2.</span>' +
+        '</div>';
     }
-    return '<div class="pf-panel pf-pad" style="border-left:3px solid var(--accent);' +
-      'margin-bottom:14px"><b class="pos">Plan locked</b> ' +
-      '<span class="dim">' + esc(plan.name) +
-      (plan.locked_at ? ' · ' + new Date(plan.locked_at).toLocaleString() : '') +
-      '</span>' + (plan.summary ? '<div style="margin-top:6px;font-size:12.5px" ' +
-        'class="dim">' + esc(plan.summary) + '</div>' : '') + '</div>';
+    return '<div class="row" style="margin-bottom:22px;color:var(--ink-2);' +
+      'font-size:13px"><span class="badge b-locked">locked</span>' +
+      '<span>' + esc(plan.name) +
+      (plan.locked_at ? ' · ' + new Date(plan.locked_at).toLocaleDateString() : '') +
+      '</span></div>';
   }
 
-  function stats(a) {
-    var wB = weights(S.positions, 0), wA = weights(a.after, a.net);
-    var top = function (w) {
-      return Object.values(w.by).sort(function (x, y) { return y - x; }); };
-    var tb = top(wB), ta = top(wA);
-    var hhi = function (w) {
-      return Object.values(w.by).reduce(function (s, v) {
-        return s + Math.pow(v / w.total * 100, 2); }, 0); };
-    var lgB = Object.entries(wB.by).sort(function (x, y) { return y[1] - x[1]; })[0];
-    var lgA = Object.entries(wA.by).sort(function (x, y) { return y[1] - x[1]; })[0];
+  function metrics(a) {
+    var base = S.positions.map(function (p) {
+      return Object.assign({}, p, { market_value: p.qty * px(p) }); });
+    var wB = weights(base, 0), wA = weights(a.after, a.cash);
+    var cB = T.concentration(wB.by), cA = T.concentration(wA.by);
+    var lgA = Object.keys(wA.by).sort(function (x, y) {
+      return wA.by[y] - wA.by[x]; })[0];
 
     var cells = [
-      ['Sell side', money(a.sell), rows.filter(function (e) {
-        return e.action === 'sell'; }).length + ' entries'],
-      ['Buy side', a.buy ? money(a.buy) : '—', rows.filter(function (e) {
-        return e.action === 'buy'; }).length + ' entries'],
-      ['Net to cash', money(a.net), a.net > 0 ? 'undeployed' : 'fully redeployed'],
-      ['Largest holding', (lgA[1] / wA.total * 100).toFixed(1) + '%',
-        lgA[0] + ' · was ' + (lgB[1] / wB.total * 100).toFixed(1) + '% (' + lgB[0] + ')'],
-      ['Top 3', (ta.slice(0, 3).reduce(function (x, y) { return x + y; }, 0) /
-        wA.total * 100).toFixed(1) + '%',
-        'was ' + (tb.slice(0, 3).reduce(function (x, y) { return x + y; }, 0) /
-        wB.total * 100).toFixed(1) + '%'],
-      ['HHI', hhi(wA).toFixed(0), 'was ' + hhi(wB).toFixed(0)],
+      ['Proceeds', money(a.sell), a.buy ? money(a.buy) + ' redeployed' : 'not redeployed', ''],
+      ['Tax', money(a.tax.tax), a.tax.offset ? money(a.tax.offset) + ' harvest applied'
+        : (rate * 100).toFixed(1) + '% federal', a.tax.tax ? 'r' : ''],
+      ['Net cash', money(a.cash - a.tax.tax), 'after tax', ''],
+      ['Largest holding', cA.top1.toFixed(1) + '%',
+        lgA + ' · was ' + cB.top1.toFixed(1) + '%', cA.top1 > 25 ? 'r' : 'g'],
+      ['Top 3', cA.top3.toFixed(1) + '%', 'was ' + cB.top3.toFixed(1) + '%', ''],
+      ['HHI', cA.hhi.toFixed(0), 'was ' + cB.hhi.toFixed(0), ''],
     ];
-    return '<div class="pf-stats">' + cells.map(function (c) {
-      return '<div><div class="k">' + c[0] + '</div><div class="v">' + c[1] +
-        '</div><div class="n">' + esc(c[2]) + '</div></div>'; }).join('') + '</div>';
+    return '<div class="metrics" style="padding-bottom:12px">' +
+      cells.map(function (c) {
+        return '<div class="metric"><div class="k">' + c[0] + '</div>' +
+          '<div class="v sm ' + c[3] + '">' + c[1] + '</div>' +
+          '<div class="n">' + esc(c[2]) + '</div></div>';
+      }).join('') +
+      (a.tax.nUnknown ? '<div class="metric"><div class="k">Unpriced</div>' +
+        '<div class="v sm r">' + a.tax.nUnknown + '</div>' +
+        '<div class="n">position(s) with no basis — real tax is higher</div></div>'
+        : '') + '</div>';
   }
 
   function comparison(a) {
-    var wB = weights(S.positions, 0), wA = weights(a.after, a.net);
-    var syms = Object.keys(wB.by).concat(Object.keys(wA.by))
-      .filter(function (v, i, arr) { return arr.indexOf(v) === i; })
-      .map(function (s) {
-        return { label: s,
-                 before: (wB.by[s] || 0) / wB.total * 100,
-                 after: (wA.by[s] || 0) / wA.total * 100 }; })
-      .filter(function (x) { return x.before > 0.4 || x.after > 0.4; })
-      .sort(function (x, y) { return y.before - x.before; })
-      .slice(0, 12);
+    var base = S.positions.map(function (p) {
+      return Object.assign({}, p, { market_value: p.qty * px(p) }); });
+    var tmap = {};
+    tgts.forEach(function (t) {
+      if (t.target_pct !== null) tmap[t.kind + '|' + t.key] = t.target_pct; });
 
-    var tB = themeWeights(S.positions, 0), tA = themeWeights(a.after, a.net);
-    var themes = Object.keys(tB.by).concat(Object.keys(tA.by))
-      .filter(function (v, i, arr) { return arr.indexOf(v) === i; })
-      .map(function (t) {
-        return { label: t,
-                 before: (tB.by[t] || 0) / tB.total * 100,
-                 after: (tA.by[t] || 0) / tA.total * 100 }; })
-      .filter(function (x) { return x.before > 0.4 || x.after > 0.4; })
-      .sort(function (x, y) { return y.before - x.before; })
-      .slice(0, 12);
+    function build(key) {
+      var wB = weights(base, 0, key), wA = weights(a.after, a.cash, key);
+      return Object.keys(wB.by).concat(Object.keys(wA.by))
+        .filter(function (v, i, arr) { return arr.indexOf(v) === i; })
+        .map(function (k) {
+          return { label: k,
+                   before: (wB.by[k] || 0) / wB.total * 100,
+                   after: (wA.by[k] || 0) / wA.total * 100,
+                   target: tmap[(key || 'symbol') + '|' + k] };
+        })
+        .filter(function (x) { return x.before > 0.4 || x.after > 0.4; })
+        .sort(function (x, y) { return y.before - x.before; }).slice(0, 11);
+    }
 
-    return '<div class="pf-grid2">' +
-      '<div><h2 class="pf-h">Position weights</h2><div class="pf-panel pf-pad">' +
-        C.beforeAfter(syms, { width: 520 }) +
-        '<div class="pf-legend" style="padding:6px 0 0"><div>' +
-        '<span class="sw" style="background:currentColor;opacity:.28"></span>' +
-        'before</div><div><span class="sw" style="background:#3d6b96"></span>' +
-        'after</div></div></div></div>' +
-      '<div><h2 class="pf-h">Theme exposure</h2><div class="pf-panel pf-pad">' +
-        C.beforeAfter(themes, { width: 520 }) + '</div></div>' +
+    return '<div class="grid2">' +
+      '<div><div class="faint" style="font-size:12.5px;margin-bottom:12px">' +
+        'Positions — grey is now, blue is after, dashed is target</div>' +
+        C.beforeAfter(build(null), { width: 480 }) + '</div>' +
+      '<div><div class="faint" style="font-size:12.5px;margin-bottom:12px">' +
+        'Themes, looking through funds</div>' +
+        C.beforeAfter(build('theme'), { width: 480 }) + '</div>' +
       '</div>';
   }
 
-  function accountTable(a) {
-    var rowsOut = Object.keys(S.accounts).map(function (k) {
-      var b = S.positions.filter(function (p) { return p.account === k; })
-        .reduce(function (s, p) { return s + p.market_value; }, 0);
-      var af = a.after.filter(function (p) { return p.account === k; })
-        .reduce(function (s, p) { return s + p.market_value; }, 0);
-      return { k: k, before: b, after: af };
-    });
-    return '<h2 class="pf-h">Account values</h2><div class="pf-panel pf-scroll">' +
-      '<table class="pf-t"><thead><tr><th>Account</th><th>Tax</th>' +
-      '<th class="num">Before</th><th class="num">After</th>' +
-      '<th class="num">Change</th></tr></thead><tbody>' +
-      rowsOut.map(function (r) {
-        var d = r.after - r.before;
-        return '<tr><td>' + esc(S.accounts[r.k].label) + '</td>' +
-          '<td>' + (S.accounts[r.k].trades_taxable
-            ? '<span class="badge b-tax">taxable</span>'
-            : '<span class="badge b-free">tax-free</span>') + '</td>' +
-          '<td class="num dim">' + money(r.before) + '</td>' +
-          '<td class="num">' + money(r.after) + '</td>' +
-          '<td class="num ' + (Math.abs(d) < 1 ? 'faint' : d < 0 ? 'neg' : 'pos') +
-            '">' + (Math.abs(d) < 1 ? '—' : (d > 0 ? '+' : '') + money(d)) +
-            '</td></tr>';
-      }).join('') + '</tbody></table></div>';
-  }
-
-  // ---- execution sequence ---------------------------------------------
-  // Ordering rule: tax-free accounts first (nothing to optimise, no lot
-  // picking, no tax consequence), then loss sales in taxable accounts so the
-  // losses are banked in the same tax year as the gains, then gain sales with
-  // explicit lot selection, then buys once cash has settled.
   function sequence() {
     var buckets = [
-      { key: 'free',    title: 'Tax-free accounts — sell here first',
-        why: 'No tax consequence and no lot selection needed, so nothing here ' +
-             'has to be sequenced around anything else.',
-        test: function (e, p) { return e.action === 'sell' && p && !p.trades_taxable; } },
-      { key: 'loss',    title: 'Taxable — loss sales',
-        why: 'Realise losses in the same tax year as the gains they offset. ' +
-             'Crypto has no wash-sale rule, so those lots can be repurchased ' +
-             'immediately; equities need a 30-day gap.',
-        test: function (e, p) { return e.action === 'sell' && p && p.trades_taxable &&
-                                       p.gain !== null && p.gain < 0; } },
-      { key: 'gain',    title: 'Taxable — gain sales, with lot selection',
-        why: 'Pick lots explicitly. Left alone both brokers default to FIFO, ' +
-             'which sells your oldest and usually lowest-basis shares first.',
-        test: function (e, p) { return e.action === 'sell' && p && p.trades_taxable; } },
-      { key: 'buy',     title: 'Redeploy',
-        why: 'After proceeds settle. Retirement accounts settle immediately for ' +
-             'reinvestment; taxable proceeds may take a day.',
-        test: function (e) { return e.action === 'buy'; } },
+      ['Tax-free accounts', 'Nothing to optimise and no tax, so these come first.',
+        function (e, p) { return e.action === 'sell' && p && !p.trades_taxable; }],
+      ['Taxable — losses', 'Bank losses in the same tax year as the gains they ' +
+        'offset. Crypto can be repurchased immediately; equities need 30 days.',
+        function (e, p) { return e.action === 'sell' && p && p.trades_taxable &&
+          p.gain !== null && p.gain < 0; }],
+      ['Taxable — gains', 'Pick lots explicitly; both brokers default to FIFO.',
+        function (e, p) { return e.action === 'sell' && p && p.trades_taxable; }],
+      ['Redeploy', 'After proceeds settle.',
+        function (e) { return e.action === 'buy'; }],
     ];
-
     var used = {};
     var out = buckets.map(function (b) {
       var mine = rows.filter(function (e) {
         if (used[e.id]) return false;
         var p = S.positions.find(function (x) {
           return x.account === e.account && x.symbol === e.symbol; });
-        if (b.test(e, p)) { used[e.id] = true; return true; }
+        if (b[2](e, p)) { used[e.id] = true; return true; }
         return false;
       });
       if (!mine.length) return '';
-      var items = mine.map(function (e) {
-        var r = resolve(e);
-        var p = r.pos;
-        var flags = [];
-        if (p && p.trades_taxable && p.tax_model === 'lots')
-          flags.push('use the lot picker — highest cost basis first');
-        if (e.symbol === 'BTC')
-          flags.push('enter a <b>coin-denominated</b> amount; a dollar order ' +
-                     'silently falls back to FIFO');
-        if (p && p.broker === 'Robinhood' && p.trades_taxable &&
-            p.asset_class !== 'crypto')
-          flags.push('lot selection is app-only, not on web');
-        if (p && p.broker === 'Schwab' && p.trades_taxable)
-          flags.push('elect specific-ID at or before the sale');
-        if (p && p.asset_class === 'private_alt')
-          flags.push('thin book — use a limit order');
-        return '<li><b>' + (e.action === 'sell' ? 'Sell' : 'Buy') + ' ' +
-          (r.shares !== null ? r.shares.toLocaleString('en-US',
-            { maximumFractionDigits: 4 }) + ' ' : '') + esc(e.symbol) + '</b>' +
-          ' in ' + esc(acctShort(e.account)) +
-          (r.usd !== null ? ' <span class="dim">≈ ' + money(r.usd) + '</span>' : '') +
-          (e.note ? '<div class="sub">' + esc(e.note) + '</div>' : '') +
-          (flags.length ? '<div class="sub">→ ' + flags.join(' · ') + '</div>' : '') +
-          '</li>';
-      }).join('');
-      return '<h2 class="pf-h">' + esc(b.title) + '</h2>' +
-        '<div class="faint" style="font-size:11.5px;margin-bottom:8px">' +
-          b.why + '</div>' +
-        '<div class="pf-panel"><ol class="steps">' + items + '</ol></div>';
+      return '<div class="sec"><div class="sec__h"><h2>' + esc(b[0]) + '</h2>' +
+        '<span class="hint">' + b[1] + '</span></div><ol class="steps">' +
+        mine.map(function (e) {
+          var r = resolve(e), p = r.pos, f = [];
+          var tx = e.action === 'sell' && p ? T.sell(p, Math.min(1, r.frac), rate) : null;
+          if (p && p.trades_taxable && p.tax_model === 'lots')
+            f.push('lot picker, highest basis first');
+          if (e.symbol === 'BTC') f.push('coin-denominated order, not dollars');
+          if (p && p.broker === 'Robinhood' && p.trades_taxable &&
+              p.asset_class !== 'crypto') f.push('app only, not web');
+          if (p && p.broker === 'Schwab' && p.trades_taxable)
+            f.push('elect specific-ID at or before the sale');
+          if (p && p.asset_class === 'private_alt') f.push('thin — use a limit order');
+          return '<li><b>' + (e.action === 'sell' ? 'Sell' : 'Buy') + ' ' +
+            (r.shares !== null ? r.shares.toLocaleString('en-US',
+              { maximumFractionDigits: 4 }) + ' ' : '') + esc(e.symbol) + '</b> in ' +
+            esc(acct(e.account)) +
+            (r.usd !== null ? ' <span class="faint">≈ ' + money(r.usd) +
+              (tx && tx.known && tx.tax ? ', tax ' + money(tx.tax) : '') +
+              '</span>' : '') +
+            (e.note ? '<div class="sub">' + esc(e.note) + '</div>' : '') +
+            (f.length ? '<div class="sub">' + f.join(' · ') + '</div>' : '') +
+            '</li>';
+        }).join('') + '</ol></div>';
     }).join('');
-
-    return out || '<div class="pf-panel"><div class="empty">' +
-      'No sell or buy entries recorded yet.</div></div>';
+    return out;
   }
 
-  function practices() {
-    var tips = [
-      ['Never send a market order on a thin name.', 'SPCX and the small ETF ' +
-        'positions can move several percent on a single order. Use a limit at ' +
-        'or just inside the spread and let it work.'],
-      ['Avoid the first and last fifteen minutes.', 'Spreads are widest at the ' +
-        'open and the close. Mid-session fills are usually materially better.'],
-      ['Break large orders up.', 'A position worth more than a few percent of ' +
-        'the book is worth splitting across a session, or across days.'],
-      ['Check the lot picker on every taxable sale.', 'Both brokers default to ' +
-        'FIFO. On Robinhood equities the picker is app-only; on Robinhood crypto ' +
-        'it works only on coin-denominated orders; on Schwab you elect specific ' +
-        'ID at or before the trade.'],
-      ['Mind the 30-day wash-sale window on equities.', 'Selling a stock at a ' +
-        'loss and rebuying it — or a substantially identical security — within ' +
-        '30 days either side disallows the loss. Crypto is not currently subject ' +
-        'to this, which is why crypto losses are the cleaner harvest.'],
-      ['Realise offsetting gains and losses in the same tax year.', 'A loss ' +
-        'harvested in December against a gain taken in January does nothing for ' +
-        'the earlier year.'],
-      ['Let taxable proceeds settle before redeploying.', 'Retirement accounts ' +
-        'reinvest immediately; taxable proceeds can take a day. Do not plan a ' +
-        'same-day sell-and-buy chain in the brokerage account.'],
-      ['Screenshot the confirmation for every taxable trade.', 'Lot selection ' +
-        'does not always survive onto the 1099 cleanly. A contemporaneous record ' +
-        'is what you will want at filing.'],
-      ['Reconcile the snapshot afterwards.', 'Once the trades are done, take a ' +
-        'fresh set of positions and reload it. This plan is priced against ' +
-        esc(S.as_of) + ' and drifts from the moment you start.'],
+  function tips() {
+    var t = [
+      ['Limit orders on thin names', 'SPCX and the small ETFs move on a single order.'],
+      ['Avoid the first and last 15 minutes', 'Spreads are widest at the open and close.'],
+      ['Split large orders', 'Anything over a few percent of the book, across a session.'],
+      ['Check the lot picker every time', 'Both brokers default to FIFO.'],
+      ['30-day wash-sale window on equities', 'Crypto is exempt — the cleaner harvest.'],
+      ['Match gains and losses in one tax year', 'A December loss does nothing for January.'],
+      ['Let taxable proceeds settle', 'IRAs reinvest immediately; brokerage can take a day.'],
+      ['Screenshot every taxable confirmation', 'Lot selection does not always survive to the 1099.'],
+      ['Reload a fresh snapshot afterwards', 'This is priced against ' + esc(S.as_of) + '.'],
     ];
-    return '<h2 class="pf-h">Execution notes</h2><div class="pf-panel">' +
-      '<ul class="tips">' + tips.map(function (t) {
-        return '<li><b>' + t[0] + '</b> ' + t[1] + '</li>'; }).join('') +
-      '</ul></div>' +
-      '<div class="pf-panel pf-pad" style="margin-top:10px;font-size:12px" ' +
-        'class="dim"><span class="faint">Tax figures anywhere in this workspace ' +
-        'are federal long-term only and exclude state tax. This is a planning ' +
-        'record, not tax or investment advice — worth a CPA conversation before ' +
-        'executing anything of size.</span></div>';
+    return '<div class="sec"><div class="sec__h"><h2>Execution notes</h2></div>' +
+      '<ul class="tips">' + t.map(function (x) {
+        return '<li><b>' + x[0] + '</b>' + x[1] + '</li>'; }).join('') + '</ul>' +
+      '<div class="faint" style="font-size:12px;margin-top:18px">Federal ' +
+      'long-term rates only; state tax not modelled. A planning record, not ' +
+      'tax or investment advice.</div></div>';
   }
 
   function render() {
     if (!rows.length) {
-      root.innerHTML = banner() + '<div class="pf-panel"><div class="empty">' +
-        'Nothing recorded yet. Add entries on the <b>Rebalance workspace</b> tab ' +
-        'and this view fills in.</div></div>' + practices();
+      root.innerHTML = banner() + '<div class="empty">Nothing recorded yet — ' +
+        'add decisions on the workspace tab.</div>' + tips();
       return;
     }
     var a = applied();
-    root.innerHTML = banner() + stats(a) +
-      '<h2 class="pf-h">Before &rarr; after</h2>' + comparison(a) +
-      accountTable(a) +
-      '<h2 class="pf-h" style="margin-top:30px">Execution sequence</h2>' +
-      '<div class="faint" style="font-size:11.5px;margin-bottom:10px">' +
-        'Ordered so nothing blocks anything else: free trades first, losses ' +
-        'banked before gains, redeployment last.</div>' +
-      sequence() + practices();
+    root.innerHTML = banner() + metrics(a) +
+      '<div class="sec"><div class="sec__h"><h2>Before and after</h2></div>' +
+      comparison(a) + '</div>' + sequence() + tips();
   }
 
-  function mount(el, snapshot, planRow, entryRows, resolver) {
-    root = el; S = snapshot; plan = planRow; rows = entryRows; resolve = resolver;
+  function mount(el, snap, st) {
+    root = el; S = snap; plan = st.plan; rows = st.rows; tgts = st.targets;
+    cons = st.constraints; resolve = st.resolve; rate = st.rate;
+    useHarvest = st.useHarvest; quotes = st.quotes;
     render();
   }
   return { mount: mount };
