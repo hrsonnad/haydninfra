@@ -1,9 +1,9 @@
 {
-  "version": "v260915.04 5:19pm",
-  "release": 4,
-  "sha": "d3ebead",
-  "fullSha": "d3ebead0b398812c45f382fb558907ec0260f914",
+  "version": "v260915.05 5:22pm",
+  "release": 5,
+  "sha": "f2f9e0f",
+  "fullSha": "f2f9e0fcbaff6174dd386ff0ed5e5a9cecabe9fb",
   "actor": "hrsonnad",
-  "pushedAt": "2026-09-15T22:19:24Z",
-  "commits": [{"sha": "d3ebead", "message": "Portfolio v2: tax engine, targets, scenarios, live quotes, history", "author": "Haydn"}]
+  "pushedAt": "2026-09-15T22:22:50Z",
+  "commits": [{"sha": "f2f9e0f", "message": "Cache-bust shared js/css on the private pages", "author": "Haydn"}]
 }
