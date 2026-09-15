@@ -1,9 +1,9 @@
 {
-  "version": "v260821.01 10:08am",
+  "version": "v260915.01 4:51pm",
   "release": 1,
-  "sha": "799a2d7",
-  "fullSha": "799a2d7e4932b37c64f1dccd7277992220c32835",
+  "sha": "68bd626",
+  "fullSha": "68bd626c2c832641b5f1062cf1e1fe48597ce6f5",
   "actor": "hrsonnad",
-  "pushedAt": "2026-08-21T15:08:27Z",
-  "commits": [{"sha": "799a2d7", "message": "Add private photo library (Photos section)", "author": "Haydn"}]
+  "pushedAt": "2026-09-15T21:51:53Z",
+  "commits": [{"sha": "68bd626", "message": "Render sign-in button before the session resolves", "author": "Haydn"}]
 }
