@@ -1,9 +1,9 @@
 {
-  "version": "v260915.10 5:53pm",
-  "release": 10,
-  "sha": "bb8ee2c",
-  "fullSha": "bb8ee2cbbb58f55728a30d2b4de483507fd4c748",
+  "version": "v260915.11 6:11pm",
+  "release": 11,
+  "sha": "f2ac93c",
+  "fullSha": "f2ac93c27367208d08ffa276951df597d7b70a56",
   "actor": "hrsonnad",
-  "pushedAt": "2026-09-15T22:53:31Z",
-  "commits": [{"sha": "3c9765e", "message": "Photos: real face crops for People covers, and recover from stale tokens", "author": "Haydn"}, {"sha": "bb8ee2c", "message": "Bump asset version to v260915.09", "author": "Haydn"}]
+  "pushedAt": "2026-09-15T23:11:11Z",
+  "commits": [{"sha": "f2ac93c", "message": "Portfolio UI: cut the noise, collapse the settings, show what moved", "author": "Haydn"}]
 }
