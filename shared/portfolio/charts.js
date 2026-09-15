@@ -182,3 +182,152 @@ window.PFCharts = (function () {
   return { donut: donut, legend: legend, hbars: hbars, beforeAfter: beforeAfter,
            line: line, color: color, esc: esc, money: money };
 })();
+
+// ---- sankey + stacked composition -------------------------------------
+// Added after the original IIFE so the module stays readable; both attach to
+// the same PFCharts namespace.
+(function (C) {
+  'use strict';
+  var esc = C.esc, money = C.money;
+  var INK3 = '#80868b';
+
+  // nodes: [{id, label, col, color}]   links: [{from, to, value}]
+  // Three columns: what was sold, the account it sat in, what it became.
+  // Laying it out this way makes the binding constraint visible — proceeds
+  // cannot cross from one account into another.
+  function sankey(nodes, links, opts) {
+    opts = opts || {};
+    var w = opts.width || 900, gap = 5, pad = 4;
+    var cols = {};
+    nodes.forEach(function (n) { (cols[n.col] = cols[n.col] || []).push(n); });
+    var nCols = Object.keys(cols).length;
+
+    // node value = max(in, out) so a pass-through account is sized correctly
+    var val = {};
+    nodes.forEach(function (n) { val[n.id] = 0; });
+    var inn = {}, out = {};
+    links.forEach(function (l) {
+      out[l.from] = (out[l.from] || 0) + l.value;
+      inn[l.to] = (inn[l.to] || 0) + l.value;
+    });
+    nodes.forEach(function (n) {
+      val[n.id] = Math.max(inn[n.id] || 0, out[n.id] || 0); });
+
+    // tallest column drives the scale so nothing overflows
+    var colTotal = Object.keys(cols).map(function (c) {
+      return cols[c].reduce(function (s, n) { return s + val[n.id]; }, 0); });
+    var maxTotal = Math.max.apply(null, colTotal) || 1;
+    var maxCount = Math.max.apply(null, Object.keys(cols).map(function (c) {
+      return cols[c].length; }));
+    var h = opts.height || Math.max(420, maxCount * 34);
+    var scale = (h - (maxCount - 1) * gap) / maxTotal;
+
+    var NODE_W = 11, labelW = opts.labelW || 150;
+    var colX = {};
+    Object.keys(cols).sort().forEach(function (c, i) {
+      colX[c] = labelW + i * ((w - labelW * 2 - NODE_W) / Math.max(1, nCols - 1));
+    });
+
+    // stack each column, largest first
+    var pos = {};
+    Object.keys(cols).forEach(function (c) {
+      var y = 0;
+      cols[c].sort(function (a, b) { return val[b.id] - val[a.id]; })
+        .forEach(function (n) {
+          var nh = Math.max(2, val[n.id] * scale);
+          pos[n.id] = { x: colX[c], y: y, h: nh, col: +c };
+          y += nh + gap;
+        });
+    });
+
+    // ribbons, tracked per node so parallel links stack instead of overlap
+    var offOut = {}, offIn = {};
+    var ribbons = links.slice().sort(function (a, b) { return b.value - a.value; })
+      .map(function (l) {
+        var a = pos[l.from], b = pos[l.to];
+        if (!a || !b) return '';
+        var lh = Math.max(1, l.value * scale);
+        var y0 = a.y + (offOut[l.from] = (offOut[l.from] || 0)) ;
+        var y1 = b.y + (offIn[l.to] = (offIn[l.to] || 0));
+        offOut[l.from] += lh; offIn[l.to] += lh;
+        var x0 = a.x + NODE_W, x1 = b.x, mx = (x0 + x1) / 2;
+        return '<path d="M' + x0 + ' ' + y0 + ' C' + mx + ' ' + y0 + ' ' + mx +
+          ' ' + y1 + ' ' + x1 + ' ' + y1 + ' L' + x1 + ' ' + (y1 + lh) +
+          ' C' + mx + ' ' + (y1 + lh) + ' ' + mx + ' ' + (y0 + lh) + ' ' +
+          x0 + ' ' + (y0 + lh) + ' Z" fill="' + (l.color || '#8ab4f8') +
+          '" opacity=".33"><title>' + esc(l.label || '') + ' ' +
+          money(l.value) + '</title></path>';
+      }).join('');
+
+    var boxes = nodes.map(function (n) {
+      var p = pos[n.id]; if (!p) return '';
+      var right = p.col === nCols - 1;
+      var lx = right ? p.x + NODE_W + 7 : p.x - 7;
+      return '<rect x="' + p.x + '" y="' + p.y + '" width="' + NODE_W +
+          '" height="' + p.h + '" rx="2" fill="' + (n.color || '#5f6368') +
+          '"><title>' + esc(n.label) + ' ' + money(val[n.id]) + '</title></rect>' +
+        (p.h >= 7 ? '<text x="' + lx + '" y="' + (p.y + p.h / 2 + 3.5) +
+          '" text-anchor="' + (right ? 'start' : 'end') + '" font-size="11" ' +
+          'fill="#5f6368">' + esc(n.label) + '</text>' +
+          '<text x="' + lx + '" y="' + (p.y + p.h / 2 + 15) + '" text-anchor="' +
+          (right ? 'start' : 'end') + '" font-size="9.5" fill="' + INK3 +
+          '" font-family="Roboto Mono,monospace">' + money(val[n.id]) +
+          '</text>' : '');
+    }).join('');
+
+    var heads = (opts.headers || []).map(function (t, i) {
+      return '<text x="' + (colX[i] + NODE_W / 2) + '" y="-12" ' +
+        'text-anchor="middle" font-size="11" fill="' + INK3 + '">' +
+        esc(t) + '</text>'; }).join('');
+
+    return '<svg class="chart" viewBox="0 -28 ' + w + ' ' + (h + 36) +
+      '" role="img">' + heads + ribbons + boxes + '</svg>';
+  }
+
+  // One stacked bar per account, before over after.
+  function stackedCompare(groups, opts) {
+    opts = opts || {};
+    var w = opts.width || 880, labelW = 186, rowH = 58, barH = 17;
+    var h = groups.length * rowH;
+    var max = Math.max.apply(null, groups.map(function (g) {
+      return Math.max(g.beforeTotal, g.afterTotal); })) || 1;
+    var barW = w - labelW - 92;
+
+    function seg(items, total, y) {
+      var x = labelW;
+      return items.map(function (it, i) {
+        var sw = it.value / max * barW;
+        var r = '<rect x="' + x.toFixed(1) + '" y="' + y + '" width="' +
+          Math.max(0.6, sw).toFixed(1) + '" height="' + barH + '" fill="' +
+          C.color(it.ci) + '"><title>' + esc(it.label) + ' ' + money(it.value) +
+          ' · ' + (it.value / (total || 1) * 100).toFixed(1) + '%</title></rect>';
+        x += sw;
+        return r;
+      }).join('');
+    }
+
+    return '<svg class="chart" viewBox="0 0 ' + w + ' ' + h + '" role="img">' +
+      groups.map(function (g, i) {
+        var y = i * rowH + 4;
+        return '<text x="0" y="' + (y + 13) + '" font-size="12.5" ' +
+            'fill="#202124">' + esc(g.label) + '</text>' +
+          '<text x="0" y="' + (y + 28) + '" font-size="10.5" fill="' + INK3 +
+            '">' + esc(g.tag || '') + '</text>' +
+          '<text x="' + (labelW - 10) + '" y="' + (y + 12) + '" ' +
+            'text-anchor="end" font-size="9.5" fill="' + INK3 + '">now</text>' +
+          '<text x="' + (labelW - 10) + '" y="' + (y + 33) + '" ' +
+            'text-anchor="end" font-size="9.5" fill="' + INK3 + '">after</text>' +
+          seg(g.before, g.beforeTotal, y) +
+          seg(g.after, g.afterTotal, y + 21) +
+          '<text x="' + w + '" y="' + (y + 12) + '" text-anchor="end" ' +
+            'font-size="11" font-family="Roboto Mono,monospace" fill="' + INK3 +
+            '">' + money(g.beforeTotal) + '</text>' +
+          '<text x="' + w + '" y="' + (y + 33) + '" text-anchor="end" ' +
+            'font-size="11" font-family="Roboto Mono,monospace" fill="#202124">' +
+            money(g.afterTotal) + '</text>';
+      }).join('') + '</svg>';
+  }
+
+  C.sankey = sankey;
+  C.stackedCompare = stackedCompare;
+})(window.PFCharts);

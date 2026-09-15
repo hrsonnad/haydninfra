@@ -153,6 +153,112 @@ window.PFPlan = (function () {
       '</div>';
   }
 
+
+  // ---- account structure + money flow ---------------------------------
+  var ACCT_COLOR = { rh_individual: '#8ab4f8', rh_crypto: '#c58af9',
+                     schwab_trad_inh: '#fdd663', schwab_roth_inh: '#81c995',
+                     rh_roth: '#78d9ec' };
+
+  function accountStructure(a) {
+    var base = S.positions.map(function (p) {
+      return Object.assign({}, p, { market_value: p.qty * px(p) }); });
+    var ci = {}, n = 0;
+    function idx(sym) { if (!(sym in ci)) ci[sym] = n++; return ci[sym]; }
+
+    var groups = Object.keys(S.accounts).map(function (k) {
+      function pack(list) {
+        return list.filter(function (p) { return p.account === k &&
+            p.market_value > 1; })
+          .sort(function (x, y) { return y.market_value - x.market_value; })
+          .map(function (p) { return { label: p.symbol, value: p.market_value,
+                                       ci: idx(p.symbol) }; });
+      }
+      var b = pack(base), af = pack(a.after);
+      var cashHere = k === 'rh_individual' ? a.cash : 0;
+      if (cashHere > 1) af.push({ label: 'cash', value: cashHere, ci: idx('cash') });
+      return { label: S.accounts[k].label.replace(' (from Inherited)', ' (inh)')
+                 .replace(' (Inherited)', ' (inh)').replace(' (Brokerage)', ''),
+               tag: S.accounts[k].tax_class,
+               before: b, after: af,
+               beforeTotal: b.reduce(function (s, x) { return s + x.value; }, 0),
+               afterTotal: af.reduce(function (s, x) { return s + x.value; }, 0) };
+    }).filter(function (g) { return g.beforeTotal > 1 || g.afterTotal > 1; });
+
+    return '<div class="sec"><div class="sec__h"><h2>Account structure</h2>' +
+      '<span class="hint">Each account before and after, same scale</span></div>' +
+      C.stackedCompare(groups, { width: 880 }) + '</div>';
+  }
+
+  function moneyFlow(a) {
+    var nodes = [], links = [], seen = {};
+    function node(id, label, col, color) {
+      if (seen[id]) return id;
+      seen[id] = 1; nodes.push({ id: id, label: label, col: col, color: color });
+      return id;
+    }
+    // Middle column: the account. Everything has to pass through it, which is
+    // the point — proceeds cannot cross from one tax bucket into another.
+    Object.keys(S.accounts).forEach(function (k) {
+      node('A|' + k, S.accounts[k].label.replace('Robinhood ', 'RH ')
+        .replace('Schwab ', ''), 1, ACCT_COLOR[k] || '#9aa0a6');
+    });
+
+    var TINY = 1200, tinySell = {}, tinyBuy = {};
+    rows.forEach(function (e) {
+      if (e.action === 'hold') return;
+      var r = resolve(e);
+      if (!r.usd || r.usd <= 0) return;
+      var col = ACCT_COLOR[e.account] || '#9aa0a6';
+      if (e.action === 'sell') {
+        if (r.usd < TINY) { tinySell[e.account] = (tinySell[e.account] || 0) + r.usd; return; }
+        var sid = 'S|' + e.account + '|' + e.symbol;
+        node(sid, e.symbol, 0, col);
+        links.push({ from: sid, to: 'A|' + e.account, value: r.usd,
+                     color: col, label: 'sell ' + e.symbol });
+      } else {
+        if (r.usd < TINY) { tinyBuy[e.account] = (tinyBuy[e.account] || 0) + r.usd; return; }
+        var bid = 'B|' + e.account + '|' + e.symbol;
+        node(bid, e.symbol, 2, col);
+        links.push({ from: 'A|' + e.account, to: bid, value: r.usd,
+                     color: col, label: 'buy ' + e.symbol });
+      }
+    });
+    Object.keys(tinySell).forEach(function (k) {
+      var id = 'S|' + k + '|tiny'; node(id, 'small positions', 0, ACCT_COLOR[k]);
+      links.push({ from: id, to: 'A|' + k, value: tinySell[k],
+                   color: ACCT_COLOR[k], label: 'small positions' });
+    });
+    Object.keys(tinyBuy).forEach(function (k) {
+      var id = 'B|' + k + '|tiny'; node(id, 'other buys', 2, ACCT_COLOR[k]);
+      links.push({ from: 'A|' + k, to: id, value: tinyBuy[k],
+                   color: ACCT_COLOR[k], label: 'other buys' });
+    });
+
+    // The two flows that are not a sell or a buy, and are easy to miss.
+    var xfer = rows.filter(function (e) { return e.account === 'rh_crypto' &&
+      e.action === 'sell'; }).reduce(function (s, e) {
+        var r = resolve(e); return s + (r.usd || 0); }, 0);
+    if (xfer > 0) {
+      links.push({ from: 'A|rh_crypto', to: 'A|rh_individual', value: xfer,
+                   color: ACCT_COLOR.rh_crypto,
+                   label: 'transfer crypto proceeds to brokerage' });
+    }
+    (cons || []).filter(function (c) { return c.kind === 'cash_need' && c.amount; })
+      .forEach(function (c, i) {
+        var id = 'B|withdraw|' + i;
+        node(id, 'withdrawal', 2, '#f28b82');
+        links.push({ from: 'A|schwab_trad_inh', to: id, value: Number(c.amount),
+                     color: '#f28b82', label: c.label });
+      });
+
+    if (!links.length) return '';
+    return '<div class="sec"><div class="sec__h"><h2>Where the money goes</h2>' +
+      '<span class="hint">Proceeds stay inside their own account — the only ' +
+      'crossing is crypto into the brokerage, both taxable</span></div>' +
+      C.sankey(nodes, links, { width: 900, labelW: 130,
+        headers: ['Sold', 'Account', 'Bought'] }) + '</div>';
+  }
+
   function sequence() {
     var buckets = [
       ['Tax-free accounts', 'Nothing to optimise and no tax, so these come first.',
@@ -235,7 +341,8 @@ window.PFPlan = (function () {
     var a = applied();
     root.innerHTML = banner() + metrics(a) +
       '<div class="sec"><div class="sec__h"><h2>Before and after</h2></div>' +
-      comparison(a) + '</div>' + sequence() + tips();
+      comparison(a) + '</div>' + accountStructure(a) + moneyFlow(a) +
+      sequence() + tips();
   }
 
   function mount(el, snap, st) {
