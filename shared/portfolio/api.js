@@ -133,6 +133,18 @@ window.PFApi = (function () {
     await one(sb.from('portfolio_notes').delete().eq('id', id), 'delete note');
   }
 
+  // ---- settings (single owner row) ------------------------------------
+  async function settings() {
+    var d = await one(sb.from('portfolio_settings').select('profile').eq('id', 1),
+      'load settings');
+    return (d && d.length ? d[0].profile : null) || {};
+  }
+  async function saveSettings(profile) {
+    var d = await one(sb.from('portfolio_settings').update({ profile: profile })
+      .eq('id', 1).select('profile').single(), 'save settings');
+    return d.profile;
+  }
+
   // ---- live quotes -----------------------------------------------------
   // Proxied through an owner-gated edge function: the page CSP only permits
   // this origin, and the symbol list itself reveals holdings.
@@ -161,5 +173,6 @@ window.PFApi = (function () {
            constraints: constraints, addConstraint: addConstraint,
            updateConstraint: updateConstraint, deleteConstraint: deleteConstraint,
            notes: notes, addNote: addNote, deleteNote: deleteNote,
+           settings: settings, saveSettings: saveSettings,
            quotes: quotes };
 })();

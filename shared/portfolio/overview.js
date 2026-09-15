@@ -3,7 +3,7 @@
 window.PFOverview = (function () {
   'use strict';
   var C = window.PFCharts, T = window.PFTax;
-  var S = null, root = null, quotes = null;
+  var S = null, root = null, quotes = null, rates = null;
   var mode = 'consolidated', open = {}, curveFor = null;
   var sortKey = 'market_value', sortDir = -1;
 
@@ -16,6 +16,16 @@ window.PFOverview = (function () {
   var acct = function (k) {
     return S.accounts[k].label.replace('Robinhood ', 'RH ').replace('Schwab ', '');
   };
+
+  // Three states, because "tax-free" was wrong on the traditional IRA: free to
+  // trade inside, but the whole balance is taxed as ordinary income on exit.
+  function classBadge(cls) {
+    if (cls === 'roth') return '<span class="badge b-free">tax-free</span>';
+    if (cls === 'pretax') return '<span class="badge b-defer">deferred</span>';
+    return '<span class="badge b-tax">taxable</span>';
+  }
+  function badge(p) { return classBadge(p.tax_class); }
+  function acctBadge(a) { return classBadge(S.accounts[a].tax_class); }
   // live price when we have one, snapshot price otherwise
   var px = function (p) {
     return (quotes && quotes[p.symbol]) ? quotes[p.symbol] : p.price;
@@ -64,19 +74,34 @@ window.PFOverview = (function () {
     var known = S.positions.filter(function (p) { return p.cost_basis !== null; });
     var kmv = known.reduce(function (s, p) { return s + mv(p); }, 0);
     var kcb = known.reduce(function (s, p) { return s + p.cost_basis; }, 0);
-    var free = S.positions.filter(function (p) { return !p.trades_taxable; })
-      .reduce(function (s, p) { return s + mv(p); }, 0);
     var gl = kmv - kcb;
+
+    // Three classes, not two. A traditional IRA is free to REBALANCE but is
+    // not tax-free: the whole balance is taxed as ordinary income on the way
+    // out, so lumping it in with the Roths overstates what the money is worth.
+    var cls = { roth: 0, pretax: 0, taxable: 0 };
+    S.positions.forEach(function (p) {
+      cls[p.tax_class || 'taxable'] += mv(p); });
+
+    var ordRate = (rates && rates.ordinary ? rates.ordinary : 0) +
+                  (rates && rates.state ? rates.state : 0);
+    var deferred = cls.pretax * ordRate;
+
     var cells = [
       ['Total value', money(tot), consolidated().length + ' holdings · ' +
         Object.keys(S.accounts).length + ' accounts', ''],
       ['Unrealised gain', (gl >= 0 ? '+' : '') + money(gl),
         'on ' + money(kmv) + ' with known basis', gl >= 0 ? 'g' : 'r'],
-      ['Tax-free', money(free), (free / tot * 100).toFixed(0) +
-        '% in retirement accounts', ''],
-      ['Taxable', money(tot - free), (100 - free / tot * 100).toFixed(0) +
-        '% where sales are taxed', ''],
+      ['Tax-free', money(cls.roth), 'Roth — no tax on trades or withdrawal', ''],
+      ['Tax-deferred', money(cls.pretax),
+        ordRate ? money(deferred) + ' owed at ' + (ordRate * 100).toFixed(0) +
+          '% on withdrawal' : 'ordinary income tax due on withdrawal', 'r'],
+      ['Taxable', money(cls.taxable), 'capital gains on sale', ''],
     ];
+    if (ordRate) {
+      cells.push(['After deferred tax', money(tot - deferred),
+        'what the book is actually worth', '']);
+    }
     return '<div class="metrics">' + cells.map(function (c) {
       return '<div class="metric"><div class="k">' + c[0] + '</div>' +
         '<div class="v ' + c[3] + '">' + c[1] + '</div>' +
@@ -109,7 +134,7 @@ window.PFOverview = (function () {
   }
 
   function curveRow(p) {
-    var rate = 0.188;
+    var rate = (rates && rates.ltcg) || 0.188;
     var pts = T.curve(p, rate, 24);
     var marks = [0.25, 0.5, 0.75].map(function (f) {
       var r = T.sell(p, f, rate);
@@ -126,7 +151,7 @@ window.PFOverview = (function () {
         fmtX: function (v) { return v.toFixed(0) + 'sh'; } }) + '</div>' +
       '<div style="font-size:13px">' +
         '<div class="faint" style="margin-bottom:8px">Selling highest-cost-basis ' +
-          'lots first, at 18.8% federal.</div>' +
+          'lots first, at ' + (rate * 100).toFixed(1) + '% long-term federal.</div>' +
         '<table class="t" style="font-size:12.5px"><tbody>' +
         [0.25, 0.5, 1].map(function (f) {
           var r = T.sell(p, f, rate);
@@ -184,9 +209,7 @@ window.PFOverview = (function () {
               (hasLots ? ' data-curve="' + p.account + '|' + p.symbol + '"' : '') +
               '><td>' + esc(acct(p.account)) +
                 (hasLots ? ' <span class="faint">· tax curve</span>' : '') + '</td>' +
-              '<td>' + (p.trades_taxable
-                ? '<span class="badge b-tax">taxable</span>'
-                : '<span class="badge b-free">tax-free</span>') + '</td>' +
+              '<td>' + badge(p) + '</td>' +
               '<td></td>' +
               '<td class="num">' + p.qty.toLocaleString('en-US',
                 { maximumFractionDigits: 6 }) + '</td>' +
@@ -218,16 +241,13 @@ window.PFOverview = (function () {
       var sub = rows.reduce(function (s, p) { return s + mv(p); }, 0);
       html += '<tr class="sub"><td colspan="5" style="padding-left:12px">' +
         '<b style="color:var(--ink)">' + esc(S.accounts[a].label) + '</b> ' +
-        (S.accounts[a].trades_taxable
-          ? '<span class="badge b-tax">taxable</span>'
-          : '<span class="badge b-free">tax-free</span>') +
+        acctBadge(a) +
         '</td><td class="num"><b>' + money(sub) + '</b></td>' +
         '<td class="num">' + (sub / tot * 100).toFixed(1) + '%</td><td></td></tr>';
       rows.forEach(function (p) {
         html += '<tr><td class="sym">' + p.symbol + '</td>' +
           '<td class="dim">' + esc(p.name) + '</td>' +
-          '<td>' + (p.trades_taxable ? '<span class="badge b-tax">tax</span>'
-                                     : '<span class="badge b-free">free</span>') + '</td>' +
+          '<td>' + badge(p) + '</td>' +
           '<td class="num dim">' + p.qty.toLocaleString('en-US',
             { maximumFractionDigits: 4 }) + '</td>' +
           '<td class="num dim">' + money2(px(p)) + '</td>' +
@@ -284,6 +304,8 @@ window.PFOverview = (function () {
   }
 
   function setQuotes(q) { quotes = q; if (root) render(); }
+  function setRates(r) { rates = r; if (root) render(); }
   function mount(el, snapshot) { root = el; S = snapshot; render(); }
-  return { mount: mount, setQuotes: setQuotes, total: total };
+  return { mount: mount, setQuotes: setQuotes, setRates: setRates,
+           total: total };
 })();

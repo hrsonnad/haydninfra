@@ -3,7 +3,8 @@
 window.PortfolioApp = (function () {
   'use strict';
   var snapshot, data, plans = [], plan, entries = [], targets = [],
-      constraints = [], notes = [], quotes = null, current = 'overview';
+      constraints = [], notes = [], quotes = null, current = 'overview',
+      profile = {}, rates = null;
 
   function el(id) { return document.getElementById(id); }
 
@@ -38,6 +39,17 @@ window.PortfolioApp = (function () {
     window.PFPlan.mount(el('view-plan'), data, window.PFWorkspace.state());
   }
   function planChanged() { if (current === 'plan') mountPlan(); }
+
+
+  function applyProfile(p) {
+    profile = p || {};
+    rates = window.PFTax.deriveRates(profile.income || 0, profile.filing);
+    rates.state = Number(profile.state_rate || 0) / 100;
+    window.PFOverview.setRates(rates);
+    window.PFWorkspace.setProfile(profile, rates);
+    planChanged();
+  }
+  function profileChanged(p) { applyProfile(p); }
 
   function mountWorkspace() {
     window.PFWorkspace.mount(el('view-workspace'), data, plans, plan,
@@ -119,11 +131,15 @@ window.PortfolioApp = (function () {
       return;
     }
 
+    try { profile = await window.PFApi.settings(); }
+    catch (e) { profile = {}; }
+
     el('pf-asof').textContent = 'as of ' + data.as_of;
 
     if (window.PFHistory) await window.PFHistory.init(snapshot);
     window.PFOverview.mount(el('view-overview'), data);
     mountWorkspace();
+    applyProfile(profile);
 
     el('pf-tabs').addEventListener('click', function (e) {
       var b = e.target.closest('.pf-tab'); if (b) show(b.dataset.tab); });
@@ -136,6 +152,7 @@ window.PortfolioApp = (function () {
   }
 
   return { boot: boot, toast: toast, planChanged: planChanged,
+           profileChanged: profileChanged,
            switchScenario: switchScenario, scenarioAdded: scenarioAdded,
            scenarioArchived: scenarioArchived };
 })();

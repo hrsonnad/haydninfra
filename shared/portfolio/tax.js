@@ -14,6 +14,56 @@ window.PFTax = (function () {
 
   var RATES = [['15%', 0.15], ['18.8% + NIIT', 0.188], ['23.8% top', 0.238]];
 
+  // 2026 brackets, inflation-estimated from 2025 — thresholds move and these
+  // are not authoritative, which is why every derived rate stays overridable.
+  var ORDINARY = {
+    single: [[12400, .10], [50400, .12], [105700, .22], [201775, .24],
+             [256225, .32], [640600, .35], [Infinity, .37]],
+    mfj:    [[24800, .10], [100800, .12], [211400, .22], [403550, .24],
+             [512450, .32], [768700, .35], [Infinity, .37]],
+  };
+  var LTCG = {
+    single: [[50400, 0], [556700, .15], [Infinity, .20]],
+    mfj:    [[100800, 0], [626350, .15], [Infinity, .20]],
+  };
+  var NIIT_THRESHOLD = { single: 200000, mfj: 250000 };
+  var NIIT = 0.038;
+
+  function marginal(table, income) {
+    for (var i = 0; i < table.length; i++) {
+      if (income <= table[i][0]) return table[i][1];
+    }
+    return table[table.length - 1][1];
+  }
+
+  // Two different rates, and confusing them is the usual mistake:
+  //   ltcg     long-term capital gains + NIIT — taxable-account SALES
+  //   ordinary marginal income rate — traditional-IRA WITHDRAWALS, short-term
+  function deriveRates(income, filing) {
+    filing = (filing === 'mfj') ? 'mfj' : 'single';
+    income = Number(income) || 0;
+    var base = marginal(LTCG[filing], income);
+    var niit = income > NIIT_THRESHOLD[filing] ? NIIT : 0;
+    return {
+      filing: filing, income: income,
+      ltcgBase: base, niit: niit, ltcg: base + niit,
+      ordinary: marginal(ORDINARY[filing], income),
+      note: 'LTCG ' + (base * 100).toFixed(0) + '%' +
+            (niit ? ' + ' + (niit * 100).toFixed(1) + '% NIIT' : '') +
+            ' · ordinary ' + (marginal(ORDINARY[filing], income) * 100).toFixed(0) + '%',
+    };
+  }
+
+  // The deferred ordinary-income liability sitting inside pre-tax accounts.
+  // Unlike a taxable account, it is owed on the WHOLE balance, not the gain.
+  function deferredLiability(S, ordinaryRate, stateRate) {
+    var pre = S.positions.filter(function (p) {
+      return p.tax_class === 'pretax'; })
+      .reduce(function (s, p) { return s + p.market_value; }, 0);
+    var rate = (ordinaryRate || 0) + (stateRate || 0);
+    return { balance: pre, rate: rate, tax: pre * rate, net: pre * (1 - rate) };
+  }
+
   // Sell `frac` (0..1) of a position.
   function sell(p, frac, rate) {
     var shares = p.qty * frac;
@@ -106,5 +156,6 @@ window.PFTax = (function () {
   }
 
   return { RATES: RATES, sell: sell, scenario: scenario, curve: curve,
-           harvestPool: harvestPool, concentration: concentration };
+           harvestPool: harvestPool, concentration: concentration,
+           deriveRates: deriveRates, deferredLiability: deferredLiability };
 })();

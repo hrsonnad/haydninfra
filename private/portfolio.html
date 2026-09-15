@@ -26,16 +26,20 @@
             <div class="pf-head__top">
                 <h1>Portfolio</h1>
                 <span class="pf-asof" id="pf-asof"></span>
-                <span class="pf-head__right">
+                <!-- auth.js injects its profile widget into .site-nav__inner when
+                     present; without it the widget lands inside the first <nav>
+                     and tears the tab strip apart. Keep this element, and keep
+                     the tabs a <div> so they can never be the fallback target. -->
+                <div class="site-nav__inner" id="pf-authbar">
                     <span class="pf-asof" id="pf-quote-note"></span>
                     <button class="btn outline" id="pf-refresh">Refresh prices</button>
-                </span>
+                </div>
             </div>
-            <nav class="pf-tabs" id="pf-tabs">
+            <div class="pf-tabs" id="pf-tabs" role="tablist">
                 <button class="pf-tab active" data-tab="overview">Overview</button>
                 <button class="pf-tab" data-tab="workspace">Rebalance</button>
                 <button class="pf-tab" data-tab="plan">Execution</button>
-            </nav>
+            </div>
         </header>
 
         <main>

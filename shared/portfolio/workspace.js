@@ -11,6 +11,7 @@ window.PFWorkspace = (function () {
   var C = window.PFCharts, A = window.PFApi, T = window.PFTax;
   var S, plans = [], plan, rows = [], tgts = [], cons = [], noteList = [];
   var root, rate = 0.188, useHarvest = true, quotes = null;
+  var profile = {}, rates = null;
 
   var esc = C.esc, money = C.money;
   var toast = function (m) { window.PortfolioApp.toast(m); };
@@ -46,6 +47,53 @@ window.PFWorkspace = (function () {
         return { position: r.pos, frac: Math.min(1, r.frac) };
       }).filter(function (t) { return t.position; });
     return T.scenario(S, trims, rate, useHarvest);
+  }
+
+  // ---------- tax profile ----------
+  // 18.8% is not an assumption about your income, it is the long-term
+  // capital-gains rate: 15% bracket plus the 3.8% NIIT surcharge that applies
+  // over $200k single / $250k MFJ. Your ORDINARY marginal rate is a different
+  // and higher number, and it is what traditional-IRA withdrawals cost.
+  function taxSection() {
+    var r = rates || T.deriveRates(profile.income || 0, profile.filing);
+    var st = Number(profile.state_rate || 0);
+    var d = T.deferredLiability(S, r.ordinary, st / 100);
+    return '<div class="sec" style="margin-top:0"><div class="sec__h">' +
+      '<h2>Tax profile</h2><span class="hint">Drives every figure below</span>' +
+      '</div><div class="row" style="margin-bottom:14px">' +
+      '<label class="faint" style="font-size:12.5px">Income' +
+        '<input class="f num" id="tx-income" type="number" step="1000" ' +
+        'value="' + (profile.income || '') + '" placeholder="225000" ' +
+        'style="width:120px;margin-left:8px"></label>' +
+      '<label class="faint" style="font-size:12.5px">Filing' +
+        '<select class="f" id="tx-filing" style="width:150px;margin-left:8px">' +
+        '<option value="single"' + (r.filing === 'single' ? ' selected' : '') +
+          '>Single</option>' +
+        '<option value="mfj"' + (r.filing === 'mfj' ? ' selected' : '') +
+          '>Married filing jointly</option></select></label>' +
+      '<label class="faint" style="font-size:12.5px">State %' +
+        '<input class="f num" id="tx-state" type="number" step="0.1" ' +
+        'value="' + (profile.state_rate || '') + '" placeholder="0" ' +
+        'style="width:74px;margin-left:8px"></label>' +
+      '<button class="btn" id="tx-save">Save</button>' +
+      '</div>' +
+      '<div class="metrics" style="padding-bottom:18px">' +
+        '<div class="metric"><div class="k">Long-term capital gains</div>' +
+          '<div class="v sm">' + ((r.ltcg + st / 100) * 100).toFixed(1) + '%</div>' +
+          '<div class="n">' + (r.ltcgBase * 100).toFixed(0) + '% bracket' +
+            (r.niit ? ' + 3.8% NIIT' : '') +
+            (st ? ' + ' + st + '% state' : '') + ' — taxable sales</div></div>' +
+        '<div class="metric"><div class="k">Ordinary marginal</div>' +
+          '<div class="v sm">' + ((r.ordinary + st / 100) * 100).toFixed(1) + '%</div>' +
+          '<div class="n">traditional-IRA withdrawals, short-term gains</div></div>' +
+        '<div class="metric"><div class="k">Deferred liability</div>' +
+          '<div class="v sm r">' + money(d.tax) + '</div>' +
+          '<div class="n">owed on the ' + money(d.balance) +
+            ' traditional IRA</div></div>' +
+      '</div>' +
+      '<div class="faint" style="font-size:12px;margin:-6px 0 4px">' +
+        'Brackets are 2026 estimates. Override the rate used for this scenario ' +
+        'in the selector below if they are off.</div></div>';
   }
 
   // ---------- scenarios ----------
@@ -289,7 +337,7 @@ window.PFWorkspace = (function () {
   async function guard(fn) { try { await fn(); } catch (e) { toast(e.message); } }
 
   function render() {
-    root.innerHTML = scenarioBar() + metrics() + targetsSection() +
+    root.innerHTML = taxSection() + scenarioBar() + metrics() + targetsSection() +
       constraintsSection() + entriesSection() + notesSection();
     syncSyms();
     var q = function (s) { return root.querySelector(s); };
@@ -310,6 +358,17 @@ window.PFWorkspace = (function () {
       rate = parseFloat(q('#rate').value); render(); window.PortfolioApp.planChanged(); });
     q('#harv').addEventListener('change', function () {
       useHarvest = q('#harv').checked; render(); window.PortfolioApp.planChanged(); });
+
+    q('#tx-save').addEventListener('click', function () { guard(async function () {
+      var inc = parseFloat(q('#tx-income').value);
+      var stt = parseFloat(q('#tx-state').value);
+      profile = await A.saveSettings({
+        income: isNaN(inc) ? null : inc,
+        filing: q('#tx-filing').value,
+        state_rate: isNaN(stt) ? null : stt });
+      window.PortfolioApp.profileChanged(profile);
+      toast('Tax profile saved');
+    }); });
     if (q('#lock')) q('#lock').addEventListener('click', function () {
       guard(async function () {
         if (!rows.length) { toast('Record at least one decision first'); return; }
@@ -432,10 +491,17 @@ window.PFWorkspace = (function () {
     render();
   }
   function setQuotes(q) { quotes = q; if (root) render(); }
+  function setProfile(p, r) {
+    profile = p || {}; rates = r;
+    // default the scenario rate to the derived LTCG rate
+    if (r && r.ltcg) rate = r.ltcg + (Number(profile.state_rate || 0) / 100);
+    if (root) render();
+  }
   function state() {
     return { plan: plan, rows: rows, targets: tgts, constraints: cons,
              resolve: resolve, rate: rate, useHarvest: useHarvest,
-             quotes: quotes };
+             quotes: quotes, profile: profile, rates: rates };
   }
-  return { mount: mount, state: state, setQuotes: setQuotes };
+  return { mount: mount, state: state, setQuotes: setQuotes,
+           setProfile: setProfile };
 })();
