@@ -14,11 +14,27 @@ window.PFPlan = (function () {
   var px = function (p) { return (quotes && quotes[p.symbol]) || p.price; };
 
   function applied() {
-    var delta = {}, sell = 0, buy = 0, trims = [];
+    var delta = {}, added = [], sell = 0, buy = 0, trims = [];
     rows.forEach(function (e) {
       if (e.action === 'hold') return;
       var r = resolve(e);
-      if (r.usd === null || !r.pos) return;
+      if (r.usd === null) return;
+      if (!r.pos) {
+        // a buy into something not held becomes a new line in the after-state
+        if (e.action !== 'buy') return;
+        var a = S.accounts[e.account] || {};
+        added.push({
+          account: e.account, symbol: e.symbol,
+          name: e.symbol + ' (new)', theme: e.theme || 'Unassigned',
+          asset_class: 'us_equity', tax_class: a.tax_class || 'taxable',
+          trades_taxable: !!a.trades_taxable, broker: a.broker,
+          tax_model: a.trades_taxable ? 'unknown' : 'free',
+          qty: r.shares || 0, price: r.shares ? r.usd / r.shares : 0,
+          cost_basis: r.usd, gain: 0, market_value: r.usd, _new: true,
+        });
+        buy += r.usd;
+        return;
+      }
       var k = e.account + '|' + e.symbol;
       delta[k] = (delta[k] || 0) + (e.action === 'sell' ? -r.usd : r.usd);
       if (e.action === 'sell') { sell += r.usd;
@@ -29,9 +45,10 @@ window.PFPlan = (function () {
       var d = delta[p.account + '|' + p.symbol] || 0;
       return Object.assign({}, p, {
         market_value: Math.max(0, p.qty * px(p) + d) });
-    });
+    }).concat(added);
     var t = T.scenario(S, trims, rate, useHarvest);
-    return { after: after, sell: sell, buy: buy, cash: sell - buy, tax: t };
+    return { after: after, sell: sell, buy: buy, cash: sell - buy, tax: t,
+             added: added };
   }
 
   function weights(list, cash, key) {
@@ -172,8 +189,10 @@ window.PFPlan = (function () {
           if (p && p.broker === 'Schwab' && p.trades_taxable)
             f.push('elect specific-ID at or before the sale');
           if (p && p.asset_class === 'private_alt') f.push('thin — use a limit order');
+          if (!p && e.action === 'buy') f.push('new position');
+          if (!p && r.usd === null) f.push('no price — set one on tab 2');
           return '<li><b>' + (e.action === 'sell' ? 'Sell' : 'Buy') + ' ' +
-            (r.shares !== null ? r.shares.toLocaleString('en-US',
+            (r.shares ? r.shares.toLocaleString('en-US',
               { maximumFractionDigits: 4 }) + ' ' : '') + esc(e.symbol) + '</b> in ' +
             esc(acct(e.account)) +
             (r.usd !== null ? ' <span class="faint">≈ ' + money(r.usd) +

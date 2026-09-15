@@ -31,16 +31,33 @@ window.PFWorkspace = (function () {
     return S.positions.find(function (p) {
       return p.account === a && p.symbol === s; }) || null;
   }
+  // A buy is frequently into something not owned yet, which is most of what
+  // rebalancing is. Those entries have no position to measure against, so the
+  // amount is taken at face value and a price is only needed to derive shares.
   function resolve(e) {
     var p = posFor(e.account, e.symbol);
-    if (!p || e.amount === null || e.amount === undefined)
-      return { usd: null, shares: null, frac: 0, pos: p };
-    var a = Number(e.amount), price = px(p);
+    if (e.amount === null || e.amount === undefined)
+      return { usd: null, shares: null, frac: 0, pos: p, isNew: !p };
+
+    var a = Number(e.amount);
+    if (!p) {
+      // price comes from the entry override, else a live quote, else unknown
+      var q = e.price || (quotes && quotes[e.symbol]) || null;
+      if (e.unit === 'usd')    return { usd: a, shares: q ? a / q : null,
+                                        frac: 0, pos: null, isNew: true };
+      if (e.unit === 'shares') return { usd: q ? a * q : null, shares: a,
+                                        frac: 0, pos: null, isNew: true };
+      // a percentage of a position you do not hold has no meaning
+      return { usd: null, shares: null, frac: 0, pos: null, isNew: true,
+               badUnit: true };
+    }
+
+    var price = px(p);
     var shares = e.unit === 'pct' ? p.qty * a / 100
                : e.unit === 'shares' ? a
                : (price ? a / price : 0);
     return { usd: shares * price, shares: shares,
-             frac: p.qty ? shares / p.qty : 0, pos: p };
+             frac: p.qty ? shares / p.qty : 0, pos: p, isNew: false };
   }
   function entryTax(e) {
     var r = resolve(e);
@@ -253,15 +270,13 @@ window.PFWorkspace = (function () {
 
     var body = rows.map(function (e) {
       var r = resolve(e), tx = entryTax(e), d = locked() ? ' disabled' : '';
-      var syms = S.positions.filter(function (p) { return p.account === e.account; })
-        .map(function (p) { return [p.symbol, p.symbol]; });
-      if (!syms.some(function (s) { return s[0] === e.symbol; }))
-        syms.unshift([e.symbol, e.symbol]);
+
       return '<tr data-id="' + e.id + '">' +
-        '<td><select class="f" data-fld="account" style="width:124px"' + d +
+        '<td><select class="f" data-fld="account" style="width:158px"' + d +
           '>' + opts(accts, e.account) + '</select></td>' +
-        '<td><select class="f" data-fld="symbol" style="width:86px"' + d +
-          '>' + opts(syms, e.symbol) + '</select></td>' +
+        '<td><input class="f" data-fld="symbol" list="held-' + e.account +
+          '" value="' + esc(e.symbol) + '" style="width:86px;font-family:var(--mono)"' +
+          d + '></td>' +
         '<td><select class="f" data-fld="action" style="width:82px"' + d + '>' +
           opts([['sell', 'Sell'], ['buy', 'Buy'], ['hold', 'Hold']], e.action) +
           '</select></td>' +
@@ -271,17 +286,28 @@ window.PFWorkspace = (function () {
         '<td><select class="f" data-fld="unit" style="width:80px"' + d + '>' +
           opts([['pct', '%'], ['shares', 'sh'], ['usd', '$']], e.unit) +
           '</select></td>' +
-        '<td class="num">' + (r.usd === null ? '<span class="faint">—</span>'
+        '<td class="num">' + (r.usd === null
+          ? '<span class="neg" title="' + (r.badUnit
+              ? 'a percentage of a position you do not hold has no meaning'
+              : 'no price for this symbol — set one') + '">' +
+            (r.badUnit ? 'use $ or shares' : 'needs price') + '</span>'
           : money(r.usd)) + '</td>' +
         '<td class="num ' + (!r.pos || !r.pos.trades_taxable ? 'faint'
           : tx.known ? (tx.tax ? 'neg' : 'faint') : 'neg') + '">' +
-          (!r.pos ? '—' : !r.pos.trades_taxable ? '$0'
+          (e.action !== 'sell' ? '$0'
+            : !r.pos ? '—' : !r.pos.trades_taxable ? '$0'
             : tx.known ? money(tx.tax) : '?') + '</td>' +
         '<td>' + (r.pos ? (r.pos.trades_taxable
           ? '<span class="badge b-tax">taxable</span>'
-          : '<span class="badge b-free">free</span>') : '') +
+          : '<span class="badge b-free">free</span>')
+          : '<span class="badge b-new">new</span>') +
           (mixedSources() && e.source === 'claude'
             ? ' <span class="badge b-claude">claude</span>' : '') +
+          '</td>' +
+        '<td>' + (r.isNew
+          ? '<input class="f" data-fld="theme" value="' + esc(e.theme) +
+            '" placeholder="theme" style="width:104px" list="themes"' + d + '>'
+          : '<span class="tag">' + esc(r.pos ? r.pos.theme : '') + '</span>') +
           '</td>' +
         '<td><input class="f" data-fld="note" value="' + esc(e.note) +
           '" placeholder="why"' + d + '></td>' +
@@ -289,20 +315,33 @@ window.PFWorkspace = (function () {
           '">×</button>') + '</td></tr>';
     }).join('');
 
-    return '<div class="sec"><div class="sec__h"><h2>Decisions</h2>' +
+    var lists = Object.keys(S.accounts).map(function (a) {
+      return '<datalist id="held-' + a + '">' +
+        S.positions.filter(function (p) { return p.account === a; })
+          .sort(function (x, y) { return y.market_value - x.market_value; })
+          .map(function (p) { return '<option value="' + p.symbol + '">'; })
+          .join('') + '</datalist>';
+    }).join('') + '<datalist id="themes">' +
+      Object.keys(S.positions.reduce(function (m, p) {
+        m[p.theme] = 1; return m; }, {})).sort().map(function (t) {
+          return '<option value="' + esc(t) + '">'; }).join('') + '</datalist>';
+
+    return lists + '<div class="sec"><div class="sec__h"><h2>Decisions</h2>' +
       '<span class="hint">Priced against ' + esc(S.as_of) +
       (quotes ? ' with live quotes' : '') + '</span></div>' +
       (rows.length ? '<div class="scroll"><table class="t"><thead><tr>' +
         '<th>Account</th><th>Symbol</th><th>Action</th><th class="num">Amount</th>' +
         '<th>Unit</th><th class="num">Value</th><th class="num">Tax</th>' +
-        '<th></th><th style="width:34%">Note</th><th></th></tr></thead><tbody>' +
+        '<th></th><th>Theme</th><th style="width:26%">Note</th><th></th>' +
+      '</tr></thead><tbody>' +
         body + '</tbody></table></div>'
         : '<div class="empty">Nothing recorded yet.</div>') +
       (locked() ? '' : '<div class="row" style="margin-top:14px">' +
         '<select class="f" id="ad-acct" style="width:170px">' +
           accts.map(function (a) { return '<option value="' + a[0] + '">' +
             esc(a[1]) + '</option>'; }).join('') + '</select>' +
-        '<select class="f" id="ad-sym" style="width:110px"></select>' +
+        '<input class="f" id="ad-sym" list="held-' + Object.keys(S.accounts)[0] +
+          '" placeholder="symbol" style="width:104px;font-family:var(--mono)">' +
         '<select class="f" id="ad-action" style="width:86px">' +
           '<option value="sell">Sell</option><option value="buy">Buy</option>' +
           '<option value="hold">Hold</option></select>' +
@@ -335,10 +374,7 @@ window.PFWorkspace = (function () {
   function syncSyms() {
     var a = root.querySelector('#ad-acct'), s = root.querySelector('#ad-sym');
     if (!a || !s) return;
-    s.innerHTML = S.positions.filter(function (p) { return p.account === a.value; })
-      .sort(function (x, y) { return y.market_value - x.market_value; })
-      .map(function (p) { return '<option value="' + p.symbol + '">' + p.symbol +
-        '</option>'; }).join('');
+    s.setAttribute('list', 'held-' + a.value);
   }
   async function guard(fn) { try { await fn(); } catch (e) { toast(e.message); } }
 
@@ -472,7 +508,9 @@ window.PFWorkspace = (function () {
         var id = Number(el.closest('tr').dataset.id), f = el.dataset.fld;
         var v = el.value;
         if (f === 'amount') v = v === '' ? null : parseFloat(v);
-        if (f === 'note') v = v || null;
+        if (f === 'note' || f === 'theme') v = v || null;
+        if (f === 'symbol') v = (v || '').trim().toUpperCase();
+        if (f === 'price') v = v === '' ? null : parseFloat(v);
         var patch = {}; patch[f] = v;
         var u = await A.updateEntry(id, patch);
         rows[rows.findIndex(function (r) { return r.id === id; })] = u;
