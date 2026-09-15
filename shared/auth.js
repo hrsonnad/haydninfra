@@ -276,15 +276,20 @@
         var widget = buildAuthWidget();
         navInner.appendChild(widget);
 
+        // Paint the signed-out button immediately. getSession() goes to the network
+        // whenever the stored token needs refreshing, and a refresh against an
+        // unreachable backend is retried without the promise ever settling — neither
+        // then nor catch runs, so anything rendered inside them leaves an empty
+        // widget and no way to sign in.
+        renderLoggedOut(widget);
+
         sb.auth.getSession().then(function(result) {
             if (result.data.session && result.data.session.user) {
                 currentUser = result.data.session.user;
                 renderLoggedIn(widget, currentUser);
-            } else {
-                renderLoggedOut(widget);
             }
         }).catch(function() {
-            renderLoggedOut(widget);
+            // Leave the signed-out button in place.
         });
 
         // Listen for auth changes (login/logout from another tab)
