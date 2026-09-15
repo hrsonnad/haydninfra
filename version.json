@@ -1,9 +1,9 @@
 {
-  "version": "v260915.03 5:07pm",
-  "release": 3,
-  "sha": "a8d7c78",
-  "fullSha": "a8d7c78919af10ae0b47db5b94fa62b3b2ade3eb",
+  "version": "v260915.04 5:19pm",
+  "release": 4,
+  "sha": "d3ebead",
+  "fullSha": "d3ebead0b398812c45f382fb558907ec0260f914",
   "actor": "hrsonnad",
-  "pushedAt": "2026-09-15T22:07:40Z",
-  "commits": [{"sha": "a8d7c78", "message": "Stop guarded pages hanging on the auth check", "author": "Haydn"}]
+  "pushedAt": "2026-09-15T22:19:24Z",
+  "commits": [{"sha": "d3ebead", "message": "Portfolio v2: tax engine, targets, scenarios, live quotes, history", "author": "Haydn"}]
 }
