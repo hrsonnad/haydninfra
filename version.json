@@ -1,9 +1,9 @@
 {
-  "version": "v260915.02 4:55pm",
-  "release": 2,
-  "sha": "041c938",
-  "fullSha": "041c9383fb2694d7360194c2d5a6f959e1613381",
+  "version": "v260915.03 5:07pm",
+  "release": 3,
+  "sha": "a8d7c78",
+  "fullSha": "a8d7c78919af10ae0b47db5b94fa62b3b2ade3eb",
   "actor": "hrsonnad",
-  "pushedAt": "2026-09-15T21:55:46Z",
-  "commits": [{"sha": "041c938", "message": "Add private portfolio workspace (3-step rebalancing flow)", "author": "Haydn"}]
+  "pushedAt": "2026-09-15T22:07:40Z",
+  "commits": [{"sha": "a8d7c78", "message": "Stop guarded pages hanging on the auth check", "author": "Haydn"}]
 }
