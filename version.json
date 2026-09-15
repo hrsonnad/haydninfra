@@ -1,9 +1,9 @@
 {
-  "version": "v260915.05 5:22pm",
-  "release": 5,
-  "sha": "f2f9e0f",
-  "fullSha": "f2f9e0fcbaff6174dd386ff0ed5e5a9cecabe9fb",
+  "version": "v260915.06 5:24pm",
+  "release": 6,
+  "sha": "b91ab04",
+  "fullSha": "b91ab04fbbb4cc3131711e7fe6104324dc2232ab",
   "actor": "hrsonnad",
-  "pushedAt": "2026-09-15T22:22:50Z",
-  "commits": [{"sha": "f2f9e0f", "message": "Cache-bust shared js/css on the private pages", "author": "Haydn"}]
+  "pushedAt": "2026-09-15T22:24:33Z",
+  "commits": [{"sha": "b91ab04", "message": "Cache-bust shared js/css on the home page too", "author": "Haydn"}]
 }
