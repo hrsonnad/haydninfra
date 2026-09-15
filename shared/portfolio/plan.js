@@ -66,16 +66,21 @@ window.PFPlan = (function () {
       return Object.assign({}, p, { market_value: p.qty * px(p) }); });
     var wB = weights(base, 0), wA = weights(a.after, a.cash);
     var cB = T.concentration(wB.by), cA = T.concentration(wA.by);
-    var lgA = Object.keys(wA.by).sort(function (x, y) {
-      return wA.by[y] - wA.by[x]; })[0];
+    var lgA = Object.keys(wA.by).filter(function (k) {
+      return k !== '(cash)' && k !== 'Cash'; })
+      .sort(function (x, y) { return wA.by[y] - wA.by[x]; })[0];
 
     var cells = [
       ['Proceeds', money(a.sell), a.buy ? money(a.buy) + ' redeployed' : 'not redeployed', ''],
       ['Tax', money(a.tax.tax), a.tax.offset ? money(a.tax.offset) + ' harvest applied'
         : (rate * 100).toFixed(1) + '% federal', a.tax.tax ? 'r' : ''],
       ['Net cash', money(a.cash - a.tax.tax), 'after tax', ''],
-      ['Largest holding', cA.top1.toFixed(1) + '%',
-        lgA + ' · was ' + cB.top1.toFixed(1) + '%', cA.top1 > 25 ? 'r' : 'g'],
+      ['Largest holding', (wA.by[lgA] / wA.total * 100).toFixed(1) + '%',
+        lgA + ' · was ' + cB.top1.toFixed(1) + '%',
+        (wA.by[lgA] / wA.total * 100) > 25 ? 'r' : 'g'],
+      ['Undeployed cash', money(a.cash),
+        (a.cash / wA.total * 100).toFixed(1) + '% of the book', 
+        (a.cash / wA.total * 100) > 10 ? 'r' : ''],
       ['Top 3', cA.top3.toFixed(1) + '%', 'was ' + cB.top3.toFixed(1) + '%', ''],
       ['HHI', cA.hhi.toFixed(0), 'was ' + cB.hhi.toFixed(0), ''],
     ];
@@ -100,7 +105,7 @@ window.PFPlan = (function () {
 
     function build(key) {
       var wB = weights(base, 0, key), wA = weights(a.after, a.cash, key);
-      return Object.keys(wB.by).concat(Object.keys(wA.by))
+      var rowsOf = Object.keys(wB.by).concat(Object.keys(wA.by))
         .filter(function (v, i, arr) { return arr.indexOf(v) === i; })
         .map(function (k) {
           return { label: k,
@@ -108,13 +113,22 @@ window.PFPlan = (function () {
                    after: (wA.by[k] || 0) / wA.total * 100,
                    target: tmap[(key || 'symbol') + '|' + k] };
         })
-        .filter(function (x) { return x.before > 0.4 || x.after > 0.4; })
-        .sort(function (x, y) { return y.before - x.before; }).slice(0, 11);
+        .filter(function (x) { return x.before > 0.4 || x.after > 0.4; });
+
+      var moved = rowsOf.filter(function (x) {
+        return Math.abs(x.after - x.before) >= 0.1; })
+        .sort(function (x, y) {
+          return Math.abs(y.after - y.before) - Math.abs(x.after - x.before); });
+      var still = rowsOf.filter(function (x) {
+        return Math.abs(x.after - x.before) < 0.1; })
+        .sort(function (x, y) { return y.before - x.before; });
+      // What the plan changes, then enough of the unchanged book for context.
+      return moved.concat(still.slice(0, Math.max(0, 9 - moved.length)));
     }
 
     return '<div class="grid2">' +
       '<div><div class="faint" style="font-size:12.5px;margin-bottom:12px">' +
-        'Positions — grey is now, blue is after, dashed is target</div>' +
+        'Positions that move, grey now / blue after / dashed target</div>' +
         C.beforeAfter(build(null), { width: 480 }) + '</div>' +
       '<div><div class="faint" style="font-size:12.5px;margin-bottom:12px">' +
         'Themes, looking through funds</div>' +

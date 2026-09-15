@@ -11,7 +11,7 @@ window.PFWorkspace = (function () {
   var C = window.PFCharts, A = window.PFApi, T = window.PFTax;
   var S, plans = [], plan, rows = [], tgts = [], cons = [], noteList = [];
   var root, rate = 0.188, useHarvest = true, quotes = null;
-  var profile = {}, rates = null;
+  var profile = {}, rates = null, setupOpen = false;
 
   var esc = C.esc, money = C.money;
   var toast = function (m) { window.PortfolioApp.toast(m); };
@@ -19,6 +19,13 @@ window.PFWorkspace = (function () {
   var acct = function (k) {
     return S.accounts[k].label.replace('Robinhood ', 'RH ').replace('Schwab ', ''); };
   var px = function (p) { return (quotes && quotes[p.symbol]) || p.price; };
+
+  // Only worth flagging provenance when the list actually mixes the two.
+  function mixedSources() {
+    var c = 0, h = 0;
+    rows.forEach(function (e) { if (e.source === 'claude') c++; else h++; });
+    return c > 0 && h > 0;
+  }
 
   function posFor(a, s) {
     return S.positions.find(function (p) {
@@ -108,10 +115,6 @@ window.PFWorkspace = (function () {
       '<button class="btn" id="scn-new">New scenario</button>' +
       (plans.length > 1 ? '<button class="btn danger" id="scn-del">Archive</button>' : '') +
       '<span style="margin-left:auto"></span>' +
-      '<select class="f" id="rate" style="width:150px">' +
-        T.RATES.map(function (r) {
-          return '<option value="' + r[1] + '"' + (r[1] === rate ? ' selected' : '') +
-            '>' + r[0] + '</option>'; }).join('') + '</select>' +
       '<label class="faint" style="font-size:12.5px"><input type="checkbox" ' +
         'id="harv"' + (useHarvest ? ' checked' : '') + '> apply harvest</label>' +
       (locked()
@@ -162,8 +165,8 @@ window.PFWorkspace = (function () {
         var cur = (w.d[t.key] || 0) / w.tot * 100;
         var gap = t.target_pct === null ? null : t.target_pct - cur;
         return '<tr data-tid="' + t.id + '">' +
-          '<td class="dim">' + esc(t.key) + '</td>' +
-          '<td class="tag">' + esc(t.kind) + '</td>' +
+          '<td class="dim">' + esc(t.key) +
+            ' <span class="tag">' + esc(t.kind) + '</span></td>' +
           '<td class="num dim">' + cur.toFixed(1) + '%</td>' +
           '<td class="num"><input class="f num" type="number" step="any" ' +
             'data-tf="target_pct" value="' + (t.target_pct === null ? '' : t.target_pct) +
@@ -182,8 +185,9 @@ window.PFWorkspace = (function () {
     return '<div class="sec"><div class="sec__h"><h2>Targets</h2>' +
       '<span class="hint">What this scenario is aiming at</span></div>' +
       (body ? '<div class="scroll"><table class="t"><thead><tr>' +
-        '<th>Key</th><th>Kind</th><th class="num">Current</th>' +
-        '<th class="num">Target</th><th class="num">Gap</th><th>Note</th><th></th>' +
+        '<th>What</th><th class="num">Current</th>' +
+        '<th class="num">Target</th><th class="num">Gap (pp)</th>' +
+        '<th>Note</th><th></th>' +
         '</tr></thead><tbody>' + body + '</tbody></table></div>'
         : '<div class="empty">No targets set.</div>') +
       (locked() ? '' : '<div class="row" style="margin-top:14px">' +
@@ -254,10 +258,10 @@ window.PFWorkspace = (function () {
       if (!syms.some(function (s) { return s[0] === e.symbol; }))
         syms.unshift([e.symbol, e.symbol]);
       return '<tr data-id="' + e.id + '">' +
-        '<td><select class="f" data-fld="account"' + d + '>' +
-          opts(accts, e.account) + '</select></td>' +
-        '<td><select class="f" data-fld="symbol"' + d + '>' +
-          opts(syms, e.symbol) + '</select></td>' +
+        '<td><select class="f" data-fld="account" style="width:124px"' + d +
+          '>' + opts(accts, e.account) + '</select></td>' +
+        '<td><select class="f" data-fld="symbol" style="width:86px"' + d +
+          '>' + opts(syms, e.symbol) + '</select></td>' +
         '<td><select class="f" data-fld="action" style="width:82px"' + d + '>' +
           opts([['sell', 'Sell'], ['buy', 'Buy'], ['hold', 'Hold']], e.action) +
           '</select></td>' +
@@ -276,7 +280,8 @@ window.PFWorkspace = (function () {
         '<td>' + (r.pos ? (r.pos.trades_taxable
           ? '<span class="badge b-tax">taxable</span>'
           : '<span class="badge b-free">free</span>') : '') +
-          (e.source === 'claude' ? ' <span class="badge b-claude">claude</span>' : '') +
+          (mixedSources() && e.source === 'claude'
+            ? ' <span class="badge b-claude">claude</span>' : '') +
           '</td>' +
         '<td><input class="f" data-fld="note" value="' + esc(e.note) +
           '" placeholder="why"' + d + '></td>' +
@@ -290,7 +295,7 @@ window.PFWorkspace = (function () {
       (rows.length ? '<div class="scroll"><table class="t"><thead><tr>' +
         '<th>Account</th><th>Symbol</th><th>Action</th><th class="num">Amount</th>' +
         '<th>Unit</th><th class="num">Value</th><th class="num">Tax</th>' +
-        '<th></th><th style="width:22%">Note</th><th></th></tr></thead><tbody>' +
+        '<th></th><th style="width:34%">Note</th><th></th></tr></thead><tbody>' +
         body + '</tbody></table></div>'
         : '<div class="empty">Nothing recorded yet.</div>') +
       (locked() ? '' : '<div class="row" style="margin-top:14px">' +
@@ -313,8 +318,9 @@ window.PFWorkspace = (function () {
 
   function notesSection() {
     return '<div class="sec"><div class="sec__h"><h2>Notes</h2></div>' +
-      '<textarea class="f" id="nt-body" placeholder="Record a decision, a ' +
-        'constraint, something to come back to…"></textarea>' +
+      '<textarea class="f" id="nt-body" rows="2" style="min-height:44px" ' +
+        'placeholder="Record a decision, a constraint, something to come ' +
+        'back to…"></textarea>' +
       '<div class="row" style="margin-top:10px;justify-content:flex-end">' +
         '<button class="btn filled" id="nt-add">Add note</button></div>' +
       (noteList.length ? '<div style="margin-top:8px">' + noteList.map(function (n) {
@@ -337,10 +343,22 @@ window.PFWorkspace = (function () {
   async function guard(fn) { try { await fn(); } catch (e) { toast(e.message); } }
 
   function render() {
-    root.innerHTML = taxSection() + scenarioBar() + metrics() + targetsSection() +
-      constraintsSection() + entriesSection() + notesSection();
+    var r = rates || T.deriveRates(profile.income || 0, profile.filing);
+    var st = Number(profile.state_rate || 0) / 100;
+    var summary = '<b>Setup</b> tax profile, targets, constraints' +
+      '<span class="sum">' + ((r.ltcg + st) * 100).toFixed(1) + '% LTCG · ' +
+      tgts.length + ' targets · ' + cons.length + ' constraints</span>';
+    root.innerHTML = scenarioBar() + metrics() +
+      '<details class="setup"' + (setupOpen ? ' open' : '') + '>' +
+        '<summary>' + summary + '</summary>' +
+        '<div class="setup__body">' + taxSection() + targetsSection() +
+          constraintsSection() + '</div>' +
+      '</details>' +
+      entriesSection() + notesSection();
     syncSyms();
     var q = function (s) { return root.querySelector(s); };
+    var det = root.querySelector('details.setup');
+    if (det) det.addEventListener('toggle', function () { setupOpen = det.open; });
 
     q('#scn').addEventListener('change', function () {
       window.PortfolioApp.switchScenario(Number(q('#scn').value)); });
@@ -354,8 +372,6 @@ window.PFWorkspace = (function () {
         await A.archivePlan(plan.id);
         window.PortfolioApp.scenarioArchived(plan.id);
       }); });
-    q('#rate').addEventListener('change', function () {
-      rate = parseFloat(q('#rate').value); render(); window.PortfolioApp.planChanged(); });
     q('#harv').addEventListener('change', function () {
       useHarvest = q('#harv').checked; render(); window.PortfolioApp.planChanged(); });
 

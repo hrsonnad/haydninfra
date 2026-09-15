@@ -4,7 +4,8 @@ window.PFOverview = (function () {
   'use strict';
   var C = window.PFCharts, T = window.PFTax;
   var S = null, root = null, quotes = null, rates = null;
-  var mode = 'consolidated', open = {}, curveFor = null;
+  var mode = 'consolidated', open = {}, curveFor = null, showAll = false;
+  var SMALL = 0.005;   // under 0.5% of the book
   var sortKey = 'market_value', sortDir = -1;
 
   var esc = C.esc;
@@ -80,56 +81,79 @@ window.PFOverview = (function () {
     // not tax-free: the whole balance is taxed as ordinary income on the way
     // out, so lumping it in with the Roths overstates what the money is worth.
     var cls = { roth: 0, pretax: 0, taxable: 0 };
-    S.positions.forEach(function (p) {
-      cls[p.tax_class || 'taxable'] += mv(p); });
-
+    S.positions.forEach(function (p) { cls[p.tax_class || 'taxable'] += mv(p); });
     var ordRate = (rates && rates.ordinary ? rates.ordinary : 0) +
                   (rates && rates.state ? rates.state : 0);
     var deferred = cls.pretax * ordRate;
 
-    var cells = [
+    // Three headline figures only. The tax split is a breakdown, not a peer of
+    // the total, so it reads as one strip rather than four competing metrics.
+    var head = [
       ['Total value', money(tot), consolidated().length + ' holdings · ' +
         Object.keys(S.accounts).length + ' accounts', ''],
       ['Unrealised gain', (gl >= 0 ? '+' : '') + money(gl),
         'on ' + money(kmv) + ' with known basis', gl >= 0 ? 'g' : 'r'],
-      ['Tax-free', money(cls.roth), 'Roth — no tax on trades or withdrawal', ''],
-      ['Tax-deferred', money(cls.pretax),
-        ordRate ? money(deferred) + ' owed at ' + (ordRate * 100).toFixed(0) +
-          '% on withdrawal' : 'ordinary income tax due on withdrawal', 'r'],
-      ['Taxable', money(cls.taxable), 'capital gains on sale', ''],
     ];
     if (ordRate) {
-      cells.push(['After deferred tax', money(tot - deferred),
-        'what the book is actually worth', '']);
+      head.push(['Net of deferred tax', money(tot - deferred),
+        money(deferred) + ' owed on the traditional IRA', '']);
     }
-    return '<div class="metrics">' + cells.map(function (c) {
-      return '<div class="metric"><div class="k">' + c[0] + '</div>' +
-        '<div class="v ' + c[3] + '">' + c[1] + '</div>' +
-        '<div class="n">' + esc(c[2]) + '</div></div>';
-    }).join('') + '</div>';
+
+    var split = [
+      ['Tax-free', cls.roth, 'Roth — no tax on trades or withdrawal'],
+      ['Tax-deferred', cls.pretax, ordRate
+        ? 'ordinary income on withdrawal, ' + (ordRate * 100).toFixed(0) + '%'
+        : 'ordinary income on withdrawal'],
+      ['Taxable', cls.taxable, 'capital gains on sale'],
+    ];
+    var maxSplit = Math.max(cls.roth, cls.pretax, cls.taxable) || 1;
+
+    return '<div class="metrics">' + head.map(function (c) {
+        return '<div class="metric"><div class="k">' + c[0] + '</div>' +
+          '<div class="v ' + c[3] + '">' + c[1] + '</div>' +
+          '<div class="n">' + esc(c[2]) + '</div></div>';
+      }).join('') + '</div>' +
+      '<div class="taxsplit">' + split.map(function (r) {
+        return '<div><div class="k">' + r[0] + ' <b>' + money(r[1]) + '</b>' +
+          '<span class="faint"> · ' + (r[1] / tot * 100).toFixed(0) + '%</span></div>' +
+          '<div class="tsbar"><i style="width:' + (r[1] / maxSplit * 100) +
+            '%"></i></div>' +
+          '<div class="n">' + esc(r[2]) + '</div></div>';
+      }).join('') + '</div>';
+  }
+
+  // Long tails make a donut unreadable, so anything past the top slices is
+  // folded into one "Other" wedge rather than rendered as slivers.
+  function capped(list, n, tot) {
+    if (list.length <= n) return list;
+    var head = list.slice(0, n);
+    var rest = list.slice(n).reduce(function (s, r) { return s + r.value; }, 0);
+    if (rest > tot * 0.002) head.push({ label: 'Other', value: rest });
+    return head;
   }
 
   function allocation() {
     var tot = total();
     var byA = rollup('account').map(function (r) {
       return { label: acct(r.label), value: r.value }; });
-    var byT = rollup('theme');
+    var byT = capped(rollup('theme'), 7, tot);
     var top = consolidated().sort(function (a, b) {
       return b.market_value - a.market_value; }).slice(0, 8)
       .map(function (e) { return { label: e.symbol, value: e.market_value,
-        note: e.pct.toFixed(1) + '%' }; });
+        note: money(e.market_value) + '  ' + e.pct.toFixed(1) + '%' }; });
 
     return '<div class="sec"><div class="sec__h"><h2>Allocation</h2></div>' +
       '<div class="grid3">' +
-        '<div><div class="faint" style="font-size:12.5px;margin-bottom:10px">' +
-          'By account</div>' + C.donut(byA, { centerTop: money(tot) }) +
+        '<div><div class="chart-cap">By account</div>' +
+          C.donut(byA, { centerTop: money(tot), centerSub: 'total' }) +
           C.legend(byA, tot) + '</div>' +
-        '<div><div class="faint" style="font-size:12.5px;margin-bottom:10px">' +
-          'By theme, looking through funds</div>' +
-          C.donut(byT.slice(0, 8), { centerTop: byT.length + '' }) +
-          C.legend(byT.slice(0, 8), tot) + '</div>' +
-        '<div><div class="faint" style="font-size:12.5px;margin-bottom:10px">' +
-          'Largest holdings</div>' + C.hbars(top, { width: 400 }) + '</div>' +
+        '<div><div class="chart-cap">By theme, looking through funds</div>' +
+          C.donut(byT, { centerTop: String(rollup('theme').length),
+                         centerSub: 'themes' }) +
+          C.legend(byT, tot) + '</div>' +
+        '<div><div class="chart-cap">Largest holdings</div>' +
+          C.hbars(top, { width: 430, labelW: 58, valW: 132, mono: true }) +
+        '</div>' +
       '</div></div>';
   }
 
@@ -173,7 +197,12 @@ window.PFOverview = (function () {
       ['qty', 'Qty', 1], ['market_value', 'Value', 1], ['pct', 'Weight', 1],
       ['cost_basis', 'Cost basis', 1], ['gain', 'Unrealised', 1],
       ['n', 'Accts', 1]];
-    var rows = consolidated().sort(function (a, b) {
+    var all = consolidated();
+    var tot = total();
+    var hidden = showAll ? [] : all.filter(function (e) {
+      return e.market_value < tot * SMALL; });
+    var rows = (showAll ? all : all.filter(function (e) {
+      return e.market_value >= tot * SMALL; })).sort(function (a, b) {
       var x = a[sortKey], y = b[sortKey];
       if (x === null) x = -Infinity; if (y === null) y = -Infinity;
       if (typeof x === 'string') return sortDir * x.localeCompare(y);
@@ -226,7 +255,20 @@ window.PFOverview = (function () {
           });
       }
     });
-    return html + '</tbody>';
+    html += '</tbody>';
+    if (hidden.length) {
+      var hv = hidden.reduce(function (s, e) { return s + e.market_value; }, 0);
+      html += '<tfoot><tr><td colspan="9" class="dim">' + hidden.length +
+        ' holdings under ' + (SMALL * 100).toFixed(1) + '% hidden · ' +
+        money(hv) + ' total <button class="btn" id="show-all" ' +
+        'style="padding:2px 8px;font-size:12.5px">Show all</button>' +
+        '</td></tr></tfoot>';
+    } else if (showAll) {
+      html += '<tfoot><tr><td colspan="9" class="dim">' +
+        '<button class="btn" id="show-less" style="padding:2px 8px;' +
+        'font-size:12.5px">Hide small positions</button></td></tr></tfoot>';
+    }
+    return html;
   }
 
   function byAccount() {
@@ -293,6 +335,9 @@ window.PFOverview = (function () {
         open[tr.dataset.sym] = !open[tr.dataset.sym]; render();
       });
     });
+    var sa = root.querySelector('#show-all'), sl = root.querySelector('#show-less');
+    if (sa) sa.addEventListener('click', function () { showAll = true; render(); });
+    if (sl) sl.addEventListener('click', function () { showAll = false; render(); });
     root.querySelectorAll('#hold tr[data-curve]').forEach(function (tr) {
       tr.addEventListener('click', function (e) {
         e.stopPropagation();
