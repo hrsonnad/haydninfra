@@ -1,9 +1,9 @@
 {
-  "version": "v260915.08 5:52pm",
-  "release": 8,
-  "sha": "0a032ad",
-  "fullSha": "0a032ad64e2f909f3618e9b4dfaec829a26558b4",
-  "actor": "hrsonnad",
-  "pushedAt": "2026-09-15T22:52:04Z",
-  "commits": [{"sha": "0a032ad", "message": "Portfolio: correct the IRA tax classification, add a tax profile, fix header", "author": "Haydn"}]
+  "version": "v260915.09 5:53P",
+  "release": 9,
+  "sha": "3c9765e",
+  "fullSha": "3c9765e5233d59691006cee5b118d68fd95c2de2",
+  "actor": "Haydn",
+  "pushedAt": "2026-09-15T22:53:11Z",
+  "commits": []
 }
