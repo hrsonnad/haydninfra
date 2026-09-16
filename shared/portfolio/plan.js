@@ -219,6 +219,23 @@ window.PFPlan = (function () {
     });
 
     var TINY = 1200, tinySell = {}, tinyBuy = {};
+
+    // Money that simply stays put. Without it the node height is trade volume,
+    // which contradicts the balance chart directly above and makes a big
+    // untouched account (the RH Roth) look like it is not in the plan at all.
+    var soldOf = {};
+    rows.forEach(function (e) {
+      if (e.action !== 'sell') return;
+      var r = resolve(e);
+      if (r.usd > 0) soldOf[e.account + '|' + e.symbol] =
+        (soldOf[e.account + '|' + e.symbol] || 0) + r.usd;
+    });
+    var retained = {};
+    S.positions.forEach(function (p) {
+      var keep = Math.max(0, p.qty * px(p) - (soldOf[p.account + '|' + p.symbol] || 0));
+      if (keep > 1) retained[p.account] = (retained[p.account] || 0) + keep;
+    });
+
     rows.forEach(function (e) {
       if (e.action === 'hold') return;
       var r = resolve(e);
@@ -249,6 +266,16 @@ window.PFPlan = (function () {
                    color: ACCT_COLOR[k], label: 'other buys' });
     });
 
+    Object.keys(retained).forEach(function (k) {
+      var lid = 'R|' + k, rid = 'K|' + k;
+      node(lid, 'held', 0, '#dadce0', 'not traded');
+      node(rid, 'still held', 2, '#dadce0', null);
+      links.push({ from: lid, to: 'A|' + k, value: retained[k],
+                   color: '#9aa0a6', opacity: '.20', label: 'retained' });
+      links.push({ from: 'A|' + k, to: rid, value: retained[k],
+                   color: '#9aa0a6', opacity: '.20', label: 'retained' });
+    });
+
     // The two flows that are not a sell or a buy, and are easy to miss.
     var xfer = XF;
     if (xfer > 0) {
@@ -266,7 +293,8 @@ window.PFPlan = (function () {
 
     if (!links.length) return '';
     return '<div class="sec"><div class="sec__h"><h2>Where the money goes</h2>' +
-      '<span class="hint">Proceeds stay inside their own account. The one ' +
+      '<span class="hint">Full book, not just the trades — grey is money that ' +
+      'stays put. Proceeds stay inside their own account. The one ' +
       'crossing is crypto into the brokerage — both are taxable, so the ' +
       'brokerage node is larger than what the brokerage itself sold</span>' +
       '</div>' +

@@ -255,7 +255,7 @@ window.PFCharts = (function () {
           ' ' + y1 + ' ' + x1 + ' ' + y1 + ' L' + x1 + ' ' + (y1 + lh) +
           ' C' + mx + ' ' + (y1 + lh) + ' ' + mx + ' ' + (y0 + lh) + ' ' +
           x0 + ' ' + (y0 + lh) + ' Z" fill="' + (l.color || '#8ab4f8') +
-          '" opacity=".33"><title>' + esc(l.label || '') + ' ' +
+          '" opacity="' + (l.opacity || '.33') + '"><title>' + esc(l.label || '') + ' ' +
           money(l.value) + '</title></path>';
       }).join('');
 
