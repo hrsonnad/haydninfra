@@ -1,9 +1,9 @@
 {
-  "version": "v260916.03 6:22pm",
-  "release": 3,
-  "sha": "ff101b4",
-  "fullSha": "ff101b46c6f548c33458af338d9d56b568e5aeab",
+  "version": "v260916.04 6:56pm",
+  "release": 4,
+  "sha": "3034d5a",
+  "fullSha": "3034d5af5570070ecea43c704e623decfd151368",
   "actor": "hrsonnad",
-  "pushedAt": "2026-09-16T23:22:02Z",
-  "commits": [{"sha": "9b5ec57", "message": "Portfolio: fix the totals, make tab 2 explain rather than pretend to calculate", "author": "Haydn"}, {"sha": "ff101b4", "message": "Portfolio: valuation context, look-through exposure, readable legends", "author": "Haydn"}]
+  "pushedAt": "2026-09-16T23:56:30Z",
+  "commits": [{"sha": "3034d5a", "message": "Portfolio: show what is inside each account", "author": "Haydn"}]
 }
