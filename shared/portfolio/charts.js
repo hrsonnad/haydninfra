@@ -234,7 +234,7 @@ window.PFCharts = (function () {
       var y = 0;
       cols[c].sort(function (a, b) { return val[b.id] - val[a.id]; })
         .forEach(function (n) {
-          var nh = Math.max(2, val[n.id] * scale);
+          var nh = Math.max(10, val[n.id] * scale);
           pos[n.id] = { x: colX[c], y: y, h: nh, col: +c };
           y += nh + gap;
         });
@@ -266,13 +266,16 @@ window.PFCharts = (function () {
       return '<rect x="' + p.x + '" y="' + p.y + '" width="' + NODE_W +
           '" height="' + p.h + '" rx="2" fill="' + (n.color || '#5f6368') +
           '"><title>' + esc(n.label) + ' ' + money(val[n.id]) + '</title></rect>' +
-        (p.h >= 7 ? '<text x="' + lx + '" y="' + (p.y + p.h / 2 + 3.5) +
+        (p.h >= 7 ? '<text x="' + lx + '" y="' + (p.y + p.h / 2 + (n.sub ? -3 : 3.5)) +
           '" text-anchor="' + (right ? 'start' : 'end') + '" font-size="11" ' +
           'fill="#5f6368">' + esc(n.label) + '</text>' +
-          '<text x="' + lx + '" y="' + (p.y + p.h / 2 + 15) + '" text-anchor="' +
-          (right ? 'start' : 'end') + '" font-size="9.5" fill="' + INK3 +
-          '" font-family="Roboto Mono,monospace">' + money(val[n.id]) +
-          '</text>' : '');
+          '<text x="' + lx + '" y="' + (p.y + p.h / 2 + (n.sub ? 9 : 15)) +
+          '" text-anchor="' + (right ? 'start' : 'end') + '" font-size="9.5" ' +
+          'fill="' + INK3 + '" font-family="Roboto Mono,monospace">' +
+          money(val[n.id]) + '</text>' +
+          (n.sub ? '<text x="' + lx + '" y="' + (p.y + p.h / 2 + 20) +
+            '" text-anchor="' + (right ? 'start' : 'end') + '" font-size="9" ' +
+            'fill="' + INK3 + '">' + esc(n.sub) + '</text>' : '') : '');
     }).join('');
 
     var heads = (opts.headers || []).map(function (t, i) {

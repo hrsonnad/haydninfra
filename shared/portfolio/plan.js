@@ -191,16 +191,31 @@ window.PFPlan = (function () {
 
   function moneyFlow(a) {
     var nodes = [], links = [], seen = {};
-    function node(id, label, col, color) {
+    function node(id, label, col, color, sub) {
       if (seen[id]) return id;
-      seen[id] = 1; nodes.push({ id: id, label: label, col: col, color: color });
+      seen[id] = 1;
+      nodes.push({ id: id, label: label, col: col, color: color, sub: sub || null });
       return id;
     }
     // Middle column: the account. Everything has to pass through it, which is
     // the point — proceeds cannot cross from one tax bucket into another.
+    var ownSells = {}, xferIn = {}, xferOut = {};
+    rows.forEach(function (e) {
+      if (e.action !== 'sell') return;
+      var r = resolve(e);
+      if (r.usd > 0) ownSells[e.account] = (ownSells[e.account] || 0) + r.usd;
+    });
+    // crypto proceeds move into the brokerage: the one legitimate crossing,
+    // because both sides are taxable
+    var XF = ownSells.rh_crypto || 0;
+    if (XF > 0) { xferOut.rh_crypto = XF; xferIn.rh_individual = XF; }
+
     Object.keys(S.accounts).forEach(function (k) {
+      var sub = null;
+      if (xferIn[k]) sub = money(xferIn[k]) + ' of that came from crypto';
+      else if (xferOut[k]) sub = 'all transferred to the brokerage';
       node('A|' + k, S.accounts[k].label.replace('Robinhood ', 'RH ')
-        .replace('Schwab ', ''), 1, ACCT_COLOR[k] || '#9aa0a6');
+        .replace('Schwab ', ''), 1, ACCT_COLOR[k] || '#9aa0a6', sub);
     });
 
     var TINY = 1200, tinySell = {}, tinyBuy = {};
@@ -235,9 +250,7 @@ window.PFPlan = (function () {
     });
 
     // The two flows that are not a sell or a buy, and are easy to miss.
-    var xfer = rows.filter(function (e) { return e.account === 'rh_crypto' &&
-      e.action === 'sell'; }).reduce(function (s, e) {
-        var r = resolve(e); return s + (r.usd || 0); }, 0);
+    var xfer = XF;
     if (xfer > 0) {
       links.push({ from: 'A|rh_crypto', to: 'A|rh_individual', value: xfer,
                    color: ACCT_COLOR.rh_crypto,
@@ -253,8 +266,10 @@ window.PFPlan = (function () {
 
     if (!links.length) return '';
     return '<div class="sec"><div class="sec__h"><h2>Where the money goes</h2>' +
-      '<span class="hint">Proceeds stay inside their own account — the only ' +
-      'crossing is crypto into the brokerage, both taxable</span></div>' +
+      '<span class="hint">Proceeds stay inside their own account. The one ' +
+      'crossing is crypto into the brokerage — both are taxable, so the ' +
+      'brokerage node is larger than what the brokerage itself sold</span>' +
+      '</div>' +
       C.sankey(nodes, links, { width: 900, labelW: 130,
         headers: ['Sold', 'Account', 'Bought'] }) + '</div>';
   }
