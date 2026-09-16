@@ -1,9 +1,9 @@
 {
-  "version": "v260916.02 5:13pm",
-  "release": 2,
-  "sha": "1fee810",
-  "fullSha": "1fee8102780c6ad69154821c2c4cc04061f3f41d",
+  "version": "v260916.03 6:22pm",
+  "release": 3,
+  "sha": "ff101b4",
+  "fullSha": "ff101b46c6f548c33458af338d9d56b568e5aeab",
   "actor": "hrsonnad",
-  "pushedAt": "2026-09-16T22:13:12Z",
-  "commits": [{"sha": "1fee810", "message": "Portfolio: sankey shows the whole book, not just the trades", "author": "Haydn"}]
+  "pushedAt": "2026-09-16T23:22:02Z",
+  "commits": [{"sha": "9b5ec57", "message": "Portfolio: fix the totals, make tab 2 explain rather than pretend to calculate", "author": "Haydn"}, {"sha": "ff101b4", "message": "Portfolio: valuation context, look-through exposure, readable legends", "author": "Haydn"}]
 }
