@@ -356,8 +356,50 @@ window.PFOverview = (function () {
     return html + '</tbody>';
   }
 
+  // What is actually inside each account. The donuts above show how big each
+  // account is; this shows what it is made of, on a shared scale so the two
+  // readings agree. A colour is tied to a symbol, not to a position in a list,
+  // so the same holding keeps its colour across accounts.
+  function accountBreakdown() {
+    var ci = {}, n = 0;
+    function idx(sym) { if (!(sym in ci)) ci[sym] = n++; return ci[sym]; }
+
+    var groups = Object.keys(S.accounts).map(function (k) {
+      var here = S.positions.filter(function (p) { return p.account === k; })
+        .map(function (p) { return { label: p.symbol, value: mv(p) }; });
+      (S.options || []).forEach(function (o) {
+        if (o.account === k) here.push(
+          { label: o.underlying + ' call', value: o.market_value }); });
+
+      var tot = here.reduce(function (a, b) { return a + b.value; }, 0);
+      here.sort(function (a, b) { return b.value - a.value; });
+
+      // Anything under 3% of its own account becomes one "other" block rather
+      // than a row of slivers nobody can read or hover.
+      var big = here.filter(function (x) { return x.value >= tot * 0.03; });
+      var rest = here.length - big.length;
+      var restV = here.slice(big.length)
+        .reduce(function (a, b) { return a + b.value; }, 0);
+      var segs = big.map(function (x) {
+        return { label: x.label, value: x.value, ci: idx(x.label) }; });
+      if (restV > 0) segs.push({ label: rest + ' smaller', value: restV,
+                                 ci: 0, muted: true });
+
+      return { label: acct(k), tag: TAX_TAG[S.accounts[k].tax_class] || '',
+               segs: segs, total: tot };
+    }).filter(function (g) { return g.total > 1; })
+      .sort(function (a, b) { return b.total - a.total; });
+
+    return '<div class="sec"><div class="sec__h"><h2>Account by account</h2>' +
+      '<span class="hint">Bar length is account size · hover any block</span>' +
+      '</div>' + C.stackedRows(groups, { width: 880 }) + '</div>';
+  }
+
+  var TAX_TAG = { roth: 'tax-free', pretax: 'taxed on withdrawal',
+                  taxable: 'taxed on sale' };
+
   function render() {
-    root.innerHTML = metrics() + allocation() +
+    root.innerHTML = metrics() + allocation() + accountBreakdown() +
       '<div class="sec"><div class="sec__h"><h2>Holdings</h2>' +
         '<span class="hint">' + (mode === 'consolidated'
           ? 'Summed across accounts — click a row to see where it sits'

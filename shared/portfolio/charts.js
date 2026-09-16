@@ -320,6 +320,48 @@ window.PFCharts = (function () {
   }
 
   // One stacked bar per account, before over after.
+  // One bar per group on a SHARED scale, so bar length reads as size and the
+  // segments read as composition. Simpler than stackedCompare because there is
+  // only one state to show -- this is "what is in each account", not a plan.
+  function stackedRows(groups, opts) {
+    opts = opts || {};
+    var w = opts.width || 880, labelW = opts.labelW || 178;
+    var rowH = 46, barH = 22, valW = 84;
+    var barW = w - labelW - valW;
+    var max = Math.max.apply(null, groups.map(function (g) { return g.total; })) || 1;
+
+    return '<svg class="chart" viewBox="0 0 ' + w + ' ' +
+        (groups.length * rowH) + '" role="img">' +
+      groups.map(function (g, i) {
+        var y = i * rowH + 6, x = labelW;
+        var segs = g.segs.map(function (it) {
+          var sw = it.value / max * barW;
+          var mid = x + sw / 2;
+          var r = '<rect x="' + x.toFixed(1) + '" y="' + y + '" width="' +
+            Math.max(0.6, sw).toFixed(1) + '" height="' + barH + '" fill="' +
+            (it.muted ? '#dadce0' : C.color(it.ci)) + '"><title>' +
+            esc(it.label) + ' ' + money(it.value) + ' · ' +
+            (it.value / (g.total || 1) * 100).toFixed(1) +
+            '% of this account</title></rect>' +
+            // Only label a segment that can actually hold its own name.
+            (sw > 38 ? '<text x="' + mid.toFixed(1) + '" y="' + (y + 15) +
+              '" text-anchor="middle" font-size="10" fill="' +
+              (it.muted ? '#5f6368' : '#fff') + '" font-weight="500">' +
+              esc(it.label) + '</text>' : '');
+          x += sw;
+          return r;
+        }).join('');
+
+        return '<text x="0" y="' + (y + 10) + '" font-size="12.5" ' +
+            'fill="#202124">' + esc(g.label) + '</text>' +
+          '<text x="0" y="' + (y + 24) + '" font-size="10.5" fill="' + INK3 +
+            '">' + esc(g.tag || '') + '</text>' + segs +
+          '<text x="' + w + '" y="' + (y + 16) + '" text-anchor="end" ' +
+            'font-size="11.5" font-family="Roboto Mono,monospace" ' +
+            'fill="#202124">' + money(g.total) + '</text>';
+      }).join('') + '</svg>';
+  }
+
   function stackedCompare(groups, opts) {
     opts = opts || {};
     var w = opts.width || 880, labelW = 186, rowH = 58, barH = 17;
@@ -365,4 +407,5 @@ window.PFCharts = (function () {
 
   C.sankey = sankey;
   C.stackedCompare = stackedCompare;
+  C.stackedRows = stackedRows;
 })(window.PFCharts);
