@@ -36,14 +36,17 @@ window.PFCharts = (function () {
       var a1 = a0 + frac * Math.PI * 2;
       if (frac > 0.9995) {
         parts.push('<circle cx="' + cx + '" cy="' + cy + '" r="' + r +
-          '" fill="none" stroke="' + color(i) + '" stroke-width="' + thick + '"/>');
+          '" fill="none" stroke="' + color(i) + '" stroke-width="' + thick +
+          '" data-i="' + i + '"><title>' + esc(it.label) + ' — ' +
+          money(it.value) + ' (100%)</title></circle>');
       } else {
         var x0 = cx + r * Math.cos(a0), y0 = cy + r * Math.sin(a0);
         var x1 = cx + r * Math.cos(a1), y1 = cy + r * Math.sin(a1);
         parts.push('<path d="M' + x0.toFixed(2) + ' ' + y0.toFixed(2) + ' A' + r +
           ' ' + r + ' 0 ' + ((a1 - a0) > Math.PI ? 1 : 0) + ' 1 ' + x1.toFixed(2) +
           ' ' + y1.toFixed(2) + '" fill="none" stroke="' + color(i) +
-          '" stroke-width="' + thick + '" stroke-linecap="butt"><title>' +
+          '" stroke-width="' + thick + '" stroke-linecap="butt" data-i="' + i +
+        '"><title>' +
           esc(it.label) + ' — ' + money(it.value) + ' (' +
           (frac * 100).toFixed(1) + '%)</title></path>');
       }
@@ -62,9 +65,11 @@ window.PFCharts = (function () {
 
   function legend(items, total) {
     return '<div class="legend">' + items.map(function (it, i) {
-      return '<div><span class="sw" style="background:' + color(i) + '"></span>' +
-        esc(it.label) + ' <span class="faint">' +
-        (it.value / total * 100).toFixed(1) + '%</span></div>';
+      return '<div data-i="' + i + '"><span class="sw" style="background:' +
+        color(i) + '"></span><span class="legend__l">' + esc(it.label) +
+        '</span><span class="legend__v">' + money(it.value) + '</span>' +
+        '<span class="legend__p">' + (it.value / total * 100).toFixed(1) +
+        '%</span></div>';
     }).join('') + '</div>';
   }
 

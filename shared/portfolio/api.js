@@ -163,7 +163,12 @@ window.PFApi = (function () {
       method: 'POST',
       headers: { 'Authorization': 'Bearer ' + token,
                  'Content-Type': 'application/json' },
-      body: JSON.stringify({ items: items }),
+      // `symbols` is sent alongside `items` so a not-yet-redeployed function
+      // still answers. It will happily price CASH when it does, but the
+      // client-side plausibility guard catches that -- which is better than
+      // the alternative of getting no live prices at all during a deploy gap.
+      body: JSON.stringify({ items: items,
+        symbols: items.map(function (i) { return i.symbol; }) }),
     });
     if (!r.ok) throw new Error('quotes unavailable (' + r.status + ')');
     return await r.json();

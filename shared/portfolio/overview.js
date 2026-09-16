@@ -303,20 +303,78 @@ window.PFOverview = (function () {
     return html + '</tbody>';
   }
 
+  // Grouping by theme is the look-through view: IBIT, ARKB and native BTC all
+  // land under Bitcoin because they are the same bet. Expanding a group is
+  // what keeps that honest -- you can always see which ticker, in which
+  // account, makes up the number.
+  function byTheme() {
+    var tot = total(), groups = {};
+    S.positions.forEach(function (p) {
+      (groups[p.theme] = groups[p.theme] || []).push(
+        { symbol: p.symbol, account: p.account, qty: p.qty, value: mv(p) });
+    });
+    (S.options || []).forEach(function (o) {
+      (groups[o.theme] = groups[o.theme] || []).push(
+        { symbol: o.underlying + ' call', account: o.account, qty: o.contracts,
+          value: o.market_value });
+    });
+
+    var list = Object.keys(groups).map(function (k) {
+      var legs = groups[k].sort(function (a, b) { return b.value - a.value; });
+      return { theme: k, legs: legs,
+               value: legs.reduce(function (s2, l) { return s2 + l.value; }, 0) };
+    }).sort(function (a, b) { return b.value - a.value; });
+
+    var html = '<thead><tr><th>Exposure</th><th>Held as</th>' +
+      '<th class="num">Value</th><th class="num">% of book</th>' +
+      '<th class="num">Tickers</th></tr></thead><tbody>';
+
+    list.forEach(function (g) {
+      var isOpen = !!open['th:' + g.theme];
+      var syms = {};
+      g.legs.forEach(function (l) { syms[l.symbol] = 1; });
+      var names = Object.keys(syms);
+      html += '<tr class="click" data-sym="th:' + g.theme + '">' +
+        '<td class="sym">' + esc(g.theme) + '</td>' +
+        '<td class="dim">' + esc(names.slice(0, 4).join(', ')) +
+          (names.length > 4 ? ' +' + (names.length - 4) : '') + '</td>' +
+        '<td class="num">' + money2(g.value) + '</td>' +
+        '<td class="num dim">' + (g.value / tot * 100).toFixed(2) + '%</td>' +
+        '<td class="num ' + (names.length > 1 ? '' : 'faint') + '">' +
+          names.length + '</td></tr>';
+      if (isOpen) {
+        g.legs.forEach(function (l) {
+          html += '<tr class="sub"><td>' + esc(l.symbol) + '</td>' +
+            '<td>' + esc(acct(l.account)) + '</td>' +
+            '<td class="num">' + money2(l.value) + '</td>' +
+            '<td class="num">' + (l.value / tot * 100).toFixed(2) + '%</td>' +
+            '<td class="num dim">' + l.qty.toLocaleString('en-US',
+              { maximumFractionDigits: 6 }) + '</td></tr>';
+        });
+      }
+    });
+    return html + '</tbody>';
+  }
+
   function render() {
     root.innerHTML = metrics() + allocation() +
       '<div class="sec"><div class="sec__h"><h2>Holdings</h2>' +
         '<span class="hint">' + (mode === 'consolidated'
           ? 'Summed across accounts — click a row to see where it sits'
+          : mode === 'bytheme'
+          ? 'Funds counted as what they track — click to see the tickers and accounts'
           : 'Every position, grouped by account') + '</span>' +
         '<span class="right">' +
           '<button class="chip' + (mode === 'consolidated' ? ' on' : '') +
             '" data-mode="consolidated">Consolidated</button>' +
+          '<button class="chip' + (mode === 'bytheme' ? ' on' : '') +
+            '" data-mode="bytheme">By exposure</button>' +
           '<button class="chip' + (mode === 'byaccount' ? ' on' : '') +
             '" data-mode="byaccount">By account</button>' +
         '</span></div>' +
       '<div class="scroll"><table class="t" id="hold">' +
-        (mode === 'consolidated' ? holdings() : byAccount()) +
+        (mode === 'consolidated' ? holdings()
+          : mode === 'bytheme' ? byTheme() : byAccount()) +
       '</table></div></div>' +
       '<div id="pf-history"></div>';
 
@@ -345,7 +403,32 @@ window.PFOverview = (function () {
         render();
       });
     });
+    wireDonuts();
     if (window.PFHistory) window.PFHistory.mount(root.querySelector('#pf-history'));
+  }
+
+  // Cross-highlight between a donut arc and its legend row. The page CSP has
+  // no 'unsafe-inline', so this has to be addEventListener from a loaded file
+  // rather than an on* attribute -- same pattern as the buttons above.
+  function wireDonuts() {
+    root.querySelectorAll('.grid3 > div').forEach(function (panel) {
+      var svg = panel.querySelector('svg');
+      var legend = panel.querySelector('.legend');
+      if (!svg || !legend) return;
+      var arcs = svg.querySelectorAll('[data-i]');
+      var legs = legend.querySelectorAll('[data-i]');
+      function focus(i) {
+        arcs.forEach(function (a) {
+          a.classList.toggle('dim', i !== null && a.dataset.i !== String(i)); });
+        legs.forEach(function (l) {
+          l.classList.toggle('on', i !== null && l.dataset.i === String(i)); });
+      }
+      function bind(el) {
+        el.addEventListener('mouseenter', function () { focus(el.dataset.i); });
+      }
+      arcs.forEach(bind); legs.forEach(bind);
+      panel.addEventListener('mouseleave', function () { focus(null); });
+    });
   }
 
   function setQuotes(q) { quotes = q; if (root) render(); }

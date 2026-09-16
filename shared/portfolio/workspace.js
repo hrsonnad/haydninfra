@@ -15,7 +15,7 @@ window.PFWorkspace = (function () {
   'use strict';
   var C = window.PFCharts, A = window.PFApi, T = window.PFTax;
   var S, plans = [], plan, rows = [], tgts = [], cons = [], noteList = [];
-  var root, rate = 0.188, quotes = null, metrics = {};
+  var root, rate = 0.188, quotes = null;
   var profile = {}, rates = null, setupOpen = false;
 
   // Harvesting losses against realised gains is simply what you would do, so
@@ -266,7 +266,8 @@ window.PFWorkspace = (function () {
           '<td><b>' + esc(e.symbol) + '</b>' +
             (r.shares ? ' <span class="faint">' +
               r.shares.toLocaleString('en-US', { maximumFractionDigits: 3 }) +
-              ' sh</span>' : '') + rangeChip(e.symbol) + '</td>' +
+              ' sh</span>' : '') +
+            rangeChip(e.symbol, r.pos ? px(r.pos) : e.price) + '</td>' +
           '<td class="num mono">' + val + '</td>' +
           '<td class="num mono">' + taxCell + '</td>' +
           '<td class="why">' + esc(e.rationale || e.note || '') + '</td></tr>';
@@ -276,17 +277,76 @@ window.PFWorkspace = (function () {
   // ---------- valuation context ----------
   // Answers "am I buying the peak?" without a paragraph: a low-high line with
   // a dot where the trade price sits.
-  function rangeChip(sym) {
-    var m = metrics[sym];
-    if (!m || !(m.hi_52 > m.lo_52) || !(m.price > 0)) return '';
-    var f = Math.max(0, Math.min(1, (m.price - m.lo_52) / (m.hi_52 - m.lo_52)));
-    var hot = f > 0.9 ? ' rng--hot' : f < 0.25 ? ' rng--cold' : '';
-    return '<span class="rng' + hot + '" title="' + esc(sym) + ' ' +
-      money(m.price) + ' — 52wk ' + money(m.lo_52) + ' to ' + money(m.hi_52) +
-      ' (' + (f * 100).toFixed(0) + '% of range)' +
-      (m.pe ? ', P/E ' + Number(m.pe).toFixed(1) : '') + '">' +
+  function metricFor(sym) {
+    var m = S.metrics && S.metrics.symbols;
+    return (m && m[sym]) || null;
+  }
+  // Price is not stored with the metrics — it comes from the same pipeline as
+  // everything else (entry price for a new buy, live quote or snapshot price
+  // for something held), so the dot cannot drift from the value beside it.
+  function rangeChip(sym, price) {
+    var m = metricFor(sym);
+    if (!m || !(m.hi_52 > m.lo_52) || !(price > 0)) return '';
+    var f = Math.max(0, Math.min(1, (price - m.lo_52) / (m.hi_52 - m.lo_52)));
+    var hot = f > 0.92 ? ' rng--hot' : f < 0.25 ? ' rng--cold' : '';
+    var pe = m.pe === null || m.pe === undefined ? 'no earnings'
+           : m.pe < 0 ? 'unprofitable'
+           : 'P/E ' + Number(m.pe).toFixed(1);
+    return '<span class="rng' + hot + '" title="' + esc(sym) + ' ' + money(price) +
+      ' — 52-week range ' + money(m.lo_52) + ' to ' + money(m.hi_52) + ', ' +
+      (f * 100).toFixed(0) + '% of the way up. ' + pe + '">' +
       '<span class="rng__dot" style="left:' + (f * 100).toFixed(1) + '%"></span>' +
       '</span>';
+  }
+
+  // ---------- what the plan is buying into ----------
+  // Sorted by position in the 52-week range so the entries near the top of
+  // their year sort to the top of the list. This is the "am I buying the
+  // peak?" question, and it is a question about the buys specifically.
+  function buyQuality() {
+    var buys = rows.filter(function (e) { return e.action === 'buy'; })
+      .map(function (e) {
+        var r = resolve(e), m = metricFor(e.symbol);
+        var price = r.pos ? px(r.pos) : e.price;
+        if (!m || !(m.hi_52 > m.lo_52) || !(price > 0)) return null;
+        return { sym: e.symbol, usd: r.usd || 0, price: price, m: m,
+                 f: Math.max(0, Math.min(1, (price - m.lo_52) / (m.hi_52 - m.lo_52))) };
+      }).filter(Boolean)
+      .sort(function (a, b) { return b.f - a.f; });
+    if (!buys.length) return '';
+
+    var hot = buys.filter(function (b) { return b.f > 0.92; });
+    var rowsHtml = buys.map(function (b) {
+      var pe = b.m.pe === null || b.m.pe === undefined
+             ? '<span class="faint">no earnings</span>'
+             : b.m.pe < 0 ? '<span class="r">unprofitable</span>'
+             : Number(b.m.pe).toFixed(0);
+      return '<tr><td><b>' + esc(b.sym) + '</b></td>' +
+        '<td class="num mono faint">' + money(b.usd) + '</td>' +
+        '<td style="width:44%"><span class="rng rng--wide' +
+          (b.f > 0.92 ? ' rng--hot' : b.f < 0.25 ? ' rng--cold' : '') +
+          '" title="' + money(b.m.lo_52) + ' to ' + money(b.m.hi_52) + '">' +
+          '<span class="rng__dot" style="left:' + (b.f * 100).toFixed(1) +
+          '%"></span></span></td>' +
+        '<td class="num mono">' + (b.f * 100).toFixed(0) + '%</td>' +
+        '<td class="num mono">' + pe + '</td></tr>';
+    }).join('');
+
+    return '<div class="sec"><div class="sec__h"><h2>What you are buying into</h2>' +
+      '<span class="hint">Where each buy sits in its own 52-week range</span></div>' +
+      (hot.length ? '<div class="warn">' + hot.length + ' of these ' +
+        (hot.length === 1 ? 'is' : 'are') + ' being bought within a few percent ' +
+        'of a 52-week high: <b>' + hot.map(function (b) { return esc(b.sym); })
+        .join('</b>, <b>') + '</b>. Not a reason not to buy — but worth ' +
+        'knowing you are not getting a discount.</div>' : '') +
+      '<div class="scroll"><table class="t"><thead><tr><th>Position</th>' +
+      '<th class="num">Size</th><th>52-week low to high</th>' +
+      '<th class="num">In range</th><th class="num">P/E</th></tr></thead>' +
+      '<tbody>' + rowsHtml + '</tbody></table></div>' +
+      '<div class="faint" style="font-size:12px;margin-top:10px">Fundamentals ' +
+      'as of ' + esc((S.metrics && S.metrics.as_of) || '—') + '. A high P/E is ' +
+      'not automatically bad and a low one is not automatically cheap; this is ' +
+      'context, not a verdict.</div></div>';
   }
 
   // ---------- targets, constraints, notes: read-only ----------
@@ -375,7 +435,8 @@ window.PFWorkspace = (function () {
         '<summary>' + summary + '</summary>' +
         '<div class="setup__body">' + taxSection() + '</div>' +
       '</details>' +
-      accountPanels() + targetsSection() + constraintsSection() + notesSection();
+      accountPanels() + buyQuality() + targetsSection() +
+      constraintsSection() + notesSection();
 
     wireScenario();
     wireSetup();
@@ -443,7 +504,6 @@ window.PFWorkspace = (function () {
     render();
   }
   function setQuotes(q) { quotes = q; if (root) render(); }
-  function setMetrics(m) { metrics = m || {}; if (root) render(); }
   function setProfile(p, r) {
     profile = p || {}; rates = r;
     // Explicit null test. `if (r.ltcg)` silently kept the 18.8% default
@@ -455,8 +515,8 @@ window.PFWorkspace = (function () {
   function state() {
     return { plan: plan, rows: rows, targets: tgts, constraints: cons,
              resolve: resolve, rate: rate, useHarvest: useHarvest,
-             quotes: quotes, profile: profile, rates: rates, metrics: metrics };
+             quotes: quotes, profile: profile, rates: rates };
   }
   return { mount: mount, state: state, setQuotes: setQuotes,
-           setMetrics: setMetrics, setProfile: setProfile };
+           setProfile: setProfile };
 })();
