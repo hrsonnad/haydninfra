@@ -37,6 +37,7 @@ window.PFApi = (function () {
   async function plans(snapshotId) {
     var rows = await one(sb.from('portfolio_plans').select('*')
       .eq('snapshot_id', snapshotId).eq('archived', false)
+      .order('is_primary', { ascending: false })
       .order('id', { ascending: true }), 'load scenarios');
     if (rows.length) return rows;
     var made = await one(sb.from('portfolio_plans').insert({
@@ -139,8 +140,12 @@ window.PFApi = (function () {
       'load settings');
     return (d && d.length ? d[0].profile : null) || {};
   }
-  async function saveSettings(profile) {
-    var d = await one(sb.from('portfolio_settings').update({ profile: profile })
+  async function saveSettings(patch) {
+    // Merge, don't replace: the column is a single JSONB blob, so an update
+    // built from three form fields would silently drop every other key.
+    var cur = await settings();
+    var next = Object.assign({}, cur, patch);
+    var d = await one(sb.from('portfolio_settings').update({ profile: next })
       .eq('id', 1).select('profile').single(), 'save settings');
     return d.profile;
   }
@@ -148,7 +153,9 @@ window.PFApi = (function () {
   // ---- live quotes -----------------------------------------------------
   // Proxied through an owner-gated edge function: the page CSP only permits
   // this origin, and the symbol list itself reveals holdings.
-  async function quotes(symbols) {
+  // items: [{symbol, asset_class}] — the asset_class is what lets the server
+  // route SOL-the-coin away from SOL-the-stock and decline to price cash.
+  async function quotes(items) {
     var s = await sb.auth.getSession();
     var token = s.data && s.data.session && s.data.session.access_token;
     if (!token) throw new Error('no session');
@@ -156,7 +163,7 @@ window.PFApi = (function () {
       method: 'POST',
       headers: { 'Authorization': 'Bearer ' + token,
                  'Content-Type': 'application/json' },
-      body: JSON.stringify({ symbols: symbols }),
+      body: JSON.stringify({ items: items }),
     });
     if (!r.ok) throw new Error('quotes unavailable (' + r.status + ')');
     return await r.json();

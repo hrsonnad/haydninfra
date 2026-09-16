@@ -213,14 +213,14 @@ window.PFCharts = (function () {
     nodes.forEach(function (n) {
       val[n.id] = Math.max(inn[n.id] || 0, out[n.id] || 0); });
 
-    // tallest column drives the scale so nothing overflows
+    // tallest column drives the scale
     var colTotal = Object.keys(cols).map(function (c) {
       return cols[c].reduce(function (s, n) { return s + val[n.id]; }, 0); });
     var maxTotal = Math.max.apply(null, colTotal) || 1;
     var maxCount = Math.max.apply(null, Object.keys(cols).map(function (c) {
       return cols[c].length; }));
-    var h = opts.height || Math.max(420, maxCount * 34);
-    var scale = (h - (maxCount - 1) * gap) / maxTotal;
+    var hTarget = opts.height || Math.max(420, maxCount * 34);
+    var scale = (hTarget - (maxCount - 1) * gap) / maxTotal;
 
     var NODE_W = 11, labelW = opts.labelW || 150;
     var colX = {};
@@ -228,17 +228,41 @@ window.PFCharts = (function () {
       colX[c] = labelW + i * ((w - labelW * 2 - NODE_W) / Math.max(1, nCols - 1));
     });
 
-    // stack each column, largest first
-    var pos = {};
+    // Each node carries a two- or three-line label block beside it, and that
+    // block needs vertical room whether or not the node itself is tall. Sizing
+    // on value alone let small nodes sit 15px apart under 21px of text, so the
+    // labels ran into each other. Reserve the label height as a minimum pitch
+    // and let the chart grow taller instead of overlapping.
+    // The label block is not centred on the node: a two-line block runs from
+    // about 4.5px above the midpoint to 17px below it, and a three-line block
+    // (with `sub`) from 11 above to 22 below. Spacing on a symmetric average
+    // left the lower line of one block almost touching the upper line of the
+    // next, so measure the real extents and clear them with a little padding.
+    var MIN_H = 10, PAD = 5;
+    function topOf(n) { return n.sub ? -11 : -4.5; }
+    function botOf(n) { return n.sub ? 22 : 17; }
+    var HALO = ' paint-order="stroke" stroke="#fff" stroke-width="3"' +
+               ' stroke-linejoin="round"';
+    var pos = {}, colH = [];
     Object.keys(cols).forEach(function (c) {
+      var list = cols[c].sort(function (a, b) { return val[b.id] - val[a.id]; });
       var y = 0;
-      cols[c].sort(function (a, b) { return val[b.id] - val[a.id]; })
-        .forEach(function (n) {
-          var nh = Math.max(10, val[n.id] * scale);
-          pos[n.id] = { x: colX[c], y: y, h: nh, col: +c };
-          y += nh + gap;
-        });
+      list.forEach(function (n, i) {
+        var nh = Math.max(MIN_H, val[n.id] * scale);
+        pos[n.id] = { x: colX[c], y: y, h: nh, col: +c };
+        var nx = list[i + 1];
+        if (!nx) { y += nh; return; }
+        // centre-to-centre distance must clear this block's bottom and the
+        // next block's top
+        var need = botOf(n) - topOf(nx) + PAD;
+        var nxh = Math.max(MIN_H, val[nx.id] * scale);
+        y += nh + Math.max(gap, need - (nh + nxh) / 2);
+      });
+      colH.push(y);
     });
+    // Grow to fit rather than clipping past the viewBox, which is what the
+    // old fixed height did once any node hit the floor.
+    var h = Math.max(hTarget, Math.max.apply(null, colH));
 
     // ribbons, tracked per node so parallel links stack instead of overlap
     var offOut = {}, offIn = {};
@@ -246,7 +270,7 @@ window.PFCharts = (function () {
       .map(function (l) {
         var a = pos[l.from], b = pos[l.to];
         if (!a || !b) return '';
-        var lh = Math.max(1, l.value * scale);
+        var lh = Math.max(1.5, l.value * scale);
         var y0 = a.y + (offOut[l.from] = (offOut[l.from] || 0)) ;
         var y1 = b.y + (offIn[l.to] = (offIn[l.to] || 0));
         offOut[l.from] += lh; offIn[l.to] += lh;
@@ -261,21 +285,24 @@ window.PFCharts = (function () {
 
     var boxes = nodes.map(function (n) {
       var p = pos[n.id]; if (!p) return '';
-      var right = p.col === nCols - 1;
+      // First column labels to the left; every other column to the right,
+      // so interior labels trail into open space instead of being
+      // right-anchored back across their own incoming ribbons.
+      var right = p.col > 0;
       var lx = right ? p.x + NODE_W + 7 : p.x - 7;
       return '<rect x="' + p.x + '" y="' + p.y + '" width="' + NODE_W +
           '" height="' + p.h + '" rx="2" fill="' + (n.color || '#5f6368') +
           '"><title>' + esc(n.label) + ' ' + money(val[n.id]) + '</title></rect>' +
-        (p.h >= 7 ? '<text x="' + lx + '" y="' + (p.y + p.h / 2 + (n.sub ? -3 : 3.5)) +
+        ('<text x="' + lx + '" y="' + (p.y + p.h / 2 + (n.sub ? -3 : 3.5)) +
           '" text-anchor="' + (right ? 'start' : 'end') + '" font-size="11" ' +
-          'fill="#5f6368">' + esc(n.label) + '</text>' +
+          'fill="#5f6368"' + HALO + '>' + esc(n.label) + '</text>' +
           '<text x="' + lx + '" y="' + (p.y + p.h / 2 + (n.sub ? 9 : 15)) +
           '" text-anchor="' + (right ? 'start' : 'end') + '" font-size="9.5" ' +
-          'fill="' + INK3 + '" font-family="Roboto Mono,monospace">' +
+          'fill="' + INK3 + '" font-family="Roboto Mono,monospace"' + HALO + '>' +
           money(val[n.id]) + '</text>' +
           (n.sub ? '<text x="' + lx + '" y="' + (p.y + p.h / 2 + 20) +
             '" text-anchor="' + (right ? 'start' : 'end') + '" font-size="9" ' +
-            'fill="' + INK3 + '">' + esc(n.sub) + '</text>' : '') : '');
+            'fill="' + INK3 + '"' + HALO + '>' + esc(n.sub) + '</text>' : ''));
     }).join('');
 
     var heads = (opts.headers || []).map(function (t, i) {
@@ -283,7 +310,7 @@ window.PFCharts = (function () {
         'text-anchor="middle" font-size="11" fill="' + INK3 + '">' +
         esc(t) + '</text>'; }).join('');
 
-    return '<svg class="chart" viewBox="0 -28 ' + w + ' ' + (h + 36) +
+    return '<svg class="chart" viewBox="0 -28 ' + w + ' ' + (h + 28 + 26) +
       '" role="img">' + heads + ribbons + boxes + '</svg>';
   }
 

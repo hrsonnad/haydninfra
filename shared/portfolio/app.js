@@ -43,8 +43,10 @@ window.PortfolioApp = (function () {
 
   function applyProfile(p) {
     profile = p || {};
-    rates = window.PFTax.deriveRates(profile.income || 0, profile.filing);
-    rates.state = Number(profile.state_rate || 0) / 100;
+    // Pass income through unchanged — `|| 0` would erase the difference
+    // between "not configured" and "zero", which is what deriveRates needs to
+    // know before it reports a 0% rate as though it were an answer.
+    rates = window.PFTax.deriveRates(profile.income, profile.filing, profile.state);
     window.PFOverview.setRates(rates);
     window.PFWorkspace.setProfile(profile, rates);
     planChanged();
@@ -78,13 +80,22 @@ window.PortfolioApp = (function () {
   }
 
   async function refreshQuotes(silent) {
-    var syms = data.positions.map(function (p) { return p.symbol; })
-      .filter(function (v, i, a) { return a.indexOf(v) === i; });
+    // Carry asset_class so the server can route by what a thing IS rather than
+    // by what its ticker spells, and keep the snapshot price so we can reject
+    // a quote that clearly belongs to a different instrument.
+    var seen = {}, items = [], ref = {};
+    data.positions.forEach(function (p) {
+      if (ref[p.symbol] === undefined) ref[p.symbol] = p.price;
+      if (seen[p.symbol]) return;
+      seen[p.symbol] = 1;
+      items.push({ symbol: p.symbol, asset_class: p.asset_class || '' });
+    });
+    var syms = items.map(function (it) { return it.symbol; });
     var btn = el('pf-refresh');
     if (btn) { btn.disabled = true; btn.textContent = 'Refreshing…'; }
     try {
-      var r = await window.PFApi.quotes(syms);
-      quotes = r.quotes || {};
+      var r = await window.PFApi.quotes(items);
+      quotes = plausible(r.quotes || {}, ref);
       var n = Object.keys(quotes).length;
       window.PFOverview.setQuotes(quotes);
       window.PFWorkspace.setQuotes(quotes);
@@ -100,6 +111,20 @@ window.PortfolioApp = (function () {
     } finally {
       if (btn) { btn.disabled = false; btn.textContent = 'Refresh prices'; }
     }
+  }
+
+  // A ticker namespace collision prices the wrong instrument and says nothing
+  // about it. Nothing we hold moves 5x against yesterday's close, so treat that
+  // as a bad match and keep the snapshot price instead.
+  function plausible(q, ref) {
+    var out = {}, bad = [];
+    Object.keys(q).forEach(function (sym) {
+      var base = ref[sym], live = q[sym];
+      if (base > 0 && (live > base * 5 || live < base / 5)) { bad.push(sym); return; }
+      out[sym] = live;
+    });
+    if (bad.length) console.warn('quotes rejected as implausible:', bad.join(', '));
+    return out;
   }
 
   async function boot(user, sb) {
@@ -132,7 +157,12 @@ window.PortfolioApp = (function () {
     }
 
     try { profile = await window.PFApi.settings(); }
-    catch (e) { profile = {}; }
+    catch (e) {
+      // Swallowing this rendered an unconfigured 0% tax rate that was
+      // indistinguishable from a real answer.
+      profile = {};
+      toast('Tax profile did not load — rates shown are defaults. ' + e.message);
+    }
 
     el('pf-asof').textContent = 'as of ' + data.as_of;
 

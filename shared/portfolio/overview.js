@@ -82,8 +82,7 @@ window.PFOverview = (function () {
     // out, so lumping it in with the Roths overstates what the money is worth.
     var cls = { roth: 0, pretax: 0, taxable: 0 };
     S.positions.forEach(function (p) { cls[p.tax_class || 'taxable'] += mv(p); });
-    var ordRate = (rates && rates.ordinary ? rates.ordinary : 0) +
-                  (rates && rates.state ? rates.state : 0);
+    var ordRate = (rates && rates.ordinary) || 0;
     var deferred = cls.pretax * ordRate;
 
     // Three headline figures only. The tax split is a breakdown, not a peer of
@@ -158,7 +157,8 @@ window.PFOverview = (function () {
   }
 
   function curveRow(p) {
-    var rate = (rates && rates.ltcg) || 0.188;
+    // Explicit null test: a genuine 0% LTCG is falsy and must not fall back.
+    var rate = (rates && rates.ltcg != null) ? rates.ltcg : 0.188;
     var pts = T.curve(p, rate, 24);
     var marks = [0.25, 0.5, 0.75].map(function (f) {
       var r = T.sell(p, f, rate);

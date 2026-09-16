@@ -159,10 +159,34 @@ window.PFPlan = (function () {
                      schwab_trad_inh: '#fdd663', schwab_roth_inh: '#81c995',
                      rh_roth: '#78d9ec' };
 
+  function leftoverCash() {
+    var cash = {};
+    rows.forEach(function (e) {
+      if (e.action === 'hold') return;
+      var r = resolve(e);
+      if (r.usd === null) return;
+      var pos = S.positions.find(function (x) {
+        return x.account === e.account && x.symbol === e.symbol; });
+      if (e.action === 'sell') {
+        cash[e.account] = (cash[e.account] || 0) + r.usd;
+        var tx = pos ? T.sell(pos, Math.min(1, r.frac), rate) : null;
+        if (tx && tx.known) cash[e.account] -= Math.max(0, tx.tax);
+      } else {
+        cash[e.account] = (cash[e.account] || 0) - r.usd;
+      }
+    });
+    // The single legal crossing: both accounts are taxable and owned outright.
+    if (cash.rh_crypto > 0) {
+      cash.rh_individual = (cash.rh_individual || 0) + cash.rh_crypto;
+      cash.rh_crypto = 0;
+    }
+    return cash;
+  }
+
   function accountStructure(a) {
     var base = S.positions.map(function (p) {
       return Object.assign({}, p, { market_value: p.qty * px(p) }); });
-    var ci = {}, n = 0;
+    var ci = {}, n = 0, cashBy = leftoverCash();
     function idx(sym) { if (!(sym in ci)) ci[sym] = n++; return ci[sym]; }
 
     var groups = Object.keys(S.accounts).map(function (k) {
@@ -174,7 +198,7 @@ window.PFPlan = (function () {
                                        ci: idx(p.symbol) }; });
       }
       var b = pack(base), af = pack(a.after);
-      var cashHere = k === 'rh_individual' ? a.cash : 0;
+      var cashHere = cashBy[k] || 0;
       if (cashHere > 1) af.push({ label: 'cash', value: cashHere, ci: idx('cash') });
       return { label: S.accounts[k].label.replace(' (from Inherited)', ' (inh)')
                  .replace(' (Inherited)', ' (inh)').replace(' (Brokerage)', ''),
@@ -302,57 +326,146 @@ window.PFPlan = (function () {
         headers: ['Sold', 'Account', 'Bought'] }) + '</div>';
   }
 
+  // Grouped by account, because that is the unit you actually execute against:
+  // you log into one broker and do everything there. Phase order is preserved
+  // WITHIN each account (losses, then gains, then buys), and a running cash
+  // line shows the proceeds funding the purchases — which is the constraint
+  // that makes each account a closed system.
   function sequence() {
-    var buckets = [
-      ['Tax-free accounts', 'Nothing to optimise and no tax, so these come first.',
-        function (e, p) { return e.action === 'sell' && p && !p.trades_taxable; }],
-      ['Taxable — losses', 'Bank losses in the same tax year as the gains they ' +
-        'offset. Crypto can be repurchased immediately; equities need 30 days.',
-        function (e, p) { return e.action === 'sell' && p && p.trades_taxable &&
-          p.gain !== null && p.gain < 0; }],
-      ['Taxable — gains', 'Pick lots explicitly; both brokers default to FIFO.',
-        function (e, p) { return e.action === 'sell' && p && p.trades_taxable; }],
-      ['Redeploy', 'After proceeds settle.',
-        function (e) { return e.action === 'buy'; }],
-    ];
-    var used = {};
-    var out = buckets.map(function (b) {
-      var mine = rows.filter(function (e) {
-        if (used[e.id]) return false;
-        var p = S.positions.find(function (x) {
-          return x.account === e.account && x.symbol === e.symbol; });
-        if (b[2](e, p)) { used[e.id] = true; return true; }
-        return false;
+    var CLS_RANK = { roth: 0, pretax: 1, taxable: 2 };
+    // The crypto account funds the brokerage, so it has to go first among the
+    // taxable pair regardless of anything else.
+    var XFER_FROM = 'rh_crypto', XFER_TO = 'rh_individual';
+
+    var used = {}, step = 0, incoming = {};
+    var accounts = Object.keys(S.accounts).filter(function (k) {
+      return rows.some(function (e) { return e.account === k; }); })
+      .sort(function (a, b) {
+        // `|| 2` here would rank roth (0) as taxable — the falsy-zero trap.
+        var ra = CLS_RANK[S.accounts[a].tax_class];
+        var rb = CLS_RANK[S.accounts[b].tax_class];
+        if (ra === undefined) ra = 2;
+        if (rb === undefined) rb = 2;
+        if (ra !== rb) return ra - rb;
+        if (a === XFER_FROM) return -1;
+        if (b === XFER_FROM) return 1;
+        return 0;
       });
+
+    function posOf(e) {
+      return S.positions.find(function (x) {
+        return x.account === e.account && x.symbol === e.symbol; }) || null;
+    }
+    function phase(e) {
+      var p = posOf(e);
+      if (e.action === 'buy') return 3;
+      if (e.action === 'hold') return 4;
+      if (!p || !p.trades_taxable) return 0;               // free to sell
+      var tx = T.sell(p, Math.min(1, resolve(e).frac), rate);
+      return (tx.known && tx.gain < 0) ? 1 : 2;            // losses before gains
+    }
+
+    var blocks = accounts.map(function (k) {
+      var a = S.accounts[k];
+      var mine = rows.filter(function (e) { return e.account === k; })
+        .map(function (e) { return { e: e, ph: phase(e) }; })
+        .sort(function (x, y) { return x.ph - y.ph; });
       if (!mine.length) return '';
-      return '<div class="sec"><div class="sec__h"><h2>' + esc(b[0]) + '</h2>' +
-        '<span class="hint">' + b[1] + '</span></div><ol class="steps">' +
-        mine.map(function (e) {
-          var r = resolve(e), p = r.pos, f = [];
-          var tx = e.action === 'sell' && p ? T.sell(p, Math.min(1, r.frac), rate) : null;
-          if (p && p.trades_taxable && p.tax_model === 'lots')
-            f.push('lot picker, highest basis first');
-          if (e.symbol === 'BTC') f.push('coin-denominated order, not dollars');
-          if (p && p.broker === 'Robinhood' && p.trades_taxable &&
-              p.asset_class !== 'crypto') f.push('app only, not web');
-          if (p && p.broker === 'Schwab' && p.trades_taxable)
-            f.push('elect specific-ID at or before the sale');
-          if (p && p.asset_class === 'private_alt') f.push('thin — use a limit order');
-          if (!p && e.action === 'buy') f.push('new position');
-          if (!p && r.usd === null) f.push('no price — set one on tab 2');
-          return '<li><b>' + (e.action === 'sell' ? 'Sell' : 'Buy') + ' ' +
-            (r.shares ? r.shares.toLocaleString('en-US',
-              { maximumFractionDigits: 4 }) + ' ' : '') + esc(e.symbol) + '</b> in ' +
-            esc(acct(e.account)) +
-            (r.usd !== null ? ' <span class="faint">≈ ' + money(r.usd) +
-              (tx && tx.known && tx.tax ? ', tax ' + money(tx.tax) : '') +
-              '</span>' : '') +
-            (e.note ? '<div class="sub">' + esc(e.note) + '</div>' : '') +
-            (f.length ? '<div class="sub">' + f.join(' · ') + '</div>' : '') +
-            '</li>';
-        }).join('') + '</ol></div>';
+
+      // Accounts are walked in funding order, so a transfer booked by an
+      // earlier account is already waiting here as opening cash.
+      var cash = incoming[k] || 0, items = [], holds = [];
+      if (cash > 1) {
+        items.push('<li class="xfer"><b>' + money(cash) + ' arrives</b> from ' +
+          esc(acct(XFER_FROM)) + '<span class="run">' + money(cash) + '</span>' +
+          '<div class="sub">Settled proceeds from the crypto sales, ready to ' +
+          'deploy.</div></li>');
+        step++;
+      }
+      mine.forEach(function (m, i) {
+        var e = m.e, r = resolve(e), pos = posOf(e), f = [];
+        if (e.action === 'hold') {
+          holds.push(esc(e.symbol));
+          return;
+        }
+        used[e.id] = true;
+        var tx = e.action === 'sell' && pos
+          ? T.sell(pos, Math.min(1, r.frac), rate) : null;
+
+        if (pos && pos.trades_taxable && pos.tax_model === 'lots')
+          f.push('lot picker, highest basis first');
+        if (e.symbol === 'BTC') f.push('coin-denominated order, not dollars');
+        if (pos && pos.broker === 'Robinhood' && pos.trades_taxable &&
+            pos.asset_class !== 'crypto') f.push('app only, not web');
+        if (pos && pos.broker === 'Schwab' && pos.trades_taxable)
+          f.push('elect specific-ID at or before the sale');
+        if (pos && pos.asset_class === 'private_alt') f.push('thin — use a limit order');
+        if (!pos && e.action === 'buy') f.push('new position');
+        if (!pos && r.usd === null) f.push('no price recorded');
+        if (e.action === 'sell' && !pos) f.push('not currently held — check this line');
+
+        var amt = r.usd === null ? 0 : r.usd;
+        if (e.action === 'sell') { cash += amt; if (tx && tx.known) cash -= Math.max(0, tx.tax); }
+        else cash -= amt;
+
+        step++;
+        items.push('<li><b>' + (e.action === 'sell' ? 'Sell' : 'Buy') + ' ' +
+          (r.shares ? r.shares.toLocaleString('en-US',
+            { maximumFractionDigits: 4 }) + ' ' : '') + esc(e.symbol) + '</b>' +
+          (r.usd !== null ? ' <span class="faint">≈ ' + money(r.usd) +
+            (tx && tx.known && tx.tax ? ', tax ' + money(tx.tax) : '') +
+            '</span>' : '') +
+          '<span class="run">' + money(cash) + '</span>' +
+          (e.rationale || e.note
+            ? '<div class="sub">' + esc(e.rationale || e.note) + '</div>' : '') +
+          (f.length ? '<div class="sub flags">' + f.join(' · ') + '</div>' : '') +
+          '</li>');
+
+        // The transfer is a real action with a real settlement delay, so it
+        // earns a step of its own rather than being implied by two balances.
+        var nxt = mine[i + 1];
+        if (k === XFER_FROM && (!nxt || nxt.e.action !== 'sell') && cash > 1) {
+          step++;
+          incoming[XFER_TO] = (incoming[XFER_TO] || 0) + cash;
+          items.push('<li class="xfer"><b>Transfer ' + money(cash) + '</b> to ' +
+            esc(acct(XFER_TO)) + '<span class="run">' + money(0) + '</span>' +
+            '<div class="sub">Both accounts are taxable, so this is the one ' +
+            'move of cash between accounts the plan can legally make.</div></li>');
+          cash = 0;
+        }
+      });
+
+      var cls = a.tax_class || 'taxable';
+      var free = cls !== 'taxable';
+      return '<div class="sec seq"><div class="sec__h">' +
+        '<h2>' + esc(a.label) + '</h2>' +
+        '<span class="badge b-' + cls + '">' +
+          (free ? 'sales are untaxed' : 'sales are taxable') + '</span>' +
+        '</div>' +
+        (holds.length ? '<div class="seq__hold">Leave alone: <b>' +
+          holds.join('</b>, <b>') + '</b></div>' : '') +
+        '<ol class="steps steps--run" style="counter-reset:s ' +
+          (step - items.length) + '">' +
+        items.join('') + '</ol>' +
+        '<div class="seq__end">' + (Math.abs(cash) < 1
+          ? 'Ends with nothing left over.'
+          : cash > 0 ? money(cash) + ' left as cash in this account.'
+                     : money(-cash) + ' more needed than the sales raise.') +
+        '</div></div>';
     }).join('');
-    return out;
+
+    var missed = rows.filter(function (e) {
+      return !used[e.id] && e.action !== 'hold'; });
+    return '<div class="sec"><div class="sec__h"><h2>What to do, account by account</h2>' +
+      '<span class="hint">' + step + ' steps · cash column runs down the page</span>' +
+      '</div><div class="warn warn--calm">Work one account at a time, top to ' +
+      'bottom. Within each, sells come before buys because the proceeds are ' +
+      'what pays for them — and cash cannot cross between accounts except ' +
+      'where a transfer step says so.</div></div>' + blocks +
+      (missed.length ? '<div class="warn">' + missed.length +
+        ' entries could not be placed in the sequence: ' +
+        missed.map(function (e) { return esc(e.symbol); }).join(', ') +
+        '</div>' : '');
   }
 
   function tips() {
@@ -370,9 +483,9 @@ window.PFPlan = (function () {
     return '<div class="sec"><div class="sec__h"><h2>Execution notes</h2></div>' +
       '<ul class="tips">' + t.map(function (x) {
         return '<li><b>' + x[0] + '</b>' + x[1] + '</li>'; }).join('') + '</ul>' +
-      '<div class="faint" style="font-size:12px;margin-top:18px">Federal ' +
-      'long-term rates only; state tax not modelled. A planning record, not ' +
-      'tax or investment advice.</div></div>';
+      '<div class="faint" style="font-size:12px;margin-top:18px">Long-term ' +
+      'federal rates plus the state rate set on the Rebalance tab. A planning ' +
+      'record, not tax or investment advice.</div></div>';
   }
 
   function render() {

@@ -1,17 +1,27 @@
-// workspace.js — Tab 2. Where the rebalancing gets recorded.
+// workspace.js — Tab 2. Why the plan looks the way it does.
 //
-// Not a model: it does not propose trims or optimise anything. It holds the
-// targets we are aiming at, the constraints we have to respect, the decisions
-// we reach, and the notes behind them — and prices each decision so the line
-// reads back honestly. Sections re-render independently so editing one field
-// does not rebuild the tab under your cursor.
+// Read-only by design. The decisions are reached in conversation and written
+// here by pf.py; this tab explains them. It previously offered editable
+// targets that recomputed nothing, which made it look like a calculator that
+// was simply broken. The two things still yours to set are your own tax
+// situation and the lock, because neither is plan content.
+//
+// The organising idea is the account. Cash cannot move between tax buckets, so
+// every account has to fund its own buys — which means "why this trade" and
+// "why in this account" are the same question, and it is the question this tab
+// has to answer.
 
 window.PFWorkspace = (function () {
   'use strict';
   var C = window.PFCharts, A = window.PFApi, T = window.PFTax;
   var S, plans = [], plan, rows = [], tgts = [], cons = [], noteList = [];
-  var root, rate = 0.188, useHarvest = true, quotes = null;
+  var root, rate = 0.188, quotes = null, metrics = {};
   var profile = {}, rates = null, setupOpen = false;
+
+  // Harvesting losses against realised gains is simply what you would do, so
+  // it is applied rather than offered as an unexplained toggle. It shows up as
+  // a line in the tax breakdown instead.
+  var useHarvest = true;
 
   var esc = C.esc, money = C.money;
   var toast = function (m) { window.PortfolioApp.toast(m); };
@@ -19,13 +29,6 @@ window.PFWorkspace = (function () {
   var acct = function (k) {
     return S.accounts[k].label.replace('Robinhood ', 'RH ').replace('Schwab ', ''); };
   var px = function (p) { return (quotes && quotes[p.symbol]) || p.price; };
-
-  // Only worth flagging provenance when the list actually mixes the two.
-  function mixedSources() {
-    var c = 0, h = 0;
-    rows.forEach(function (e) { if (e.source === 'claude') c++; else h++; });
-    return c > 0 && h > 0;
-  }
 
   function posFor(a, s) {
     return S.positions.find(function (p) {
@@ -79,15 +82,19 @@ window.PFWorkspace = (function () {
   // over $200k single / $250k MFJ. Your ORDINARY marginal rate is a different
   // and higher number, and it is what traditional-IRA withdrawals cost.
   function taxSection() {
-    var r = rates || T.deriveRates(profile.income || 0, profile.filing);
-    var st = Number(profile.state_rate || 0);
-    var d = T.deferredLiability(S, r.ordinary, st / 100);
+    var r = rates || T.deriveRates(profile.income, profile.filing, profile.state);
+    var d = T.deferredLiability(S, r.ordinary, 0);
+    var unset = !r.configured;
+    var st = r.state;
     return '<div class="sec" style="margin-top:0"><div class="sec__h">' +
       '<h2>Tax profile</h2><span class="hint">Drives every figure below</span>' +
-      '</div><div class="row" style="margin-bottom:14px">' +
+      '</div>' +
+      (unset ? '<div class="warn">No income on file, so every rate below is a ' +
+        'placeholder. Enter it and save.</div>' : '') +
+      '<div class="row" style="margin-bottom:14px">' +
       '<label class="faint" style="font-size:12.5px">Income' +
         '<input class="f num" id="tx-income" type="number" step="1000" ' +
-        'value="' + (profile.income || '') + '" placeholder="225000" ' +
+        'value="' + (r.configured ? r.income : '') + '" placeholder="225000" ' +
         'style="width:120px;margin-left:8px"></label>' +
       '<label class="faint" style="font-size:12.5px">Filing' +
         '<select class="f" id="tx-filing" style="width:150px;margin-left:8px">' +
@@ -95,20 +102,25 @@ window.PFWorkspace = (function () {
           '>Single</option>' +
         '<option value="mfj"' + (r.filing === 'mfj' ? ' selected' : '') +
           '>Married filing jointly</option></select></label>' +
-      '<label class="faint" style="font-size:12.5px">State %' +
-        '<input class="f num" id="tx-state" type="number" step="0.1" ' +
-        'value="' + (profile.state_rate || '') + '" placeholder="0" ' +
-        'style="width:74px;margin-left:8px"></label>' +
+      // Residency is really a question about the settlement date: a sale that
+      // closes while you are a Texas resident is not California-source income.
+      '<label class="faint" style="font-size:12.5px">Resident when sold' +
+        '<select class="f" id="tx-state" style="width:210px;margin-left:8px">' +
+        '<option value="TX"' + (st === 'TX' ? ' selected' : '') +
+          '>Texas — no state income tax</option>' +
+        '<option value="CA"' + (st === 'CA' ? ' selected' : '') +
+          '>California — gains taxed as income</option></select></label>' +
       '<button class="btn" id="tx-save">Save</button>' +
       '</div>' +
       '<div class="metrics" style="padding-bottom:18px">' +
         '<div class="metric"><div class="k">Long-term capital gains</div>' +
-          '<div class="v sm">' + ((r.ltcg + st / 100) * 100).toFixed(1) + '%</div>' +
+          '<div class="v sm">' + (r.ltcg * 100).toFixed(1) + '%</div>' +
           '<div class="n">' + (r.ltcgBase * 100).toFixed(0) + '% bracket' +
             (r.niit ? ' + 3.8% NIIT' : '') +
-            (st ? ' + ' + st + '% state' : '') + ' — taxable sales</div></div>' +
+            (r.stateRate ? ' + ' + (r.stateRate * 100).toFixed(1) + '% ' + st : '') +
+            ' — taxable sales</div></div>' +
         '<div class="metric"><div class="k">Ordinary marginal</div>' +
-          '<div class="v sm">' + ((r.ordinary + st / 100) * 100).toFixed(1) + '%</div>' +
+          '<div class="v sm">' + (r.ordinary * 100).toFixed(1) + '%</div>' +
           '<div class="n">traditional-IRA withdrawals, short-term gains</div></div>' +
         '<div class="metric"><div class="k">Deferred liability</div>' +
           '<div class="v sm r">' + money(d.tax) + '</div>' +
@@ -116,427 +128,313 @@ window.PFWorkspace = (function () {
             ' traditional IRA</div></div>' +
       '</div>' +
       '<div class="faint" style="font-size:12px;margin:-6px 0 4px">' +
-        'Brackets are 2026 estimates. Override the rate used for this scenario ' +
-        'in the selector below if they are off.</div></div>';
+        'Federal brackets are 2026 estimates; California’s are too, though ' +
+        'at this income every published table puts you in the 9.3% band.</div></div>';
   }
 
-  // ---------- scenarios ----------
+  // ---------- scenario bar ----------
   function scenarioBar() {
-    return '<div class="row" style="margin-bottom:22px">' +
-      '<select class="f" id="scn" style="width:220px">' +
-        plans.map(function (p) {
-          return '<option value="' + p.id + '"' +
-            (p.id === plan.id ? ' selected' : '') + '>' + esc(p.name) +
-            (p.status !== 'draft' ? ' · ' + p.status : '') + '</option>';
-        }).join('') + '</select>' +
-      '<button class="btn" id="scn-new">New scenario</button>' +
-      (plans.length > 1 ? '<button class="btn danger" id="scn-del">Archive</button>' : '') +
+    var opts = plans.map(function (p) {
+      return '<option value="' + p.id + '"' + (p.id === plan.id ? ' selected' : '') +
+        '>' + esc(p.name) + '</option>'; }).join('');
+    return '<div class="row" style="margin:2px 0 14px">' +
+      '<select class="f" id="scn" style="width:260px">' + opts + '</select>' +
+      '<span class="badge ' + (locked() ? 'b-locked' : 'b-draft') + '">' +
+        (locked() ? 'locked' : 'draft') + '</span>' +
       '<span style="margin-left:auto"></span>' +
-      '<label class="faint" style="font-size:12.5px"><input type="checkbox" ' +
-        'id="harv"' + (useHarvest ? ' checked' : '') + '> apply harvest</label>' +
       (locked()
         ? '<button class="btn outline" id="unlock">Reopen</button>'
-        : '<button class="btn filled" id="lock">Lock scenario</button>') +
+        : '<button class="btn" id="lock">Lock this plan</button>') +
       '</div>';
   }
 
-  function metrics() {
+  // ---------- headline ----------
+  function metricsStrip() {
     var t = totals();
     var cells = [
-      ['Proceeds', money(t.proceeds), rows.filter(function (e) {
-        return e.action === 'sell'; }).length + ' sells', ''],
-      ['Gain realised', t.gain ? (t.gain >= 0 ? '+' : '') + money(t.gain) : '—',
-        t.nUnknown ? t.nUnknown + ' without basis' : '', ''],
-      ['Harvest applied', t.offset ? '−' + money(t.offset) : '—',
+      ['Raised', money(t.proceeds), 'from ' + rows.filter(function (e) {
+        return e.action === 'sell'; }).length + ' sales', ''],
+      ['Gain realised', money(t.gain), 'on the taxable sales only', ''],
+      ['Losses applied', '−' + money(t.offset),
         money(t.pool) + ' available', t.offset ? 'g' : ''],
-      ['Tax', money(t.tax), (rate * 100).toFixed(1) + '% federal', t.tax ? 'r' : ''],
-      ['Net after tax', money(t.proceeds - t.tax), '', ''],
+      ['Taxable gain', money(t.taxable), 'after the offset', ''],
+      ['Tax', money(t.tax), (rate * 100).toFixed(1) + '% all-in',
+        t.tax ? 'r' : ''],
+      ['Net after tax', money(t.proceeds - t.tax), 'available to redeploy', ''],
     ];
-    return '<div class="metrics" style="padding-bottom:20px">' +
-      cells.map(function (c) {
-        return '<div class="metric"><div class="k">' + c[0] + '</div>' +
-          '<div class="v sm ' + c[3] + '">' + c[1] + '</div>' +
-          (c[2] ? '<div class="n">' + esc(c[2]) + '</div>' : '') + '</div>';
-      }).join('') + '</div>';
+    return '<div class="metrics">' + cells.map(function (c) {
+      return '<div class="metric"><div class="k">' + c[0] + '</div>' +
+        '<div class="v sm ' + c[3] + '">' + c[1] + '</div>' +
+        '<div class="n">' + c[2] + '</div></div>'; }).join('') + '</div>';
   }
 
-  // ---------- targets ----------
+  // ---------- the account panels: the point of this tab ----------
+  // Each account is its own closed system. What it can buy is limited by what
+  // it sold, and what it SHOULD hold is decided by how that account is taxed.
+  var PLACEMENT = {
+    roth: ['Tax-free, permanently', 'Nothing here is ever taxed again — ' +
+      'not the trades, not the growth, not the withdrawal. So this is where ' +
+      'the highest expected return belongs, because it is the only account ' +
+      'where compounding is never shared with the IRS.'],
+    pretax: ['Free to trade, taxed on the way out', 'Rebalancing costs nothing, ' +
+      'but every dollar withdrawn is ordinary income — on the whole balance, ' +
+      'not just the gain. Growth here is worth less after tax than identical ' +
+      'growth in a Roth, which is why the moonshots are not here.'],
+    taxable: ['Every sale is a taxable event', 'Turnover costs real money here, ' +
+      'so this is where the things you will not need to sell belong: lower ' +
+      'volatility, broad exposure, hedges.'],
+  };
+
+  function accountPanels() {
+    var RANK = { roth: 0, pretax: 1, taxable: 2 };
+    var rank = function (k) {
+      var r = RANK[S.accounts[k].tax_class];
+      return r === undefined ? 2 : r;
+    };
+    var order = Object.keys(S.accounts).sort(function (a, b) {
+      if (rank(a) !== rank(b)) return rank(a) - rank(b);
+      return a === 'rh_crypto' ? -1 : b === 'rh_crypto' ? 1 : 0;
+    });
+
+    var blocks = order.map(function (k) {
+      var mine = rows.filter(function (e) { return e.account === k; });
+      if (!mine.length) return '';
+      var cls = S.accounts[k].tax_class || 'taxable';
+      var place = PLACEMENT[cls] || PLACEMENT.taxable;
+
+      var raised = 0, spent = 0, tax = 0;
+      mine.forEach(function (e) {
+        var r = resolve(e);
+        if (e.action === 'sell' && r.usd > 0) {
+          raised += r.usd;
+          var tx = entryTax(e); if (tx.known) tax += Math.max(0, tx.tax);
+        }
+        if (e.action === 'buy' && r.usd > 0) spent += r.usd;
+      });
+
+      var bal = S.positions.filter(function (p) { return p.account === k; })
+        .reduce(function (s, p) { return s + p.qty * px(p); }, 0);
+
+      var flow = [
+        ['Balance', money(bal), ''],
+        ['Raised', money(raised), ''],
+        ['Tax', tax ? money(tax) : 'none', tax ? 'r' : 'g'],
+        ['Redeployed', money(spent), ''],
+        ['Not redeployed', money(raised - tax - spent), ''],
+      ].map(function (c) {
+        return '<div class="metric"><div class="k">' + c[0] + '</div>' +
+          '<div class="v sm ' + c[2] + '">' + c[1] + '</div></div>'; }).join('');
+
+      return '<div class="acct">' +
+        '<div class="acct__h"><h3>' + esc(S.accounts[k].label) + '</h3>' +
+          '<span class="badge b-' + cls + '">' + place[0] + '</span></div>' +
+        '<p class="acct__why">' + place[1] +
+          (S.accounts[k].tax_note ? ' <span class="faint">' +
+            esc(S.accounts[k].tax_note) + '</span>' : '') + '</p>' +
+        '<div class="metrics acct__flow">' + flow + '</div>' +
+        tradeTable(mine) +
+        '</div>';
+    }).join('');
+
+    return '<div class="sec"><div class="sec__h"><h2>Why these trades, in these accounts</h2>' +
+      '<span class="hint">Each account funds its own buys</span></div>' +
+      '<div class="warn warn--calm">Cash cannot move between tax buckets — ' +
+      'a Roth cannot be topped up from a sale in the brokerage. The one legal ' +
+      'crossing here is Robinhood Crypto → Robinhood Individual, because ' +
+      'both are taxable accounts you own outright.</div>' +
+      blocks + '</div>';
+  }
+
+  function tradeTable(list) {
+    var order = { sell: 0, hold: 1, buy: 2 };
+    var sorted = list.slice().sort(function (a, b) {
+      return (order[a.action] || 0) - (order[b.action] || 0); });
+    return '<div class="scroll"><table class="t t--why"><thead><tr>' +
+      '<th style="width:58px">Action</th><th style="width:34%">Position</th>' +
+      '<th class="num" style="width:96px">Value</th>' +
+      '<th class="num" style="width:96px">Tax</th>' +
+      '<th>Why here</th></tr></thead><tbody>' +
+      sorted.map(function (e) {
+        var r = resolve(e), tx = entryTax(e);
+        var val = r.usd === null ? '<span class="faint">—</span>' : money(r.usd);
+        var taxCell = e.action !== 'sell' ? '<span class="faint">—</span>'
+          : !tx.known ? '<span class="faint">unknown basis</span>'
+          : tx.tax ? '<span class="r">' + money(tx.tax) + '</span>'
+          : '<span class="g">none</span>';
+        return '<tr><td><b class="act act--' + e.action + '">' +
+            e.action.toUpperCase() + '</b></td>' +
+          '<td><b>' + esc(e.symbol) + '</b>' +
+            (r.shares ? ' <span class="faint">' +
+              r.shares.toLocaleString('en-US', { maximumFractionDigits: 3 }) +
+              ' sh</span>' : '') + rangeChip(e.symbol) + '</td>' +
+          '<td class="num mono">' + val + '</td>' +
+          '<td class="num mono">' + taxCell + '</td>' +
+          '<td class="why">' + esc(e.rationale || e.note || '') + '</td></tr>';
+      }).join('') + '</tbody></table></div>';
+  }
+
+  // ---------- valuation context ----------
+  // Answers "am I buying the peak?" without a paragraph: a low-high line with
+  // a dot where the trade price sits.
+  function rangeChip(sym) {
+    var m = metrics[sym];
+    if (!m || !(m.hi_52 > m.lo_52) || !(m.price > 0)) return '';
+    var f = Math.max(0, Math.min(1, (m.price - m.lo_52) / (m.hi_52 - m.lo_52)));
+    var hot = f > 0.9 ? ' rng--hot' : f < 0.25 ? ' rng--cold' : '';
+    return '<span class="rng' + hot + '" title="' + esc(sym) + ' ' +
+      money(m.price) + ' — 52wk ' + money(m.lo_52) + ' to ' + money(m.hi_52) +
+      ' (' + (f * 100).toFixed(0) + '% of range)' +
+      (m.pe ? ', P/E ' + Number(m.pe).toFixed(1) : '') + '">' +
+      '<span class="rng__dot" style="left:' + (f * 100).toFixed(1) + '%"></span>' +
+      '</span>';
+  }
+
+  // ---------- targets, constraints, notes: read-only ----------
   function currentWeights(kind) {
     var d = {}, tot = 0;
+    function add(k, v) { d[k] = (d[k] || 0) + v; tot += v; }
     S.positions.forEach(function (p) {
-      var k = kind === 'theme' ? p.theme
-            : kind === 'asset_class' ? p.asset_class : p.symbol;
-      var v = p.qty * px(p);
-      d[k] = (d[k] || 0) + v; tot += v;
+      add(kind === 'theme' ? p.theme
+        : kind === 'asset_class' ? p.asset_class : p.symbol, p.qty * px(p));
+    });
+    // Options were excluded here but included by the other two tabs, so the
+    // same rollup disagreed with itself across the app.
+    (S.options || []).forEach(function (o) {
+      add(kind === 'theme' ? o.theme
+        : kind === 'asset_class' ? 'options' : o.underlying, o.market_value);
     });
     return { d: d, tot: tot || 1 };
   }
 
   function targetsSection() {
+    if (!tgts.length) return '';
     var byKind = {};
     tgts.forEach(function (t) { (byKind[t.kind] = byKind[t.kind] || []).push(t); });
-    var body = '';
-    Object.keys(byKind).forEach(function (kind) {
-      var w = currentWeights(kind);
-      body += byKind[kind].map(function (t) {
-        var cur = (w.d[t.key] || 0) / w.tot * 100;
-        var gap = t.target_pct === null ? null : t.target_pct - cur;
-        return '<tr data-tid="' + t.id + '">' +
-          '<td class="dim">' + esc(t.key) +
-            ' <span class="tag">' + esc(t.kind) + '</span></td>' +
-          '<td class="num dim">' + cur.toFixed(1) + '%</td>' +
-          '<td class="num"><input class="f num" type="number" step="any" ' +
-            'data-tf="target_pct" value="' + (t.target_pct === null ? '' : t.target_pct) +
-            '" style="width:66px"' + (locked() ? ' disabled' : '') + '></td>' +
-          '<td class="num ' + (gap === null ? 'faint' : Math.abs(gap) < 0.5 ? 'faint'
-            : gap < 0 ? 'neg' : 'pos') + '">' +
-            (gap === null ? '—' : (gap > 0 ? '+' : '') + gap.toFixed(1)) + '</td>' +
-          '<td><input class="f" data-tf="note" value="' + esc(t.note) +
-            '" placeholder="why"' + (locked() ? ' disabled' : '') + '></td>' +
-          '<td>' + (locked() ? '' : '<button class="icon" data-tdel="' + t.id +
-            '">×</button>') + '</td></tr>';
-      }).join('');
-    });
-
-    var themes = Object.keys(currentWeights('theme').d).sort();
-    return '<div class="sec"><div class="sec__h"><h2>Targets</h2>' +
-      '<span class="hint">What this scenario is aiming at</span></div>' +
-      (body ? '<div class="scroll"><table class="t"><thead><tr>' +
-        '<th>What</th><th class="num">Current</th>' +
-        '<th class="num">Target</th><th class="num">Gap (pp)</th>' +
-        '<th>Note</th><th></th>' +
-        '</tr></thead><tbody>' + body + '</tbody></table></div>'
-        : '<div class="empty">No targets set.</div>') +
-      (locked() ? '' : '<div class="row" style="margin-top:14px">' +
-        '<select class="f" id="tg-kind" style="width:120px">' +
-          '<option value="theme">theme</option><option value="symbol">symbol</option>' +
-          '<option value="asset_class">asset class</option></select>' +
-        '<input class="f" id="tg-key" list="tg-keys" placeholder="e.g. Tesla" ' +
-          'style="width:170px">' +
-        '<datalist id="tg-keys">' + themes.map(function (t) {
-          return '<option value="' + esc(t) + '">'; }).join('') + '</datalist>' +
-        '<input class="f num" id="tg-pct" type="number" step="any" ' +
-          'placeholder="target %" style="width:110px">' +
-        '<button class="btn" id="tg-add">Add target</button></div>') +
-      '</div>';
+    return Object.keys(byKind).map(function (kind) {
+      var cw = currentWeights(kind);
+      return '<div class="sec"><div class="sec__h"><h2>Targets by ' +
+        esc(kind.replace('_', ' ')) + '</h2>' +
+        '<span class="hint">Where the plan is aiming</span></div>' +
+        '<div class="scroll"><table class="t"><thead><tr><th>What</th>' +
+        '<th class="num">Now</th><th class="num">Target</th>' +
+        '<th class="num">Gap</th><th>Why</th></tr></thead><tbody>' +
+        byKind[kind].map(function (t) {
+          var cur = (cw.d[t.key] || 0) / cw.tot * 100;
+          var gap = (t.target_pct === null ? 0 : t.target_pct - cur);
+          var g = Math.abs(gap) < 0.5 ? 'faint' : gap < 0 ? 'neg' : 'pos';
+          return '<tr><td><b>' + esc(t.key) + '</b></td>' +
+            '<td class="num mono">' + cur.toFixed(1) + '%</td>' +
+            '<td class="num mono">' + (t.target_pct === null ? '—' :
+              Number(t.target_pct).toFixed(1) + '%') + '</td>' +
+            '<td class="num mono ' + g + '">' + (gap > 0 ? '+' : '') +
+              gap.toFixed(1) + '</td>' +
+            '<td class="why">' + esc(t.note || '') + '</td></tr>';
+        }).join('') + '</tbody></table></div></div>';
+    }).join('');
   }
 
-  // ---------- constraints ----------
   function constraintsSection() {
-    var body = cons.map(function (c) {
-      return '<tr data-cid="' + c.id + '">' +
-        '<td class="tag">' + esc(c.kind.replace('_', ' ')) + '</td>' +
-        '<td><input class="f" data-cf="label" value="' + esc(c.label) + '"' +
-          (locked() ? ' disabled' : '') + '></td>' +
-        '<td class="num"><input class="f num" type="number" step="any" ' +
-          'data-cf="amount" value="' + (c.amount === null ? '' : c.amount) +
-          '" style="width:100px"' + (locked() ? ' disabled' : '') + '></td>' +
-        '<td><input class="f" type="date" data-cf="due_date" value="' +
-          (c.due_date || '') + '" style="width:140px"' +
-          (locked() ? ' disabled' : '') + '></td>' +
-        '<td>' + (locked() ? '' : '<button class="icon" data-cdel="' + c.id +
-          '">×</button>') + '</td></tr>';
-    }).join('');
-
+    if (!cons.length) return '';
     return '<div class="sec"><div class="sec__h"><h2>Constraints</h2>' +
-      '<span class="hint">Cash the portfolio has to produce, and what is off ' +
-      'the table</span></div>' +
-      (body ? '<div class="scroll"><table class="t"><thead><tr><th>Kind</th>' +
-        '<th>What</th><th class="num">Amount</th><th>By</th><th></th></tr></thead>' +
-        '<tbody>' + body + '</tbody></table></div>'
-        : '<div class="empty">No constraints recorded.</div>') +
-      (locked() ? '' : '<div class="row" style="margin-top:14px">' +
-        '<select class="f" id="cn-kind" style="width:140px">' +
-          '<option value="cash_need">cash need</option>' +
-          '<option value="untouchable">untouchable</option>' +
-          '<option value="note">note</option></select>' +
-        '<input class="f" id="cn-label" placeholder="description" style="flex:1;min-width:180px">' +
-        '<input class="f num" id="cn-amt" type="number" step="any" ' +
-          'placeholder="amount" style="width:120px">' +
-        '<input class="f" id="cn-date" type="date" style="width:150px">' +
-        '<button class="btn" id="cn-add">Add</button></div>') +
-      '</div>';
-  }
-
-  // ---------- entries ----------
-  function entriesSection() {
-    var opts = function (list, cur) {
-      return list.map(function (v) {
-        return '<option value="' + esc(v[0]) + '"' +
-          (v[0] === cur ? ' selected' : '') + '>' + esc(v[1]) + '</option>';
-      }).join('');
-    };
-    var accts = Object.keys(S.accounts).map(function (k) { return [k, acct(k)]; });
-
-    var body = rows.map(function (e) {
-      var r = resolve(e), tx = entryTax(e), d = locked() ? ' disabled' : '';
-
-      return '<tr data-id="' + e.id + '">' +
-        '<td><select class="f" data-fld="account" style="width:158px"' + d +
-          '>' + opts(accts, e.account) + '</select></td>' +
-        '<td><input class="f" data-fld="symbol" list="held-' + e.account +
-          '" value="' + esc(e.symbol) + '" style="width:86px;font-family:var(--mono)"' +
-          d + '></td>' +
-        '<td><select class="f" data-fld="action" style="width:82px"' + d + '>' +
-          opts([['sell', 'Sell'], ['buy', 'Buy'], ['hold', 'Hold']], e.action) +
-          '</select></td>' +
-        '<td><input class="f num" type="number" step="any" data-fld="amount" ' +
-          'value="' + (e.amount === null ? '' : e.amount) + '" style="width:84px"' +
-          d + '></td>' +
-        '<td><select class="f" data-fld="unit" style="width:80px"' + d + '>' +
-          opts([['pct', '%'], ['shares', 'sh'], ['usd', '$']], e.unit) +
-          '</select></td>' +
-        '<td class="num">' + (r.usd === null
-          ? '<span class="neg" title="' + (r.badUnit
-              ? 'a percentage of a position you do not hold has no meaning'
-              : 'no price for this symbol — set one') + '">' +
-            (r.badUnit ? 'use $ or shares' : 'needs price') + '</span>'
-          : money(r.usd)) + '</td>' +
-        '<td class="num ' + (!r.pos || !r.pos.trades_taxable ? 'faint'
-          : tx.known ? (tx.tax ? 'neg' : 'faint') : 'neg') + '">' +
-          (e.action !== 'sell' ? '$0'
-            : !r.pos ? '—' : !r.pos.trades_taxable ? '$0'
-            : tx.known ? money(tx.tax) : '?') + '</td>' +
-        '<td>' + (r.pos ? (r.pos.trades_taxable
-          ? '<span class="badge b-tax">taxable</span>'
-          : '<span class="badge b-free">free</span>')
-          : '<span class="badge b-new">new</span>') +
-          (mixedSources() && e.source === 'claude'
-            ? ' <span class="badge b-claude">claude</span>' : '') +
-          '</td>' +
-        '<td>' + (r.isNew
-          ? '<input class="f" data-fld="theme" value="' + esc(e.theme) +
-            '" placeholder="theme" style="width:104px" list="themes"' + d + '>'
-          : '<span class="tag">' + esc(r.pos ? r.pos.theme : '') + '</span>') +
-          '</td>' +
-        '<td><input class="f" data-fld="note" value="' + esc(e.note) +
-          '" placeholder="why"' + d + '></td>' +
-        '<td>' + (locked() ? '' : '<button class="icon" data-del="' + e.id +
-          '">×</button>') + '</td></tr>';
-    }).join('');
-
-    var lists = Object.keys(S.accounts).map(function (a) {
-      return '<datalist id="held-' + a + '">' +
-        S.positions.filter(function (p) { return p.account === a; })
-          .sort(function (x, y) { return y.market_value - x.market_value; })
-          .map(function (p) { return '<option value="' + p.symbol + '">'; })
-          .join('') + '</datalist>';
-    }).join('') + '<datalist id="themes">' +
-      Object.keys(S.positions.reduce(function (m, p) {
-        m[p.theme] = 1; return m; }, {})).sort().map(function (t) {
-          return '<option value="' + esc(t) + '">'; }).join('') + '</datalist>';
-
-    return lists + '<div class="sec"><div class="sec__h"><h2>Decisions</h2>' +
-      '<span class="hint">Priced against ' + esc(S.as_of) +
-      (quotes ? ' with live quotes' : '') + '</span></div>' +
-      (rows.length ? '<div class="scroll"><table class="t"><thead><tr>' +
-        '<th>Account</th><th>Symbol</th><th>Action</th><th class="num">Amount</th>' +
-        '<th>Unit</th><th class="num">Value</th><th class="num">Tax</th>' +
-        '<th></th><th>Theme</th><th style="width:26%">Note</th><th></th>' +
-      '</tr></thead><tbody>' +
-        body + '</tbody></table></div>'
-        : '<div class="empty">Nothing recorded yet.</div>') +
-      (locked() ? '' : '<div class="row" style="margin-top:14px">' +
-        '<select class="f" id="ad-acct" style="width:170px">' +
-          accts.map(function (a) { return '<option value="' + a[0] + '">' +
-            esc(a[1]) + '</option>'; }).join('') + '</select>' +
-        '<input class="f" id="ad-sym" list="held-' + Object.keys(S.accounts)[0] +
-          '" placeholder="symbol" style="width:104px;font-family:var(--mono)">' +
-        '<select class="f" id="ad-action" style="width:86px">' +
-          '<option value="sell">Sell</option><option value="buy">Buy</option>' +
-          '<option value="hold">Hold</option></select>' +
-        '<input class="f num" id="ad-amt" type="number" step="any" ' +
-          'placeholder="amount" style="width:100px">' +
-        '<select class="f" id="ad-unit" style="width:80px">' +
-          '<option value="pct">%</option><option value="shares">sh</option>' +
-          '<option value="usd">$</option></select>' +
-        '<input class="f" id="ad-note" placeholder="note" style="flex:1;min-width:140px">' +
-        '<button class="btn filled" id="ad-go">Add</button></div>') +
-      '</div>';
+      '<span class="hint">Things the plan has to respect</span></div>' +
+      '<ul class="tips">' + cons.map(function (c) {
+        return '<li><b>' + esc(c.label) + '</b>' +
+          (c.amount ? ' — ' + money(c.amount) : '') +
+          (c.due_date ? ' <span class="faint">by ' + esc(c.due_date) + '</span>' : '') +
+          '</li>'; }).join('') + '</ul></div>';
   }
 
   function notesSection() {
-    return '<div class="sec"><div class="sec__h"><h2>Notes</h2></div>' +
-      '<textarea class="f" id="nt-body" rows="2" style="min-height:44px" ' +
-        'placeholder="Record a decision, a constraint, something to come ' +
-        'back to…"></textarea>' +
-      '<div class="row" style="margin-top:10px;justify-content:flex-end">' +
-        '<button class="btn filled" id="nt-add">Add note</button></div>' +
-      (noteList.length ? '<div style="margin-top:8px">' + noteList.map(function (n) {
-        return '<div class="note"><div class="meta">' +
-          new Date(n.created_at).toLocaleString() +
-          ' <button class="icon" data-ndel="' + n.id + '">×</button></div>' +
-          '<div class="body">' + esc(n.body) + '</div></div>';
-      }).join('') + '</div>' : '') + '</div>';
+    if (!noteList.length) return '';
+    return '<div class="sec"><div class="sec__h"><h2>Notes</h2>' +
+      '<span class="hint">Recorded during the session</span></div>' +
+      noteList.map(function (n) {
+        return '<div class="note"><div class="note__d">' +
+          esc(String(n.created_at).slice(0, 10)) + '</div>' +
+          '<div>' + esc(n.body) + '</div></div>'; }).join('') + '</div>';
   }
 
-  // ---------- wiring ----------
-  function syncSyms() {
-    var a = root.querySelector('#ad-acct'), s = root.querySelector('#ad-sym');
-    if (!a || !s) return;
-    s.setAttribute('list', 'held-' + a.value);
-  }
-  async function guard(fn) { try { await fn(); } catch (e) { toast(e.message); } }
-
+  // ---------- render ----------
   function render() {
-    var r = rates || T.deriveRates(profile.income || 0, profile.filing);
-    var st = Number(profile.state_rate || 0) / 100;
-    var summary = '<b>Setup</b> tax profile, targets, constraints' +
-      '<span class="sum">' + ((r.ltcg + st) * 100).toFixed(1) + '% LTCG · ' +
-      tgts.length + ' targets · ' + cons.length + ' constraints</span>';
-    root.innerHTML = scenarioBar() + metrics() +
-      '<details class="setup"' + (setupOpen ? ' open' : '') + '>' +
+    if (!plan) {
+      root.innerHTML = '<div class="empty">No scenario open.</div>';
+      return;
+    }
+    if (!rows.length) {
+      root.innerHTML = scenarioBar() + emptyState();
+      wireScenario();
+      return;
+    }
+    var r = rates || T.deriveRates(profile.income, profile.filing, profile.state);
+    var summary = '<b>Setup</b> your tax situation' +
+      '<span class="sum">' + (r.ltcg * 100).toFixed(1) + '% LTCG · ' +
+      (r.ordinary * 100).toFixed(1) + '% ordinary · ' + r.state + '</span>';
+
+    root.innerHTML = scenarioBar() + metricsStrip() +
+      '<details class="setup"' + (setupOpen || !r.configured ? ' open' : '') + '>' +
         '<summary>' + summary + '</summary>' +
-        '<div class="setup__body">' + taxSection() + targetsSection() +
-          constraintsSection() + '</div>' +
+        '<div class="setup__body">' + taxSection() + '</div>' +
       '</details>' +
-      entriesSection() + notesSection();
-    syncSyms();
+      accountPanels() + targetsSection() + constraintsSection() + notesSection();
+
+    wireScenario();
+    wireSetup();
+  }
+
+  // A scenario with nothing in it should look like a place a plan will go,
+  // not like a broken page.
+  function emptyState() {
+    function ghost(title, note) {
+      return '<div class="sec ghost"><div class="sec__h"><h2>' + title + '</h2>' +
+        '<span class="hint">' + note + '</span></div>' +
+        '<div class="ghost__bars"><i style="width:72%"></i><i style="width:54%"></i>' +
+        '<i style="width:38%"></i><i style="width:23%"></i></div></div>';
+    }
+    return '<div class="empty empty--lead">Nothing recorded in this scenario yet.' +
+      '<div class="faint" style="margin-top:6px">Decisions are worked out in a ' +
+      'session and written here — then this tab explains them.</div></div>' +
+      ghost('Why these trades, in these accounts', 'per-account reasoning') +
+      ghost('Targets', 'where the plan is aiming');
+  }
+
+  function wireScenario() {
     var q = function (s) { return root.querySelector(s); };
-    var det = root.querySelector('details.setup');
-    if (det) det.addEventListener('toggle', function () { setupOpen = det.open; });
-
-    q('#scn').addEventListener('change', function () {
-      window.PortfolioApp.switchScenario(Number(q('#scn').value)); });
-    q('#scn-new').addEventListener('click', function () { guard(async function () {
-      var name = 'Scenario ' + String.fromCharCode(65 + plans.length);
-      var p = await A.createPlan(S._snapshotId, name);
-      window.PortfolioApp.scenarioAdded(p);
+    var sel = q('#scn');
+    if (sel) sel.addEventListener('change', function () {
+      window.PortfolioApp.switchScenario(Number(sel.value)); });
+    var lock = q('#lock');
+    if (lock) lock.addEventListener('click', function () { guard(async function () {
+      if (!rows.length) { toast('Nothing to lock'); return; }
+      plan = await A.updatePlan(plan.id,
+        { status: 'locked', locked_at: new Date().toISOString() });
+      render(); window.PortfolioApp.planChanged(); toast('Locked');
     }); });
-    if (q('#scn-del')) q('#scn-del').addEventListener('click', function () {
-      guard(async function () {
-        await A.archivePlan(plan.id);
-        window.PortfolioApp.scenarioArchived(plan.id);
-      }); });
-    q('#harv').addEventListener('change', function () {
-      useHarvest = q('#harv').checked; render(); window.PortfolioApp.planChanged(); });
+    var un = q('#unlock');
+    if (un) un.addEventListener('click', function () { guard(async function () {
+      plan = await A.updatePlan(plan.id, { status: 'draft', locked_at: null });
+      render(); window.PortfolioApp.planChanged(); toast('Reopened');
+    }); });
+  }
 
-    q('#tx-save').addEventListener('click', function () { guard(async function () {
+  function wireSetup() {
+    var q = function (s) { return root.querySelector(s); };
+    var d = root.querySelector('details.setup');
+    if (d) d.addEventListener('toggle', function () { setupOpen = d.open; });
+    var save = q('#tx-save');
+    if (save) save.addEventListener('click', function () { guard(async function () {
       var inc = parseFloat(q('#tx-income').value);
-      var stt = parseFloat(q('#tx-state').value);
       profile = await A.saveSettings({
         income: isNaN(inc) ? null : inc,
         filing: q('#tx-filing').value,
-        state_rate: isNaN(stt) ? null : stt });
+        state: q('#tx-state').value });
+      setupOpen = true;
       window.PortfolioApp.profileChanged(profile);
-      toast('Tax profile saved');
+      toast('Saved');
     }); });
-    if (q('#lock')) q('#lock').addEventListener('click', function () {
-      guard(async function () {
-        if (!rows.length) { toast('Record at least one decision first'); return; }
-        plan = await A.updatePlan(plan.id, { status: 'locked',
-          locked_at: new Date().toISOString() });
-        toast('Locked — execution plan ready'); render();
-        window.PortfolioApp.planChanged();
-      }); });
-    if (q('#unlock')) q('#unlock').addEventListener('click', function () {
-      guard(async function () {
-        plan = await A.updatePlan(plan.id, { status: 'draft', locked_at: null });
-        render(); window.PortfolioApp.planChanged();
-      }); });
+  }
 
-    // targets
-    if (q('#tg-add')) q('#tg-add').addEventListener('click', function () {
-      guard(async function () {
-        var key = q('#tg-key').value.trim(); if (!key) return;
-        var pct = parseFloat(q('#tg-pct').value);
-        var t = await A.upsertTarget(plan.id, { kind: q('#tg-kind').value, key: key,
-          target_pct: isNaN(pct) ? null : pct, sort_order: tgts.length });
-        var i = tgts.findIndex(function (x) { return x.id === t.id; });
-        if (i >= 0) tgts[i] = t; else tgts.push(t);
-        render(); window.PortfolioApp.planChanged();
-      }); });
-    root.querySelectorAll('[data-tf]').forEach(function (el) {
-      el.addEventListener('change', function () { guard(async function () {
-        var id = Number(el.closest('tr').dataset.tid), f = el.dataset.tf;
-        var v = f === 'target_pct' ? (el.value === '' ? null : parseFloat(el.value))
-                                   : (el.value || null);
-        var patch = {}; patch[f] = v;
-        var t = await A.updateTarget(id, patch);
-        tgts[tgts.findIndex(function (x) { return x.id === id; })] = t;
-        render(); window.PortfolioApp.planChanged();
-      }); }); });
-    root.querySelectorAll('[data-tdel]').forEach(function (b) {
-      b.addEventListener('click', function () { guard(async function () {
-        var id = Number(b.dataset.tdel);
-        await A.deleteTarget(id);
-        tgts = tgts.filter(function (x) { return x.id !== id; });
-        render(); window.PortfolioApp.planChanged();
-      }); }); });
-
-    // constraints
-    if (q('#cn-add')) q('#cn-add').addEventListener('click', function () {
-      guard(async function () {
-        var label = q('#cn-label').value.trim(); if (!label) return;
-        var amt = parseFloat(q('#cn-amt').value);
-        var c = await A.addConstraint(plan.id, { kind: q('#cn-kind').value,
-          label: label, amount: isNaN(amt) ? null : amt,
-          due_date: q('#cn-date').value || null, sort_order: cons.length });
-        cons.push(c); render(); window.PortfolioApp.planChanged();
-      }); });
-    root.querySelectorAll('[data-cf]').forEach(function (el) {
-      el.addEventListener('change', function () { guard(async function () {
-        var id = Number(el.closest('tr').dataset.cid), f = el.dataset.cf;
-        var v = f === 'amount' ? (el.value === '' ? null : parseFloat(el.value))
-                               : (el.value || null);
-        var patch = {}; patch[f] = v;
-        var c = await A.updateConstraint(id, patch);
-        cons[cons.findIndex(function (x) { return x.id === id; })] = c;
-      }); }); });
-    root.querySelectorAll('[data-cdel]').forEach(function (b) {
-      b.addEventListener('click', function () { guard(async function () {
-        var id = Number(b.dataset.cdel);
-        await A.deleteConstraint(id);
-        cons = cons.filter(function (x) { return x.id !== id; });
-        render();
-      }); }); });
-
-    // entries
-    if (q('#ad-acct')) q('#ad-acct').addEventListener('change', syncSyms);
-    if (q('#ad-go')) q('#ad-go').addEventListener('click', function () {
-      guard(async function () {
-        var amt = parseFloat(q('#ad-amt').value);
-        var e = await A.addEntry(plan.id, {
-          account: q('#ad-acct').value, symbol: q('#ad-sym').value,
-          action: q('#ad-action').value, unit: q('#ad-unit').value,
-          amount: isNaN(amt) ? null : amt, note: q('#ad-note').value || null,
-          source: 'haydn', sort_order: rows.length });
-        rows.push(e); render(); window.PortfolioApp.planChanged();
-      }); });
-    root.querySelectorAll('[data-fld]').forEach(function (el) {
-      el.addEventListener('change', function () { guard(async function () {
-        var id = Number(el.closest('tr').dataset.id), f = el.dataset.fld;
-        var v = el.value;
-        if (f === 'amount') v = v === '' ? null : parseFloat(v);
-        if (f === 'note' || f === 'theme') v = v || null;
-        if (f === 'symbol') v = (v || '').trim().toUpperCase();
-        if (f === 'price') v = v === '' ? null : parseFloat(v);
-        var patch = {}; patch[f] = v;
-        var u = await A.updateEntry(id, patch);
-        rows[rows.findIndex(function (r) { return r.id === id; })] = u;
-        render(); window.PortfolioApp.planChanged();
-      }); }); });
-    root.querySelectorAll('[data-del]').forEach(function (b) {
-      b.addEventListener('click', function () { guard(async function () {
-        var id = Number(b.dataset.del);
-        await A.deleteEntry(id);
-        rows = rows.filter(function (r) { return r.id !== id; });
-        render(); window.PortfolioApp.planChanged();
-      }); }); });
-
-    // notes
-    q('#nt-add').addEventListener('click', function () { guard(async function () {
-      var b = q('#nt-body').value.trim(); if (!b) return;
-      var n = await A.addNote(plan.id, b);
-      noteList.unshift(n); render();
-    }); });
-    root.querySelectorAll('[data-ndel]').forEach(function (b) {
-      b.addEventListener('click', function () { guard(async function () {
-        var id = Number(b.dataset.ndel);
-        await A.deleteNote(id);
-        noteList = noteList.filter(function (n) { return n.id !== id; });
-        render();
-      }); }); });
+  function guard(fn) {
+    return fn().catch(function (e) { toast(e.message || String(e)); });
   }
 
   function mount(el, snap, allPlans, curPlan, e, t, c, n) {
@@ -545,17 +443,20 @@ window.PFWorkspace = (function () {
     render();
   }
   function setQuotes(q) { quotes = q; if (root) render(); }
+  function setMetrics(m) { metrics = m || {}; if (root) render(); }
   function setProfile(p, r) {
     profile = p || {}; rates = r;
-    // default the scenario rate to the derived LTCG rate
-    if (r && r.ltcg) rate = r.ltcg + (Number(profile.state_rate || 0) / 100);
+    // Explicit null test. `if (r.ltcg)` silently kept the 18.8% default
+    // whenever the derived rate was a genuine 0%, so the page taxed at one
+    // rate while displaying another.
+    if (r && r.ltcg != null) rate = r.ltcg;
     if (root) render();
   }
   function state() {
     return { plan: plan, rows: rows, targets: tgts, constraints: cons,
              resolve: resolve, rate: rate, useHarvest: useHarvest,
-             quotes: quotes, profile: profile, rates: rates };
+             quotes: quotes, profile: profile, rates: rates, metrics: metrics };
   }
   return { mount: mount, state: state, setQuotes: setQuotes,
-           setProfile: setProfile };
+           setMetrics: setMetrics, setProfile: setProfile };
 })();

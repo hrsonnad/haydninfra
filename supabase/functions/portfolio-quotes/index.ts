@@ -18,8 +18,12 @@ const ALLOWED_ORIGINS = new Set([
   "http://127.0.0.1:8000",
 ]);
 
-// CoinGecko ids for the crypto we hold. Anything not listed is treated as an
-// equity symbol.
+// CoinGecko ids for the coins we hold. Membership here is necessary but NOT
+// sufficient to route a symbol to CoinGecko — the caller's asset_class must
+// also say "crypto". Ticker namespaces collide: SOL is Solana and also
+// NYSE:Emeren (~$1.50), and IBIT/ARKB are bitcoin ETFs that trade on an
+// exchange and must be priced as equities even though they are bitcoin
+// exposure. Routing on the symbol string alone gets both of those wrong.
 const COIN_IDS: Record<string, string> = {
   BTC: "bitcoin", ETH: "ethereum", LTC: "litecoin",
   SOL: "solana", DOGE: "dogecoin", USDC: "usd-coin", USDT: "tether",
@@ -99,19 +103,42 @@ Deno.serve(async (req) => {
     return json({ error: "forbidden" }, 403, origin);
   }
 
-  let symbols: string[] = [];
+  // Accepts either items:[{symbol, asset_class}] or the older symbols:[string].
+  // Without an asset_class we fall back to the symbol-only routing, which is
+  // what produced the CASH bug below, so callers should always send items.
+  let items: { symbol: string; asset_class: string }[] = [];
   try {
     const body = await req.json();
-    symbols = Array.isArray(body?.symbols) ? body.symbols : [];
+    if (Array.isArray(body?.items)) {
+      items = body.items.map((it: unknown) => {
+        const o = it as Record<string, unknown>;
+        return { symbol: String(o?.symbol ?? ""),
+                 asset_class: String(o?.asset_class ?? "") };
+      });
+    } else if (Array.isArray(body?.symbols)) {
+      items = body.symbols.map((s: unknown) => ({ symbol: String(s), asset_class: "" }));
+    }
   } catch { /* empty */ }
 
-  symbols = symbols
-    .filter((s) => typeof s === "string" && /^[A-Z0-9.\-]{1,12}$/.test(s))
+  items = items
+    .filter((it) => /^[A-Z0-9.\-]{1,12}$/.test(it.symbol))
     .slice(0, 80);
-  if (!symbols.length) return json({ quotes: {}, as_of: new Date().toISOString() }, 200, origin);
 
-  const cryptoSyms = symbols.filter((s) => COIN_IDS[s]);
-  const equitySyms = symbols.filter((s) => !COIN_IDS[s]);
+  // Cash is carried as unit-priced rows (qty = dollars, price = 1.00), so a
+  // quote for it is never wanted — and "CASH" is a live NASDAQ ticker
+  // (Pathward Financial, ~$78), which turned $611 of cash into $47,919.
+  const skipped = items.filter((it) => it.asset_class === "cash").map((it) => it.symbol);
+  const priceable = items.filter((it) => it.asset_class !== "cash");
+
+  const symbols = priceable.map((it) => it.symbol);
+  if (!symbols.length) {
+    return json({ quotes: {}, as_of: new Date().toISOString(), skipped }, 200, origin);
+  }
+
+  const isCoin = (it: { symbol: string; asset_class: string }) =>
+    !!COIN_IDS[it.symbol] && (it.asset_class === "crypto" || it.asset_class === "");
+  const cryptoSyms = priceable.filter(isCoin).map((it) => it.symbol);
+  const equitySyms = priceable.filter((it) => !isCoin(it)).map((it) => it.symbol);
 
   const [crypto, equities] = await Promise.all([
     cryptoQuotes(cryptoSyms),
@@ -125,5 +152,6 @@ Deno.serve(async (req) => {
     quotes,
     as_of: new Date().toISOString(),
     missing: symbols.filter((s) => !(s in quotes)),
+    skipped,
   }, 200, origin);
 });
