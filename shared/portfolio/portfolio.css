@@ -338,3 +338,12 @@ ol.steps li .sub.flags{color:var(--ink-3);font-size:11.5px;font-style:italic}
 .legend>div.on{background:var(--raised)}
 .legend>div.on .legend__v{color:var(--ink)}
 svg path.dim,svg circle.dim{opacity:.25}
+
+/* ---------- chart tooltip ---------- */
+#pf-tip{position:fixed;z-index:300;pointer-events:none;opacity:0;
+  background:#202124;color:#fff;padding:7px 10px;border-radius:5px;
+  font-size:12px;line-height:1.5;white-space:pre-line;max-width:280px;
+  box-shadow:0 2px 8px rgba(0,0,0,.25);transition:opacity .09s}
+#pf-tip.on{opacity:1}
+svg [data-tip]{cursor:default}
+svg [data-tip]:hover{filter:brightness(1.08)}

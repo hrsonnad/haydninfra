@@ -321,46 +321,98 @@ window.PFCharts = (function () {
 
   // One stacked bar per account, before over after.
   // One bar per group on a SHARED scale, so bar length reads as size and the
-  // segments read as composition. Simpler than stackedCompare because there is
-  // only one state to show -- this is "what is in each account", not a plan.
+  // segments read as composition. A group may carry more than one series --
+  // one bar for "now" and one for "after" -- which is how the same picture
+  // serves both the current book and a proposed one.
+  //
+  // Segments carry data-tip rather than <title>: a native SVG tooltip is slow
+  // to appear, cannot be styled, and cannot show a folded block's contents on
+  // more than one line. C.tips() wires the real thing.
   function stackedRows(groups, opts) {
     opts = opts || {};
-    var w = opts.width || 880, labelW = opts.labelW || 178;
-    var rowH = 46, barH = 22, valW = 84;
-    var barW = w - labelW - valW;
-    var max = Math.max.apply(null, groups.map(function (g) { return g.total; })) || 1;
+    var w = opts.width || 880, labelW = opts.labelW || 178, valW = 84;
+    var barW = w - labelW - valW, barH = opts.barH || 22, gapY = 5;
+
+    var gs = groups.map(function (g) {
+      return { label: g.label, tag: g.tag,
+               series: g.series || [{ name: '', segs: g.segs, total: g.total }] };
+    });
+    var nS = Math.max.apply(null, gs.map(function (g) { return g.series.length; }));
+    var rowH = 26 + nS * (barH + gapY) + 8;
+    var max = 1;
+    gs.forEach(function (g) { g.series.forEach(function (sr) {
+      if (sr.total > max) max = sr.total; }); });
+
+    function segs(sr, y) {
+      var x = labelW;
+      return sr.segs.map(function (it) {
+        var sw = it.value / max * barW, mid = x + sw / 2;
+        var tip = it.tip || (it.label + '  ' + money(it.value) + '  ' +
+          (it.value / (sr.total || 1) * 100).toFixed(1) + '%');
+        var r = '<rect x="' + x.toFixed(1) + '" y="' + y + '" width="' +
+          Math.max(0.6, sw).toFixed(1) + '" height="' + barH + '" fill="' +
+          (it.muted ? '#dadce0' : C.color(it.ci)) + '" data-tip="' + esc(tip) +
+          '" aria-label="' + esc(tip) + '"/>' +
+          // Only label a segment wide enough to hold its own name.
+          (sw > 38 ? '<text x="' + mid.toFixed(1) + '" y="' + (y + barH / 2 + 4) +
+            '" text-anchor="middle" font-size="10" fill="' +
+            (it.muted ? '#5f6368' : '#fff') + '" font-weight="500" ' +
+            'pointer-events="none">' + esc(it.label) + '</text>' : '');
+        x += sw;
+        return r;
+      }).join('');
+    }
 
     return '<svg class="chart" viewBox="0 0 ' + w + ' ' +
-        (groups.length * rowH) + '" role="img">' +
-      groups.map(function (g, i) {
-        var y = i * rowH + 6, x = labelW;
-        var segs = g.segs.map(function (it) {
-          var sw = it.value / max * barW;
-          var mid = x + sw / 2;
-          var r = '<rect x="' + x.toFixed(1) + '" y="' + y + '" width="' +
-            Math.max(0.6, sw).toFixed(1) + '" height="' + barH + '" fill="' +
-            (it.muted ? '#dadce0' : C.color(it.ci)) + '"><title>' +
-            esc(it.label) + ' ' + money(it.value) + ' · ' +
-            (it.value / (g.total || 1) * 100).toFixed(1) +
-            '% of this account</title></rect>' +
-            // Only label a segment that can actually hold its own name.
-            (sw > 38 ? '<text x="' + mid.toFixed(1) + '" y="' + (y + 15) +
-              '" text-anchor="middle" font-size="10" fill="' +
-              (it.muted ? '#5f6368' : '#fff') + '" font-weight="500">' +
-              esc(it.label) + '</text>' : '');
-          x += sw;
-          return r;
-        }).join('');
-
-        return '<text x="0" y="' + (y + 10) + '" font-size="12.5" ' +
+        (gs.length * rowH) + '" role="img">' +
+      gs.map(function (g, i) {
+        var y0 = i * rowH + 6;
+        return '<text x="0" y="' + (y0 + 10) + '" font-size="12.5" ' +
             'fill="#202124">' + esc(g.label) + '</text>' +
-          '<text x="0" y="' + (y + 24) + '" font-size="10.5" fill="' + INK3 +
-            '">' + esc(g.tag || '') + '</text>' + segs +
-          '<text x="' + w + '" y="' + (y + 16) + '" text-anchor="end" ' +
-            'font-size="11.5" font-family="Roboto Mono,monospace" ' +
-            'fill="#202124">' + money(g.total) + '</text>';
+          '<text x="0" y="' + (y0 + 24) + '" font-size="10.5" fill="' + INK3 +
+            '">' + esc(g.tag || '') + '</text>' +
+          g.series.map(function (sr, si) {
+            var y = y0 + 26 + si * (barH + gapY);
+            return (sr.name ? '<text x="' + (labelW - 9) + '" y="' +
+                (y + barH / 2 + 3.5) + '" text-anchor="end" font-size="9.5" ' +
+                'fill="' + INK3 + '">' + esc(sr.name) + '</text>' : '') +
+              segs(sr, y) +
+              '<text x="' + w + '" y="' + (y + barH / 2 + 4) +
+                '" text-anchor="end" font-size="11.5" ' +
+                'font-family="Roboto Mono,monospace" fill="' +
+                (si === g.series.length - 1 ? '#202124' : INK3) + '">' +
+                money(sr.total) + '</text>';
+          }).join('');
       }).join('') + '</svg>';
   }
+
+  // A floating tooltip for any element carrying data-tip, delegated from a
+  // container. Inline handlers are blocked by the page CSP, so this binds from
+  // the loaded file; one listener per container rather than per segment.
+  function tips(root) {
+    if (!root || root.__tips) return;
+    root.__tips = 1;
+    var box = document.getElementById('pf-tip');
+    if (!box) {
+      box = document.createElement('div');
+      box.id = 'pf-tip';
+      document.body.appendChild(box);
+    }
+    root.addEventListener('mousemove', function (e) {
+      var t = e.target && e.target.closest && e.target.closest('[data-tip]');
+      if (!t) { box.classList.remove('on'); return; }
+      box.textContent = t.getAttribute('data-tip');
+      box.classList.add('on');
+      // Flip to the left of the cursor near the right edge so the tip is
+      // never cut off by the viewport.
+      var w = box.offsetWidth, x = e.clientX + 14;
+      if (x + w > window.innerWidth - 8) x = e.clientX - w - 14;
+      box.style.left = x + 'px';
+      box.style.top = (e.clientY + 16) + 'px';
+    });
+    root.addEventListener('mouseleave', function () { box.classList.remove('on'); });
+  }
+
 
   function stackedCompare(groups, opts) {
     opts = opts || {};
@@ -408,4 +460,5 @@ window.PFCharts = (function () {
   C.sankey = sankey;
   C.stackedCompare = stackedCompare;
   C.stackedRows = stackedRows;
+  C.tips = tips;
 })(window.PFCharts);

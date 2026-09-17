@@ -159,6 +159,9 @@ window.PFPlan = (function () {
                      schwab_trad_inh: '#fdd663', schwab_roth_inh: '#81c995',
                      rh_roth: '#78d9ec' };
 
+  var TAX_TAG = { roth: 'tax-free', pretax: 'taxed on withdrawal',
+                  taxable: 'taxed on sale' };
+
   function leftoverCash() {
     var cash = {};
     rows.forEach(function (e) {
@@ -184,33 +187,60 @@ window.PFPlan = (function () {
   }
 
   function accountStructure(a) {
+    // Options are included on both sides so an account's total here matches
+    // the same account on the Overview; excluding them made the brokerage read
+    // $618 lighter on this tab than on that one. No entry touches them, so
+    // they carry through unchanged.
+    var opts = (S.options || []).map(function (o) {
+      return { account: o.account, symbol: o.underlying + ' call',
+               market_value: o.market_value }; });
     var base = S.positions.map(function (p) {
-      return Object.assign({}, p, { market_value: p.qty * px(p) }); });
+      return Object.assign({}, p, { market_value: p.qty * px(p) });
+    }).concat(opts);
+    var after = a.after.concat(opts);
     var ci = {}, n = 0, cashBy = leftoverCash();
     function idx(sym) { if (!(sym in ci)) ci[sym] = n++; return ci[sym]; }
 
+    // Same folding rule as the Overview: holdings under 3% of their own
+    // account collapse into one block that names its contents on hover, so a
+    // small position is never simply invisible.
+    function pack(list, k, extraCash) {
+      var here = list.filter(function (p) {
+        return p.account === k && p.market_value > 1; })
+        .map(function (p) { return { label: p.symbol, value: p.market_value }; });
+      if (extraCash > 1) here.push({ label: 'cash', value: extraCash });
+      here.sort(function (x, y) { return y.value - x.value; });
+      var tot = here.reduce(function (s2, x) { return s2 + x.value; }, 0);
+      var big = here.filter(function (x) { return x.value >= tot * 0.03; });
+      var small = here.slice(big.length);
+      var restV = small.reduce(function (s2, x) { return s2 + x.value; }, 0);
+      var segs = big.map(function (x) {
+        return { label: x.label, value: x.value, ci: idx(x.label),
+                 tip: x.label + '  ' + money(x.value) + '  ' +
+                      (x.value / (tot || 1) * 100).toFixed(1) + '% of this account' };
+      });
+      if (restV > 0) segs.push({
+        label: small.length + ' smaller', value: restV, ci: 0, muted: true,
+        tip: small.length + ' under 3% of this account — ' + money(restV) +
+          '\n' + small.map(function (x) {
+            return x.label + '  ' + money(x.value); }).join('\n') });
+      return { segs: segs, total: tot };
+    }
+
     var groups = Object.keys(S.accounts).map(function (k) {
-      function pack(list) {
-        return list.filter(function (p) { return p.account === k &&
-            p.market_value > 1; })
-          .sort(function (x, y) { return y.market_value - x.market_value; })
-          .map(function (p) { return { label: p.symbol, value: p.market_value,
-                                       ci: idx(p.symbol) }; });
-      }
-      var b = pack(base), af = pack(a.after);
-      var cashHere = cashBy[k] || 0;
-      if (cashHere > 1) af.push({ label: 'cash', value: cashHere, ci: idx('cash') });
+      var b = pack(base, k, 0), af = pack(after, k, cashBy[k] || 0);
       return { label: S.accounts[k].label.replace(' (from Inherited)', ' (inh)')
                  .replace(' (Inherited)', ' (inh)').replace(' (Brokerage)', ''),
-               tag: S.accounts[k].tax_class,
-               before: b, after: af,
-               beforeTotal: b.reduce(function (s, x) { return s + x.value; }, 0),
-               afterTotal: af.reduce(function (s, x) { return s + x.value; }, 0) };
-    }).filter(function (g) { return g.beforeTotal > 1 || g.afterTotal > 1; });
+               tag: TAX_TAG[S.accounts[k].tax_class] || '',
+               series: [{ name: 'now', segs: b.segs, total: b.total },
+                        { name: 'after', segs: af.segs, total: af.total }] };
+    }).filter(function (g) {
+      return g.series[0].total > 1 || g.series[1].total > 1; });
 
     return '<div class="sec"><div class="sec__h"><h2>Account structure</h2>' +
-      '<span class="hint">Each account before and after, same scale</span></div>' +
-      C.stackedCompare(groups, { width: 880 }) + '</div>';
+      '<span class="hint">Each account before and after, same scale · ' +
+      'hover any block</span></div>' +
+      C.stackedRows(groups, { width: 880 }) + '</div>';
   }
 
   function moneyFlow(a) {
@@ -499,6 +529,7 @@ window.PFPlan = (function () {
       '<div class="sec"><div class="sec__h"><h2>Before and after</h2></div>' +
       comparison(a) + '</div>' + accountStructure(a) + moneyFlow(a) +
       sequence() + tips();
+    C.tips(root);
   }
 
   function mount(el, snap, st) {

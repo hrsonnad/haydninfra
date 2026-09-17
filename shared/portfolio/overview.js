@@ -374,16 +374,21 @@ window.PFOverview = (function () {
       var tot = here.reduce(function (a, b) { return a + b.value; }, 0);
       here.sort(function (a, b) { return b.value - a.value; });
 
-      // Anything under 3% of its own account becomes one "other" block rather
-      // than a row of slivers nobody can read or hover.
+      // Anything under 3% of its own account becomes one block rather than a
+      // row of slivers nobody can read or hover -- but the block has to name
+      // what is inside it, or folding just hides real holdings.
       var big = here.filter(function (x) { return x.value >= tot * 0.03; });
-      var rest = here.length - big.length;
-      var restV = here.slice(big.length)
-        .reduce(function (a, b) { return a + b.value; }, 0);
+      var small = here.slice(big.length);
+      var restV = small.reduce(function (a, b) { return a + b.value; }, 0);
       var segs = big.map(function (x) {
-        return { label: x.label, value: x.value, ci: idx(x.label) }; });
-      if (restV > 0) segs.push({ label: rest + ' smaller', value: restV,
-                                 ci: 0, muted: true });
+        return { label: x.label, value: x.value, ci: idx(x.label),
+                 tip: x.label + '  ' + money2(x.value) + '  ' +
+                   (x.value / tot * 100).toFixed(1) + '% of this account' }; });
+      if (restV > 0) segs.push({
+        label: small.length + ' smaller', value: restV, ci: 0, muted: true,
+        tip: small.length + ' under 3% of this account \u2014 ' + money2(restV) +
+          '\n' + small.map(function (x) {
+            return x.label + '  ' + money2(x.value); }).join('\n') });
 
       return { label: acct(k), tag: TAX_TAG[S.accounts[k].tax_class] || '',
                segs: segs, total: tot };
@@ -446,6 +451,7 @@ window.PFOverview = (function () {
       });
     });
     wireDonuts();
+    C.tips(root);
     if (window.PFHistory) window.PFHistory.mount(root.querySelector('#pf-history'));
   }
 
