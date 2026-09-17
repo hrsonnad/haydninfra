@@ -1,9 +1,9 @@
 {
-  "version": "v260916.04 6:56pm",
-  "release": 4,
-  "sha": "3034d5a",
-  "fullSha": "3034d5af5570070ecea43c704e623decfd151368",
+  "version": "v260917.01 7:05pm",
+  "release": 1,
+  "sha": "d937714",
+  "fullSha": "d937714ed2ecd1edafb282e76563dd54335076d5",
   "actor": "hrsonnad",
-  "pushedAt": "2026-09-16T23:56:30Z",
-  "commits": [{"sha": "3034d5a", "message": "Portfolio: show what is inside each account", "author": "Haydn"}]
+  "pushedAt": "2026-09-17T00:05:53Z",
+  "commits": [{"sha": "d937714", "message": "Portfolio: real tooltips on the account bars, and the same view after the plan", "author": "Haydn"}]
 }
