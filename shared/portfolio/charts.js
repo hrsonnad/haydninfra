@@ -73,6 +73,71 @@ window.PFCharts = (function () {
     }).join('') + '</div>';
   }
 
+  // Before/after as a dumbbell: one row per holding, a dot for now and a dot
+  // for after, joined by a line.
+  //
+  // This replaced a pair of stacked bars per row. Two bars meant comparing two
+  // lengths from a shared left edge, which is the thing eyes are worst at, and
+  // it cost two rows of height per holding. Here the distance between the dots
+  // IS the change and the direction is just which dot sits left.
+  //
+  // Deliberately no red/green. The old version coloured a decrease green and
+  // an increase red, so cutting Tesla read as "good" and buying the ETF that
+  // replaces it read as "bad" -- but both are the plan working as intended.
+  // Direction is not goodness, so it does not get a goodness colour.
+  function dumbbell(items, opts) {
+    opts = opts || {};
+    var w = opts.width || 480, labelW = opts.labelW || 86, valW = 120;
+    var rowH = 26, top = 18;
+    var axisW = w - labelW - valW - 10;
+    var max = Math.max.apply(null, items.map(function (it) {
+      return Math.max(it.before, it.after, it.target || 0); })) || 1;
+    max = Math.ceil(max / 10) * 10;
+    var X = function (v) { return labelW + (v / max) * axisW; };
+
+    var ticks = [0, max / 2, max].map(function (v) {
+      return '<line x1="' + X(v) + '" y1="' + (top - 6) + '" x2="' + X(v) +
+        '" y2="' + (top + items.length * rowH - 8) + '" stroke="#f1f3f4"/>' +
+        '<text x="' + X(v) + '" y="' + (top - 10) + '" text-anchor="middle" ' +
+        'font-size="9" fill="' + INK3 + '">' + v + '%</text>';
+    }).join('');
+
+    return '<svg class="chart" viewBox="0 0 ' + w + ' ' +
+        (top + items.length * rowH) + '" role="img">' + ticks +
+      items.map(function (it, i) {
+        var y = top + i * rowH + 7;
+        var x0 = X(it.before), x1 = X(it.after), d = it.after - it.before;
+        var tip = it.label + '\n' + it.before.toFixed(1) + '% \u2192 ' +
+          it.after.toFixed(1) + '%  (' + (d >= 0 ? '+' : '') + d.toFixed(1) +
+          ' pts)' + (it.target != null ? '\ntarget ' + it.target + '%' : '');
+        return '<g data-tip="' + esc(tip) + '">' +
+          '<rect x="0" y="' + (y - 11) + '" width="' + w + '" height="' + rowH +
+            '" fill="transparent"/>' +
+          // Clip rather than let a long theme name run under the axis; the
+          // full name is in the tooltip.
+          '<text x="0" y="' + (y + 4) + '" font-size="11.5" fill="#202124">' +
+            esc(it.label.length > 13 ? it.label.slice(0, 12) + '\u2026'
+                                     : it.label) + '</text>' +
+          (it.target != null ? '<line x1="' + X(it.target) + '" y1="' + (y - 7) +
+            '" x2="' + X(it.target) + '" y2="' + (y + 7) +
+            '" stroke="#5f6368" stroke-width="1" stroke-dasharray="2 2"/>' : '') +
+          '<line x1="' + x0 + '" y1="' + y + '" x2="' + x1 + '" y2="' + y +
+            '" stroke="#c6dafc" stroke-width="3" stroke-linecap="round"/>' +
+          '<circle cx="' + x0 + '" cy="' + y + '" r="3.6" fill="#fff" ' +
+            'stroke="#9aa0a6" stroke-width="1.6"/>' +
+          '<circle cx="' + x1 + '" cy="' + y + '" r="4.2" fill="#1a73e8"/>' +
+          '<text x="' + (w - 46) + '" y="' + (y + 4) + '" text-anchor="end" ' +
+            'font-size="10.5" font-family="Roboto Mono,monospace" fill="' +
+            INK3 + '">' + it.before.toFixed(1) + '</text>' +
+          '<text x="' + (w - 36) + '" y="' + (y + 4) + '" text-anchor="middle" ' +
+            'font-size="10" fill="#bdc1c6">\u2192</text>' +
+          '<text x="' + w + '" y="' + (y + 4) + '" text-anchor="end" ' +
+            'font-size="10.5" font-family="Roboto Mono,monospace" ' +
+            'fill="#202124">' + it.after.toFixed(1) + '</text>' +
+          '</g>';
+      }).join('') + '</svg>';
+  }
+
   // ---- horizontal bars -------------------------------------------------
   function hbars(items, opts) {
     opts = opts || {};
@@ -184,7 +249,7 @@ window.PFCharts = (function () {
       'stroke-linejoin="round"/>' + marks + '</svg>';
   }
 
-  return { donut: donut, legend: legend, hbars: hbars, beforeAfter: beforeAfter,
+  return { donut: donut, legend: legend, hbars: hbars, beforeAfter: beforeAfter, dumbbell: dumbbell,
            line: line, color: color, esc: esc, money: money };
 })();
 

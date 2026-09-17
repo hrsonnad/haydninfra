@@ -140,16 +140,21 @@ window.PFPlan = (function () {
         return Math.abs(x.after - x.before) < 0.1; })
         .sort(function (x, y) { return y.before - x.before; });
       // What the plan changes, then enough of the unchanged book for context.
-      return moved.concat(still.slice(0, Math.max(0, 9 - moved.length)));
+      var all = moved.concat(still.slice(0, Math.max(0, 9 - moved.length)));
+      return { rows: all.slice(0, 14), hidden: Math.max(0, all.length - 14) };
     }
 
+    function panel(cap, built) {
+      return '<div><div class="faint" style="font-size:12.5px;margin-bottom:10px">' +
+        cap + '</div>' + C.dumbbell(built.rows, { width: 480 }) +
+        (built.hidden ? '<div class="faint" style="font-size:11.5px;' +
+          'margin-top:8px">' + built.hidden + ' smaller positions not shown' +
+          '</div>' : '') + '</div>';
+    }
     return '<div class="grid2">' +
-      '<div><div class="faint" style="font-size:12.5px;margin-bottom:12px">' +
-        'Positions that move, grey now / blue after / dashed target</div>' +
-        C.beforeAfter(build(null), { width: 480 }) + '</div>' +
-      '<div><div class="faint" style="font-size:12.5px;margin-bottom:12px">' +
-        'Themes, looking through funds</div>' +
-        C.beforeAfter(build('theme'), { width: 480 }) + '</div>' +
+      panel('By position \u2014 hollow dot now, solid dot after, ' +
+            'dashed tick target', build(null)) +
+      panel('By theme, looking through funds', build('theme')) +
       '</div>';
   }
 
