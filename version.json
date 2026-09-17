@@ -1,9 +1,9 @@
 {
-  "version": "v260917.01 7:05pm",
-  "release": 1,
-  "sha": "d937714",
-  "fullSha": "d937714ed2ecd1edafb282e76563dd54335076d5",
-  "actor": "hrsonnad",
-  "pushedAt": "2026-09-17T00:05:53Z",
-  "commits": [{"sha": "d937714", "message": "Portfolio: real tooltips on the account bars, and the same view after the plan", "author": "Haydn"}]
+  "version": "v260917.02 7:17P",
+  "release": 2,
+  "sha": "35bef4d",
+  "fullSha": "35bef4d44f9c4b35e5a109a6e670751fda550f82",
+  "actor": "Haydn",
+  "pushedAt": "2026-09-17T00:17:43Z",
+  "commits": []
 }
